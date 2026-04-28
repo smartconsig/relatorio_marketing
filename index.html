@@ -248,6 +248,41 @@
     .toast.ok { border-left-color: var(--green); }
     .toast.err { border-left-color: var(--danger); }
 
+    /* ── LOGIN ── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 40px 36px;
+      width: 100%; max-width: 380px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .login-logo { font-family: var(--font-h); font-weight: 800; font-size: 22px; }
+    .login-logo em { color: var(--red); font-style: normal; }
+    .login-title { font-family: var(--font-h); font-size: 18px; font-weight: 700; }
+    .login-sub { font-size: 12px; color: var(--gray); margin-top: -8px; }
+    .login-field { display: flex; flex-direction: column; gap: 6px; }
+    .login-field label { font-family: var(--font-h); font-size: 10px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.8px; }
+    .login-field input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--white); padding: 10px 14px; border-radius: 8px;
+      font-size: 13px; font-family: var(--font-b); outline: none; transition: border-color 0.15s;
+    }
+    .login-field input:focus { border-color: var(--red); }
+    .login-btn {
+      background: var(--red); color: var(--white); border: none;
+      padding: 12px; border-radius: 8px; margin-top: 4px;
+      font-family: var(--font-h); font-size: 13px; font-weight: 700;
+      cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.15s;
+    }
+    .login-btn:hover:not(:disabled) { background: var(--red-hover); }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-err { font-size: 12px; color: var(--danger); min-height: 16px; text-align: center; }
+    .user-chip { font-size: 10px; color: var(--gray-light); font-family: var(--font-h); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 6px; }
+
     /* ── MISC ── */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -290,6 +325,26 @@
 </head>
 <body>
 
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Smart<em>Consig</em></div>
+    <div class="login-title">Marketing Dashboard</div>
+    <div class="login-sub">Faça login para continuar</div>
+    <div class="login-field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') doSignIn()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doSignIn()">Entrar</button>
+    <div id="login-err" class="login-err"></div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -323,7 +378,11 @@
       Metas
     </div>
   </nav>
-  <div class="sidebar-footer"><div class="version">v1.0 · Smart Consig</div></div>
+  <div class="sidebar-footer">
+    <div class="user-chip" id="user-email"></div>
+    <div class="version">v1.0 · Smart Consig</div>
+    <button class="btn-sm btn-ghost" style="margin-top:8px;width:100%;font-size:10px" onclick="doSignOut()">Sair</button>
+  </div>
 </aside>
 
 <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
@@ -1312,6 +1371,7 @@ function classify(idx, isMkt) {
   if (row) row.remove();
   toast(isMkt ? 'Classificado como marketing ✓' : 'Classificado como não marketing ✓');
   saveState();
+  saveClassificationToSupabase(entry.cpf, isMkt);
   // Refresh overview silently
   const fd = filteredData();
   if (fd) {
@@ -1473,6 +1533,7 @@ function classifyFromProcv(idx, isMkt) {
   if (entry.cpf) overrides[entry.cpf] = isMkt;
   saveState();
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
+  saveClassificationToSupabase(entry.cpf, isMkt);
   // Atualiza PROCV e visão geral
   const fd = filteredData();
   if (fd) {
@@ -1557,6 +1618,126 @@ function clearFilter() {
   document.getElementById('date-start').value = '';
   document.getElementById('date-end').value   = '';
   if (result) { renderAll(); saveState(); }
+}
+
+// ══════════════════════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════════════════════
+const SUPA_URL = 'https://gfxfuzmoywdsiyctkrux.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmeGZ1em1veXdkc2l5Y3RrcnV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDk0NzMsImV4cCI6MjA5Mjk4NTQ3M30.zknUCd0TrOmgLUxeRcx5VWZFb-Ag-L5_v00F267Owug';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
+let currentUser = null;
+
+// ── Auth ──
+async function doSignIn() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  if (!email || !pass) { err.textContent = 'Preencha e-mail e senha.'; return; }
+  btn.textContent = 'Entrando…'; btn.disabled = true; err.textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = 'E-mail ou senha incorretos.';
+    btn.textContent = 'Entrar'; btn.disabled = false;
+    return;
+  }
+  currentUser = data.user;
+  document.getElementById('user-email').textContent = data.user.email;
+  document.getElementById('login-screen').style.display = 'none';
+  await onAuthenticated();
+}
+
+async function doSignOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('user-email').textContent = '';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value  = '';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function onAuthenticated() {
+  // 1. Metas do Supabase
+  const sbGoals = await loadSupabaseGoals();
+  if (sbGoals) {
+    goals = sbGoals;
+    populateGoalsForm(goals);
+    try { localStorage.setItem('sc_goals', JSON.stringify(goals)); } catch {}
+  } else {
+    loadGoals();
+  }
+  // 2. Classificações do Supabase → overrides
+  await syncClassificationsFromSupabase();
+  // 3. Resultado em cache (localStorage)
+  if (loadState()) {
+    await syncClassificationsFromSupabase(); // Supabase tem precedência
+    setCacheIndicator(true);
+    renderAll();
+    renderDiag(result.diag);
+    navigate('overview');
+    toast('Dados restaurados ⚡');
+  }
+}
+
+// ── Classifications ──
+async function syncClassificationsFromSupabase() {
+  try {
+    const { data, error } = await sb.from('classifications').select('cpf, is_marketing');
+    if (error || !data) return;
+    for (const row of data) {
+      overrides[row.cpf] = row.is_marketing;
+      if (result) {
+        const entry = result.entries.find(e => e.cpf === row.cpf);
+        if (entry) { entry.isMarketing = row.is_marketing; entry.reviewReason = 'manual'; }
+      }
+    }
+  } catch(e) { console.warn('syncClassifications:', e); }
+}
+
+async function saveClassificationToSupabase(cpf, isMkt) {
+  if (!cpf || !currentUser) return;
+  try {
+    await sb.from('classifications').upsert(
+      { cpf, is_marketing: isMkt, classified_by: currentUser.id, classified_at: new Date().toISOString() },
+      { onConflict: 'cpf' }
+    );
+  } catch(e) { console.warn('saveClassification:', e); }
+}
+
+// ── Goals ──
+async function loadSupabaseGoals() {
+  try {
+    const { data, error } = await sb.from('goals').select('*').limit(1).maybeSingle();
+    if (error || !data) return null;
+    return { leads: data.leads||0, invest: data.invest||0, cpl: data.cpl||0,
+             approved: data.approved||0, paid: data.paid||0, value: data.value||0,
+             cac: data.cac||0, roas: data.roas||0 };
+  } catch(e) { return null; }
+}
+
+async function saveGoalsToSupabase(g) {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('goals').select('id').limit(1).maybeSingle();
+    if (data?.id) {
+      await sb.from('goals').update({ ...g, updated_by: currentUser.id, updated_at: new Date().toISOString() }).eq('id', data.id);
+    } else {
+      await sb.from('goals').insert({ ...g, updated_by: currentUser.id });
+    }
+  } catch(e) { console.warn('saveGoals:', e); }
+}
+
+function populateGoalsForm(g) {
+  document.getElementById('g-leads').value    = g.leads    || '';
+  document.getElementById('g-invest').value   = g.invest   || '';
+  document.getElementById('g-cpl').value      = g.cpl      || '';
+  document.getElementById('g-approved').value = g.approved || '';
+  document.getElementById('g-paid').value     = g.paid     || '';
+  document.getElementById('g-value').value    = g.value    || '';
+  document.getElementById('g-cac').value      = g.cac      || '';
+  document.getElementById('g-roas').value     = g.roas     || '';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1663,6 +1844,7 @@ function saveGoals() {
     roas:     parseFloat(document.getElementById('g-roas').value)    || 0,
   };
   try { localStorage.setItem('sc_goals', JSON.stringify(goals)); } catch {}
+  saveGoalsToSupabase(goals);
   toast('Metas salvas');
   if (result) renderAll();
 }
@@ -1686,14 +1868,16 @@ function loadGoals() {
 // ══════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════
-loadGoals();
-if (loadState()) {
-  setCacheIndicator(true);
-  renderAll();
-  renderDiag(result.diag);
-  navigate('overview');
-  toast('Dados da sessão anterior restaurados ⚡');
-}
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('user-email').textContent = session.user.email;
+    document.getElementById('login-screen').style.display = 'none';
+    await onAuthenticated();
+  }
+  // Se não tiver sessão, a tela de login já está visível por padrão
+})();
 </script>
 </body>
 </html>
