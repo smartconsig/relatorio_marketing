@@ -373,6 +373,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       PROCV
     </div>
+    <div class="nav-item" data-sec="clientes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Clientes
+      <span class="nav-badge hidden" id="clientes-badge">0</span>
+    </div>
     <div class="nav-item" data-sec="goals">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
       Metas
@@ -478,6 +483,13 @@
     <div class="section" id="sec-review">
       <div id="review-body">
         <div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
+      </div>
+    </div>
+
+    <!-- ── CLIENTES ── -->
+    <div class="section" id="sec-clientes">
+      <div id="clientes-body">
+        <div class="empty"><div class="empty-icon">👥</div><div class="empty-title">Nenhum cliente confirmado ainda</div><div class="empty-desc">Confirme clientes no PROCV para eles aparecerem aqui.</div></div>
       </div>
     </div>
 
@@ -1048,6 +1060,7 @@ function renderAll() {
   renderRanking(fd.entries);
   renderReview(kpis.toReview, result.unknownStatuses);
   renderProcv(fd.entries);
+  renderClientes(fd.entries);
   const badge = document.getElementById('review-badge');
   const cnt   = kpis.toReview.length + result.unknownStatuses.length;
   badge.textContent = cnt;
@@ -1402,6 +1415,9 @@ let procvFilter = 'mkt';
 let procvSearch = '';
 
 function renderProcv(entries) {
+  // Apenas clientes ainda não confirmados manualmente
+  entries = entries.filter(e => e.reviewReason !== 'manual');
+
   // Contagens por categoria (independente de filtro)
   const cAll  = entries.length;
   const cMkt  = entries.filter(e => e.isMarketing === true).length;
@@ -1534,10 +1550,11 @@ function classifyFromProcv(idx, isMkt) {
   saveState();
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
   saveClassificationToSupabase(entry.cpf, isMkt);
-  // Atualiza PROCV e visão geral
+  // Atualiza PROCV, Clientes e visão geral
   const fd = filteredData();
   if (fd) {
     renderProcv(fd.entries);
+    renderClientes(fd.entries);
     const k = calcKPIs(fd.entries, fd.facebook);
     renderOverview(k, fd);
   }
@@ -1589,12 +1606,115 @@ function exportProcvCSV(entries) {
 }
 
 // ══════════════════════════════════════════════════════════
+// RENDER CLIENTES
+// ══════════════════════════════════════════════════════════
+let clientesSearch  = '';
+let clientesFilter  = 'all';
+
+function renderClientes(entries) {
+  // Apenas confirmados manualmente
+  const confirmed = entries.filter(e => e.reviewReason === 'manual');
+
+  // Atualiza badge
+  const badge = document.getElementById('clientes-badge');
+  badge.textContent = confirmed.length;
+  badge.classList.toggle('hidden', confirmed.length === 0);
+
+  if (confirmed.length === 0) {
+    document.getElementById('clientes-body').innerHTML = `
+      <div class="empty"><div class="empty-icon">👥</div>
+      <div class="empty-title">Nenhum cliente confirmado ainda</div>
+      <div class="empty-desc">Confirme clientes no PROCV para eles aparecerem aqui.</div></div>`;
+    return;
+  }
+
+  // Filtros
+  let filtered = confirmed;
+  if (clientesFilter === 'mkt')  filtered = filtered.filter(e => e.isMarketing === true);
+  if (clientesFilter === 'no')   filtered = filtered.filter(e => e.isMarketing === false);
+
+  // Busca
+  const q = clientesSearch.trim().toLowerCase();
+  if (q) filtered = filtered.filter(e =>
+    (e.cliente||'').toLowerCase().includes(q) || (e.cpf||'').includes(q)
+  );
+
+  const cMkt = confirmed.filter(e => e.isMarketing === true).length;
+  const cNo  = confirmed.filter(e => e.isMarketing === false).length;
+
+  function clsBadge(e) {
+    return e.isMarketing === true ? 'badge-green' : 'badge-gray';
+  }
+  function clsLabel(e) {
+    return e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing';
+  }
+  function statusBadge(cat) {
+    if (cat === 'pago')      return 'badge-green';
+    if (cat === 'aprovado')  return 'badge-yellow';
+    if (cat === 'reprovado') return 'badge-red';
+    return 'badge-gray';
+  }
+
+  const rowsHtml = filtered.length === 0
+    ? `<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado.</td></tr>`
+    : filtered.map((e, i) => `
+      <tr>
+        <td class="muted" style="font-size:11px">${i + 1}</td>
+        <td><strong>${e.cliente || '—'}</strong></td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+        <td class="muted">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td><span class="badge ${clsBadge(e)}">${clsLabel(e)}</span></td>
+      </tr>`).join('');
+
+  document.getElementById('clientes-body').innerHTML = `
+    <div class="section-title"><span class="bar"></span>Clientes Confirmados</div>
+    <div class="info-box" style="margin-bottom:16px">
+      Todos os clientes que passaram pela sua confirmação no PROCV. Total de <strong>${confirmed.length} confirmados</strong>.
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px;position:relative">
+        <input type="text" placeholder="Buscar por nome ou CPF…"
+          value="${clientesSearch.replace(/"/g,'&quot;')}"
+          oninput="clientesSearch=this.value;renderClientes(filteredData().entries)"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--white);
+                 padding:8px 12px 8px 34px;border-radius:7px;font-size:13px;font-family:var(--font-b);outline:none"
+          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--gray);pointer-events:none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <div class="table-filters">
+        <button class="filter-btn ${clientesFilter==='all'?'active':''}" onclick="clientesFilter='all';renderClientes(filteredData().entries)">Todos (${confirmed.length})</button>
+        <button class="filter-btn ${clientesFilter==='mkt'?'active':''}" onclick="clientesFilter='mkt';renderClientes(filteredData().entries)">✅ Marketing (${cMkt})</button>
+        <button class="filter-btn ${clientesFilter==='no' ?'active':''}" onclick="clientesFilter='no'; renderClientes(filteredData().entries)">❌ Não Marketing (${cNo})</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-header-title">${fmtN(filtered.length)} clientes</div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
 // NAVIGATION & FILTER
 // ══════════════════════════════════════════════════════════
 const TITLES = {
   import: 'Importar Dados', overview: 'Visão Geral',
   ranking: 'Ranking de Vendas', review: 'Revisão Manual',
-  procv: 'PROCV — Consulta de Clientes', goals: 'Configurar Metas'
+  procv: 'PROCV — Fila de Confirmação', clientes: 'Clientes Confirmados', goals: 'Configurar Metas'
 };
 
 function navigate(sec) {
