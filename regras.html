@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Consig — Regras e Processos do Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #121212; --surface: #1e1e1e; --surface2: #272727; --surface3: #303030;
+      --red: #940b10; --red-hover: #b01015; --white: #ffffff;
+      --gray: #6b7280; --gray-light: #9ca3af;
+      --green: #22c55e; --yellow: #f59e0b; --danger: #ef4444; --blue: #60a5fa;
+      --border: #2a2a2a;
+      --font-h: 'Montserrat', sans-serif; --font-b: 'Open Sans', sans-serif;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--white); font-family: var(--font-b); font-size: 14px; line-height: 1.6; }
+
+    /* ── LAYOUT ── */
+    .wrap { max-width: 960px; margin: 0 auto; padding: 48px 28px 80px; }
+
+    /* ── HEADER ── */
+    .page-header { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 40px; }
+    .brand { font-family: var(--font-h); font-weight: 800; font-size: 22px; letter-spacing: -0.3px; margin-bottom: 4px; }
+    .brand em { color: var(--red); font-style: normal; }
+    .page-title { font-family: var(--font-h); font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .page-sub { color: var(--gray-light); font-size: 13px; }
+    .updated { margin-top: 12px; font-size: 11px; color: var(--gray); font-family: var(--font-h); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-family: var(--font-h); font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--white); margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title .bar { width: 3px; height: 18px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
+    .section-num {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-h); font-size: 11px; font-weight: 800;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* ── CARD ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 12px; }
+    .card-title { font-family: var(--font-h); font-size: 12px; font-weight: 700; color: var(--white); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .card p, .card li { font-size: 13px; color: var(--gray-light); margin-bottom: 6px; }
+    .card ul, .card ol { padding-left: 20px; }
+    .card li { margin-bottom: 5px; }
+    .card strong { color: var(--white); font-weight: 600; }
+    .card code {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: #f9a8d4; padding: 1px 6px; border-radius: 4px;
+      font-size: 11px; font-family: monospace;
+    }
+
+    /* ── GRID ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── STATUS BADGES ── */
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .badge {
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; font-family: var(--font-h);
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .badge-green { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .badge-yellow { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .badge-red { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .badge-gray { background: rgba(107,114,128,0.15); color: #9ca3af; }
+    .badge-blue { background: rgba(96,165,250,0.12); color: #60a5fa; }
+    .badge-red-solid { background: rgba(148,11,16,0.15); color: #f87171; }
+
+    /* ── TABLE ── */
+    .tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: var(--surface2); padding: 10px 14px; text-align: left;
+      font-family: var(--font-h); font-size: 9px; font-weight: 700;
+      color: var(--gray); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 10px 14px; font-size: 12px; color: var(--gray-light); }
+    tbody td strong { color: var(--white); }
+
+    /* ── INFO BOX ── */
+    .info-box { border-radius: 8px; padding: 12px 16px; font-size: 12px; margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start; }
+    .info-box.warn { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: #fcd34d; }
+    .info-box.ok   { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2);  color: #86efac; }
+    .info-box.info { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); color: #93c5fd; }
+    .info-box .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── FLOW ── */
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+    .flow-step {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 14px;
+      font-family: var(--font-h); font-size: 11px; font-weight: 700; color: var(--white);
+    }
+    .flow-arrow { color: var(--gray); font-size: 16px; }
+
+    /* ── KPI TABLE ── */
+    .kpi-def { display: grid; grid-template-columns: 160px 1fr; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+    .kpi-def dt { background: var(--surface2); padding: 10px 14px; font-family: var(--font-h); font-size: 11px; font-weight: 700; color: var(--white); border-bottom: 1px solid var(--border); }
+    .kpi-def dd { background: var(--surface); padding: 10px 14px; font-size: 12px; color: var(--gray-light); border-bottom: 1px solid var(--border); }
+    .kpi-def dt:last-of-type, .kpi-def dd:last-of-type { border-bottom: none; }
+
+    /* ── MISC ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .divider { height: 1px; background: var(--border); margin: 36px 0; }
+    .tag { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 8px; font-size: 11px; color: var(--gray-light); margin: 2px; font-family: monospace; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══ HEADER ══ -->
+  <div class="page-header">
+    <div class="brand">Smart<em>Consig</em></div>
+    <div class="page-title">Regras & Processos — Dashboard de Marketing</div>
+    <div class="page-sub">Documentação completa das regras de negócio, lógica de cruzamento de dados e indicadores do painel de tráfego pago.</div>
+    <div class="updated">Atualizado em Abril de 2026 · Versão 1.0</div>
+  </div>
+
+  <!-- ══ 1. VISÃO GERAL ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">1</span>Visão Geral do Sistema</div>
+
+    <div class="card">
+      <div class="card-title">🎯 Objetivo</div>
+      <p>O dashboard cruza três fontes de dados para medir o resultado real do tráfego pago: quantas propostas geradas pelo marketing foram aprovadas, pagas ou reprovadas, quanto custou adquirir cada cliente e qual o retorno sobre o investimento.</p>
+    </div>
+
+    <div class="info-box ok">
+      <div class="icon">✅</div>
+      <div><strong>Processo diário:</strong> importe sempre o período completo que deseja analisar. O dashboard substitui os dados anteriores a cada importação — não há acúmulo de registros duplicados.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📂 As três fontes de dados</div>
+      <ul>
+        <li><strong>Facebook Ads (BM-03 e/ou BM-06):</strong> exportação de campanhas do Gerenciador de Anúncios. Fornece <strong>investimento</strong> e <strong>leads gerados</strong>.</li>
+        <li><strong>Sistema Smart (.xlsx):</strong> exportação de atendimentos/leads. Fornece a <strong>origem</strong> (canal de marketing) e <strong>audiência</strong> de cada cliente via CPF/telefone.</li>
+        <li><strong>Ecorban (.xlsx):</strong> exportação de propostas. É a fonte principal de <strong>status da proposta</strong>, <strong>valor</strong> e dados de vendedor/loja.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══ 2. FLUXO DE IMPORTAÇÃO ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">2</span>Fluxo de Importação e Processamento</div>
+
+    <div class="card">
+      <div class="card-title">🔄 Passo a passo diário</div>
+      <div class="flow">
+        <div class="flow-step">1. Exportar Ecorban (período completo)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">2. Exportar Sistema Smart (período completo)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">3. Exportar Facebook Ads (opcional)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">4. Importar no Dashboard</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">5. Filtrar período desejado</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">6. Analisar resultados</div>
+      </div>
+    </div>
+
+    <div class="info-box warn">
+      <div class="icon">⚠️</div>
+      <div><strong>Importante:</strong> importe <em>sempre o período completo</em> — não apenas o dia. O cruzamento precisa de todos os registros para funcionar corretamente. O filtro de datas no topo do dashboard recorta a análise após o processamento.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Arquivos opcionais vs obrigatórios</div>
+      <div class="tbl-wrap" style="margin-top:8px">
+        <table>
+          <thead><tr><th>Arquivo</th><th>Obrigatório?</th><th>Função</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sistema Smart</strong></td><td><span class="badge badge-red">Obrigatório</span></td><td>Identifica a origem (marketing ou não) de cada cliente via CPF/telefone</td></tr>
+            <tr><td><strong>Ecorban</strong></td><td><span class="badge badge-red">Obrigatório</span></td><td>Fonte de todas as propostas, status e valores</td></tr>
+            <tr><td><strong>Facebook BM-03</strong></td><td><span class="badge badge-gray">Opcional</span></td><td>Investimento e leads da conta de anúncios BM-03</td></tr>
+            <tr><td><strong>Facebook BM-06</strong></td><td><span class="badge badge-gray">Opcional</span></td><td>Investimento e leads da conta de anúncios BM-06</td></tr>
+            <tr><td><strong>Classificações Manuais (.json)</strong></td><td><span class="badge badge-gray">Opcional</span></td><td>Recarrega revisões manuais feitas em sessões anteriores</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3. CRUZAMENTO CPF / TELEFONE ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">3</span>Cruzamento de Dados: Ecorban ↔ Sistema Smart</div>
+
+    <div class="card">
+      <div class="card-title">🔗 Como o cruzamento funciona</div>
+      <p>Para cada proposta do Ecorban, o sistema tenta encontrar o mesmo cliente no Sistema Smart usando CPF (prioridade) e depois telefone. Quando encontrado, usa as informações de <strong>Origem</strong> e <strong>Audiência</strong> do Smart para classificar se a venda veio ou não do marketing.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🪪 Normalização de CPF</div>
+        <ul>
+          <li>Remove tudo que não é número</li>
+          <li>Completa com <strong>zeros à esquerda até 11 dígitos</strong> — CPFs exportados pelo Excel como número perdem o zero inicial (ex: <code>01234567890</code> vira <code>1234567890</code> no Excel)</li>
+          <li>CPF <code>00000000000</code> é ignorado</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 Normalização de Telefone</div>
+        <ul>
+          <li>Remove tudo que não é número</li>
+          <li>Se houver múltiplos telefones separados por <code>;</code>, usa apenas o primeiro</li>
+          <li>Remove o DDI <code>55</code> do início quando o número tiver mais de 11 dígitos</li>
+          <li>Números com menos de 8 dígitos são ignorados</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📌 Regra: múltiplos registros no Smart para o mesmo CPF</div>
+      <p>Quando um CPF aparece mais de uma vez no Sistema Smart (cliente que entrou em contato em datas diferentes), o sistema usa sempre o <strong>registro mais antigo</strong> (menor "Data de Criação"). Isso garante que a origem original do cliente seja preservada.</p>
+    </div>
+
+    <div class="info-box info">
+      <div class="icon">ℹ️</div>
+      <div><strong>Proposta não encontrada no Smart:</strong> vai para a fila de <em>Revisão Manual</em>. O gestor pode classificar manualmente se é ou não marketing. Essas classificações são exportadas em um arquivo <code>.json</code> e podem ser reimportadas no dia seguinte para não perder o trabalho.</div>
+    </div>
+  </div>
+
+  <!-- ══ 4. CLASSIFICAÇÃO DE MARKETING ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">4</span>Classificação: É Marketing ou Não?</div>
+
+    <div class="card">
+      <div class="card-title">✅ É considerado MARKETING quando (qualquer uma dessas condições):</div>
+      <ul>
+        <li>Campo <strong>Origem</strong> no Smart = <code>Instagram</code></li>
+        <li>Campo <strong>Origem</strong> no Smart = <code>Storie Instagram</code></li>
+        <li>Campo <strong>Origem</strong> no Smart = <code>Sem Origem</code></li>
+        <li>Campo <strong>Origem</strong> = <code>NÃO MAPEADO</code> <strong>E</strong> campo <strong>Audiência</strong> = <code>NÃO MAPEADO</code></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ NÃO é marketing quando:</div>
+      <ul>
+        <li>A Origem está preenchida com qualquer outro valor (ex: indicação, ligação, WhatsApp orgânico, etc.)</li>
+        <li>A Origem é NÃO MAPEADO mas a Audiência tem algum valor preenchido</li>
+      </ul>
+    </div>
+
+    <div class="info-box warn">
+      <div class="icon">⚠️</div>
+      <div><strong>Revisão Manual:</strong> propostas não encontradas no Smart ficam com classificação em branco (<em>null</em>) e são excluídas dos KPIs de marketing até que o gestor as classifique manualmente na aba "Revisão Manual".</div>
+    </div>
+  </div>
+
+  <!-- ══ 5. CLASSIFICAÇÃO DE STATUS ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">5</span>Classificação de Status das Propostas</div>
+
+    <div class="info-box info">
+      <div class="icon">ℹ️</div>
+      <div>O Ecorban exibe emojis coloridos antes do nome do status (ex: "🟢 Integrado"). O sistema remove automaticamente os emojis e acentos antes de comparar, então a comparação é robusta independente de formatação.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">✓ Pagas</span> — Operações efetivamente pagas / averbadas</div>
+      <div class="badges">
+        <span class="badge badge-green">Desaverbação</span>
+        <span class="badge badge-green">Desaverbação Master</span>
+        <span class="badge badge-green">Integrado</span>
+        <span class="badge badge-green">Pago</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-yellow">⏳ Em Andamento</span> — Aprovadas, em análise ou processamento</div>
+      <div class="badges">
+        <span class="badge badge-yellow">Aguardando Banco</span>
+        <span class="badge badge-yellow">Analise Banco</span>
+        <span class="badge badge-yellow">Anexar Link</span>
+        <span class="badge badge-yellow">Anuência / Anuencia</span>
+        <span class="badge badge-yellow">Assinado</span>
+        <span class="badge badge-yellow">Assinar Link</span>
+        <span class="badge badge-yellow">Assinar Termo</span>
+        <span class="badge badge-yellow">Auditoria Banco</span>
+        <span class="badge badge-yellow">Boleto</span>
+        <span class="badge badge-yellow">Boleto Reduzido</span>
+        <span class="badge badge-yellow">Consulta</span>
+        <span class="badge badge-yellow">Consulta Master</span>
+        <span class="badge badge-yellow">Desautorização</span>
+        <span class="badge badge-yellow">Desbloquear</span>
+        <span class="badge badge-yellow">Digitação</span>
+        <span class="badge badge-yellow">Fatura Master</span>
+        <span class="badge badge-yellow">Pendente</span>
+        <span class="badge badge-yellow">Reapresentar Conta</span>
+        <span class="badge badge-yellow">Resolvido</span>
+        <span class="badge badge-yellow">Retenção</span>
+        <span class="badge badge-yellow">Virada de Fatura</span>
+      </div>
+      <p style="margin-top:10px;font-size:11px;color:var(--gray)">* Os status Pagas também entram aqui para efeito de "Válidas Total" — a soma Em Andamento + Pagas = Válidas (equivale ao relatório do Ecorban)</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">✗ Reprovadas</span> — Propostas perdidas ou canceladas</div>
+      <div class="badges">
+        <span class="badge badge-red">Acordo</span>
+        <span class="badge badge-red">Black List</span>
+        <span class="badge badge-red">Bloqueio TBM</span>
+        <span class="badge badge-red">Boleto Agência</span>
+        <span class="badge badge-red">Boleto Master</span>
+        <span class="badge badge-red">Cliente Desistiu</span>
+        <span class="badge badge-red">Cliente Retido</span>
+        <span class="badge badge-red">Contrato Temporário</span>
+        <span class="badge badge-red">Margem Negativa</span>
+        <span class="badge badge-red">Não Compra</span>
+        <span class="badge badge-red">Não Resolvido</span>
+        <span class="badge badge-red">Perda</span>
+        <span class="badge badge-red">Política Interna</span>
+        <span class="badge badge-red">Sem Margem</span>
+        <span class="badge badge-red">Tratativa Interna</span>
+        <span class="badge badge-red">Troco Abaixo</span>
+        <span class="badge badge-red">Venda Errada</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gray">? Desconhecido</span> — Status não mapeado</div>
+      <p>Qualquer status que não esteja nas listas acima cai como "Desconhecido" e aparece na aba <strong>Revisão Manual</strong> com o aviso "Status Não Mapeados". Informe o desenvolvedor para adicionar o novo status à lista correta.</p>
+    </div>
+  </div>
+
+  <!-- ══ 6. LEADS FACEBOOK ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">6</span>Contagem de Leads — Facebook Ads</div>
+
+    <div class="card">
+      <div class="card-title">💬 Regra: somente linhas de "mensagem/conversa"</div>
+      <p>O relatório do Facebook Ads contém múltiplos tipos de resultado (cliques, alcance, conversas, etc.). O dashboard filtra apenas as linhas onde o campo <strong>"Tipo de resultado"</strong> contém as palavras <code>mensagem</code> ou <code>conversa</code> para contar leads — que são os atendimentos iniciados via anúncio.</p>
+      <p style="margin-top:8px">Se o arquivo não tiver essa coluna preenchida, usa todas as linhas como fallback.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 Investimento</div>
+      <p>O investimento total é somado de <strong>todas</strong> as linhas do arquivo do Facebook, independente do tipo de resultado, usando a coluna <code>Montante gasto (BRL)</code>.</p>
+      <p style="margin-top:6px">Se houver dois arquivos (BM-03 + BM-06), os dados são <strong>somados automaticamente</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ══ 7. COLUNA DE VALOR ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">7</span>Coluna de Valor Utilizada</div>
+
+    <div class="card">
+      <div class="card-title">💵 Qual valor é usado do Ecorban?</div>
+      <p>O dashboard usa a coluna <strong>Multiplicador</strong> do Ecorban como referência de valor das propostas — a mesma coluna destacada no relatório de Detalhamento do Ecorban. Essa coluna é buscada nesta ordem de prioridade:</p>
+      <ol style="margin-top:8px">
+        <li>Coluna <code>Multiplicador</code></li>
+        <li>Coluna <code>Valor Multiplicador</code></li>
+        <li>Coluna <code>Valor</code> (fallback)</li>
+      </ol>
+      <p style="margin-top:8px;color:var(--gray);font-size:12px">O painel de Diagnóstico (na tela de Importar) mostra os nomes exatos das colunas detectadas no arquivo — use para confirmar qual está sendo lida.</p>
+    </div>
+  </div>
+
+  <!-- ══ 8. KPIs ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">8</span>Definição dos KPIs</div>
+
+    <dl class="kpi-def">
+      <dt>CPL Calculado</dt>
+      <dd>Custo por Lead calculado internamente: <strong>Investimento ÷ Leads Gerados</strong>. Diferente do CPL reportado pelo Facebook (que é uma média das campanhas).</dd>
+      <dt>CAC</dt>
+      <dd>Custo de Aquisição de Cliente: <strong>Investimento ÷ Vendas Pagas de Marketing</strong>. Quanto custou converter um lead em venda efetivamente paga.</dd>
+      <dt>ROAS</dt>
+      <dd>Retorno sobre o Investimento em Anúncios: <strong>Valor das Vendas Pagas de Marketing ÷ Investimento</strong>. Quanto R$ de operações pagas cada R$ investido gerou.</dd>
+      <dt>Taxa de Conversão</dt>
+      <dd><strong>Vendas Pagas de Marketing ÷ Leads Gerados × 100</strong>. Percentual de leads que se tornaram clientes pagos.</dd>
+      <dt>Ticket Médio</dt>
+      <dd><strong>Valor Total das Vendas Pagas ÷ Quantidade de Vendas Pagas</strong>. Valor médio por operação. Calculado separadamente para Marketing e para Todas as Origens.</dd>
+      <dt>Em Andamento</dt>
+      <dd>Propostas com status <em>Aprovado</em> (processo ativo mas ainda não pago). Equivale às "Válidas em análise" do Ecorban.</dd>
+      <dt>Válidas (Total)</dt>
+      <dd><strong>Em Andamento + Pagas</strong>. Equivale ao total da coluna "Válidas" no relatório de Detalhamento do Ecorban. Use esse número para conferir com o sistema.</dd>
+    </dl>
+  </div>
+
+  <!-- ══ 9. ESTEIRA ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">9</span>Esteira de Vendas — Como Ler</div>
+
+    <div class="card">
+      <div class="card-title">📊 A Esteira mostra dois blocos:</div>
+      <ul>
+        <li><strong>Tráfego Pago (Marketing):</strong> apenas propostas onde a origem foi identificada como marketing (Instagram, Storie Instagram, Sem Origem, ou ambos NÃO MAPEADO)</li>
+        <li><strong>Todas as Origens:</strong> todas as propostas do Ecorban no período, independente da origem — inclui vendas orgânicas, indicações, etc.</li>
+      </ul>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="color:var(--yellow)">🟡 Em Andamento</div>
+        <p>Propostas aprovadas que ainda estão em processo (análise, assinatura, integração bancária, etc.). Ainda podem virar Pagas ou Reprovadas.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--green)">🟢 Pagas</div>
+        <p>Operações efetivamente pagas/averbadas. São os status: Pago, Integrado, Desaverbação e Desaverbação Master.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--danger)">🔴 Reprovadas</div>
+        <p>Propostas perdidas definitivamente por política interna, margem negativa, desistência do cliente, etc.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--blue)">🔵 Válidas (Total)</div>
+        <p>Soma de Em Andamento + Pagas. Esse total deve bater com a coluna "Multiplicador" do relatório "Válidas" do Ecorban.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 10. HIERARQUIA ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">10</span>Hierarquia de Times</div>
+
+    <div class="card">
+      <p>O ranking de vendas pode ser visualizado por Vendedor, Time, Supervisor ou Gerente. A hierarquia é detectada automaticamente pelo nome do <strong>Time (Loja)</strong> na proposta do Ecorban:</p>
+      <div class="tbl-wrap" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Time / Loja</th><th>Supervisor</th><th>Gerente</th></tr></thead>
+          <tbody>
+            <tr><td><strong>TITÃ</strong></td><td>Larissa Pamela</td><td>Meiry Pereira</td></tr>
+            <tr><td><strong>ZION</strong></td><td>Sara Neves</td><td>Meiry Pereira</td></tr>
+            <tr><td><strong>ALFA</strong></td><td>Kayk Taveira</td><td>Camila Avelino</td></tr>
+            <tr><td><strong>THÉMIS</strong></td><td>Thainá Graziela</td><td>Camila Avelino</td></tr>
+            <tr><td><strong>FÊNIX</strong></td><td>Gabriel Izidoro</td><td>Camila Avelino</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--gray)">Para atualizar a hierarquia (novo supervisor, nova equipe, etc.), informe o desenvolvedor — está configurado no início do código do dashboard.</p>
+    </div>
+  </div>
+
+  <!-- ══ 11. REVISÃO MANUAL ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">11</span>Revisão Manual e Persistência</div>
+
+    <div class="card">
+      <div class="card-title">🔍 O que vai para revisão manual?</div>
+      <ul>
+        <li>Propostas do Ecorban cujo CPF <strong>não foi encontrado</strong> no Sistema Smart</li>
+        <li>Propostas cujo telefone também não cruzou</li>
+        <li>Nesse caso, o sistema não consegue determinar se é marketing ou não</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💾 Como persistir as classificações manuais entre sessões</div>
+      <ol>
+        <li>Na aba <strong>Revisão Manual</strong>, classifique as vendas como "É Marketing" ou "Não é"</li>
+        <li>Clique em <strong>"Exportar Classificações (.json)"</strong> — salva um arquivo com todas as decisões por CPF</li>
+        <li>No dia seguinte, na tela de Importar, carregue esse arquivo no campo <strong>"Classificações Manuais"</strong> antes de processar</li>
+        <li>As classificações anteriores serão aplicadas automaticamente, sem precisar reclassificar</li>
+      </ol>
+    </div>
+
+    <div class="info-box warn">
+      <div class="icon">⚠️</div>
+      <div><strong>A classificação manual tem prioridade absoluta</strong> sobre qualquer cruzamento automático. Se um CPF foi classificado manualmente, essa decisão prevalece mesmo que o Smart seja reimportado com dados diferentes.</div>
+    </div>
+  </div>
+
+  <!-- ══ 12. METAS ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">12</span>Metas e Indicadores de Desempenho</div>
+
+    <div class="card">
+      <div class="card-title">🎯 Como configurar as metas</div>
+      <p>Na aba <strong>Metas</strong>, configure os valores esperados para o período. As metas são salvas no navegador e persistem entre sessões (mesmo após fechar o arquivo). Não é necessário reconfigurar todos os dias.</p>
+      <div class="tbl-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Meta</th><th>Cor quando atingida</th><th>Cor quando abaixo</th></tr></thead>
+          <tbody>
+            <tr><td>Leads, Vendas Aprovadas, Vendas Pagas, Valor, ROAS</td><td><span class="badge badge-green">Verde</span> ≥ 100%</td><td><span class="badge badge-red">Vermelho</span> &lt; 70%</td></tr>
+            <tr><td>CPL, CAC (quanto menor melhor)</td><td><span class="badge badge-green">Verde</span> ≤ 90% da meta</td><td><span class="badge badge-red">Vermelho</span> &gt; 110% da meta</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 13. DIAGNÓSTICO ══ -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span><span class="section-num">13</span>Painel de Diagnóstico</div>
+
+    <div class="card">
+      <div class="card-title">🔬 O que o diagnóstico mostra</div>
+      <p>Após processar, o painel de Diagnóstico (na tela de Importar) exibe:</p>
+      <ul>
+        <li><strong>Sistema Smart:</strong> quantos registros foram lidos, CPFs e telefones indexados, nomes das colunas detectadas</li>
+        <li><strong>Ecorban:</strong> total de propostas, quantas cruzaram com o Smart (taxa de match), quantas foram para revisão, distribuição de status (Pago / Aprovado / Reprovado / Desconhecido)</li>
+        <li><strong>Facebook:</strong> total de linhas por BM</li>
+      </ul>
+    </div>
+
+    <div class="info-box info">
+      <div class="icon">ℹ️</div>
+      <div><strong>Taxa de match abaixo de 50%:</strong> provável causa são CPFs com zeros à esquerda perdidos na exportação do Excel. Verifique se o Ecorban exporta o CPF como texto (com zeros) ou como número (sem zeros). O Sistema Smart precisa estar com o mesmo CPF.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══ RODAPÉ ══ -->
+  <div style="text-align:center;color:var(--gray);font-size:11px;font-family:var(--font-h)">
+    <div style="font-weight:700;margin-bottom:4px">Smart<span style="color:var(--red)">Consig</span> · Dashboard de Marketing</div>
+    <div>Documento interno · Para atualizar as regras, abrir com desenvolvedor</div>
+  </div>
+
+</div>
+</body>
+</html>
