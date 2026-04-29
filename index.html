@@ -1387,7 +1387,7 @@ function renderReview(toReview, unknownStatuses) {
     <div class="table-card">
       <div class="table-wrap"><table>
         <thead><tr>
-          <th>Cliente</th><th>CPF</th><th>Telefone</th><th>Valor</th><th>Status</th><th>Motivo</th><th>Ação</th>
+          <th>Cliente</th><th>CPF</th><th>Telefone</th><th>Valor</th><th>Status</th><th>Origem Ecorban</th><th>Origem Smart</th><th>Motivo</th><th>Ação</th>
         </tr></thead>
         <tbody id="review-tbody">${toReview.map(r =>
           `<tr id="rrow-${r._idx}">
@@ -1396,7 +1396,9 @@ function renderReview(toReview, unknownStatuses) {
             <td class="muted">${r.phone||'—'}</td>
             <td>${fmtBRL(r.valor)}</td>
             <td><span class="badge ${r.statusCat==='pago'?'badge-green':r.statusCat==='aprovado'?'badge-yellow':'badge-gray'}">${r.rawStatus}</span></td>
-            <td class="muted" style="max-width:260px;white-space:normal;font-size:11px">${r.reviewReason||'—'}</td>
+            <td class="muted">${r.ecorbanOrigem||'—'}</td>
+            <td class="muted">${r.origem||'—'}</td>
+            <td class="muted" style="max-width:200px;white-space:normal;font-size:11px">${r.reviewReason||'—'}</td>
             <td style="display:flex;gap:6px">
               <button class="btn-mkt"   onclick="classify(${r._idx},true)">É Marketing</button>
               <button class="btn-nomkt" onclick="classify(${r._idx},false)">Não é</button>
