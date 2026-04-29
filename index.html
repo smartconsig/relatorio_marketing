@@ -1173,7 +1173,7 @@ function renderOverview(k, fd) {
   }
 
   // ── Reconciliação: Ecorban (Total) vs Sistema (Marketing) por Status ──
-  const allValidEntries = fd.entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'pago');
+  const allValidEntries = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'pago') && normStr(r.ecorbanOrigem) === 'marketing');
   const mktValidEntries = fd.entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'pago'));
   if (allValidEntries.length > 0) {
     // Agrupa todos os status presentes
@@ -1266,7 +1266,7 @@ function renderOverview(k, fd) {
           <tr>
             <th rowspan="2">#</th>
             <th rowspan="2">Status</th>
-            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:var(--gray)">Ecorban (Total)</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:var(--gray)">Ecorban (Origem Marketing)</th>
             <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:#22c55e">Sistema (Marketing)</th>
             <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:#f59e0b">Diferença</th>
             <th rowspan="2"></th>
