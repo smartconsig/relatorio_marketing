@@ -1219,8 +1219,11 @@ function renderOverview(k, fd) {
             <td style="padding:6px 12px;font-size:12px;color:var(--gray)">${r.ecorbanOrigem || '—'}</td>
             <td style="padding:6px 12px;font-size:12px;color:${r.origem ? 'var(--white)' : 'var(--gray)'}">${r.origem || 'Não encontrado no Smart'}</td>
             <td style="padding:6px 12px;font-size:12px;text-align:right;font-family:monospace">${fmtBRL(r.valor || 0)}</td>
-            <td style="padding:6px 12px">
-              <button class="btn-nomkt" onclick="event.stopPropagation();undoFromClientes(${r._idx})" style="font-size:10px;padding:3px 7px">↩ Reclassificar</button>
+            <td style="padding:6px 12px;white-space:nowrap">
+              <div style="display:flex;gap:4px">
+                <button class="btn-mkt"    onclick="event.stopPropagation();classifyFromProcv(${r._idx},true)"  style="font-size:10px;padding:3px 8px">✅ É Marketing</button>
+                <button class="btn-nomkt"  onclick="event.stopPropagation();classifyFromProcv(${r._idx},false)" style="font-size:10px;padding:3px 8px">❌ Não é</button>
+              </div>
             </td>
           </tr>`).join('');
 
