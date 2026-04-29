@@ -758,6 +758,7 @@ function processAll() {
         ? Math.round(result.diag.ecorban.matched / result.diag.ecorban.total * 100) : 0;
       toast(`Processado: ${result.entries.length} propostas · ${matchPct}% encontradas no Smart`);
       navigate('overview');
+      saveSnapshotToSupabase();
     } catch(err) {
       toast('Erro ao processar: ' + err.message, 'err');
       console.error(err);
@@ -1836,7 +1837,7 @@ async function onAuthenticated() {
   }
   // 2. Classificações do Supabase → overrides
   await syncClassificationsFromSupabase();
-  // 3. Resultado em cache (localStorage)
+  // 3. Resultado em cache (localStorage primeiro, Supabase como fallback)
   if (loadState()) {
     await syncClassificationsFromSupabase(); // Supabase tem precedência
     setCacheIndicator(true);
@@ -1844,6 +1845,20 @@ async function onAuthenticated() {
     renderDiag(result.diag);
     navigate('overview');
     toast('Dados restaurados ⚡');
+  } else {
+    // Sem dados locais — tenta carregar snapshot do Supabase
+    toast('Carregando dados do servidor…');
+    const snap = await loadSnapshotFromSupabase();
+    if (snap) {
+      result = snap;
+      await syncClassificationsFromSupabase();
+      saveState();
+      setCacheIndicator(true);
+      renderAll();
+      renderDiag(result.diag);
+      navigate('overview');
+      toast('Dados carregados do servidor ☁️');
+    }
   }
 }
 
@@ -1881,6 +1896,41 @@ async function loadSupabaseGoals() {
              approved: data.approved||0, paid: data.paid||0, value: data.value||0,
              cac: data.cac||0, roas: data.roas||0 };
   } catch(e) { return null; }
+}
+
+// ── Snapshots ──
+async function saveSnapshotToSupabase() {
+  if (!currentUser || !result) return;
+  try {
+    const payload = JSON.stringify({
+      entries:         result.entries,
+      facebook:        result.facebook,
+      unknownStatuses: result.unknownStatuses,
+      diag:            result.diag,
+    });
+    const { data } = await sb.from('snapshots').select('id').limit(1).maybeSingle();
+    if (data?.id) {
+      await sb.from('snapshots').update({
+        data: payload,
+        updated_by: currentUser.email,
+        updated_at: new Date().toISOString()
+      }).eq('id', data.id);
+    } else {
+      await sb.from('snapshots').insert({
+        data: payload,
+        updated_by: currentUser.email,
+        updated_at: new Date().toISOString()
+      });
+    }
+  } catch(e) { console.warn('saveSnapshot:', e); }
+}
+
+async function loadSnapshotFromSupabase() {
+  try {
+    const { data, error } = await sb.from('snapshots').select('data, updated_by, updated_at').limit(1).maybeSingle();
+    if (error || !data?.data) return null;
+    return JSON.parse(data.data);
+  } catch(e) { console.warn('loadSnapshot:', e); return null; }
 }
 
 async function saveGoalsToSupabase(g) {
