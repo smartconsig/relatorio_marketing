@@ -1158,8 +1158,8 @@ function renderOverview(k, fd) {
     if (r.isMarketing && r.saleDate) {
       const key = new Date(r.saleDate).toISOString().slice(0,10);
       if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
-      if (r.statusCat === 'aprovado' || r.statusCat === 'pago') dayMap[key].valid++;
-      if (r.statusCat === 'reprovado') dayMap[key].rejected++;
+      if (r.statusCat === 'aprovado' || r.statusCat === 'pago') dayMap[key].valid += (r.valor || 0);
+      if (r.statusCat === 'reprovado') dayMap[key].rejected += (r.valor || 0);
     }
   }
   const days = Object.keys(dayMap).sort();
@@ -1211,8 +1211,8 @@ function renderOverview(k, fd) {
             callbacks: {
               label: c => {
                 if (c.datasetIndex === 0) return ` Investimento: ${fmtBRL(c.raw)}`;
-                if (c.datasetIndex === 1) return ` Válidos: ${c.raw}`;
-                return ` Reprovados: ${c.raw}`;
+                if (c.datasetIndex === 1) return ` Válidos: ${fmtBRL(c.raw)}`;
+                return ` Reprovados: ${fmtBRL(c.raw)}`;
               }
             }
           }
@@ -1226,7 +1226,7 @@ function renderOverview(k, fd) {
           },
           y2: {
             position: 'right',
-            ticks: { color: '#9ca3af', font: { family: 'Open Sans', size: 11 } },
+            ticks: { color: '#9ca3af', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
             grid: { drawOnChartArea: false }
           }
         }
