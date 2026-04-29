@@ -692,6 +692,12 @@ function toast(msg, type='ok') {
   setTimeout(() => el.className = 'toast', 3200);
 }
 
+function toggleAccordion(id) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
 // ══════════════════════════════════════════════════════════
 // FILE LOADING
 // ══════════════════════════════════════════════════════════
@@ -1166,42 +1172,119 @@ function renderOverview(k, fd) {
     </div>`;
   }
 
-  // ── Tabela de detalhamento: Marketing Válidos por Status ──
-  const validMktEntries = fd.entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'pago'));
-  if (validMktEntries.length > 0) {
-    const statusMap = {};
-    for (const r of validMktEntries) {
+  // ── Reconciliação: Ecorban (Total) vs Sistema (Marketing) por Status ──
+  const allValidEntries = fd.entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'pago');
+  const mktValidEntries = fd.entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'pago'));
+  if (allValidEntries.length > 0) {
+    // Agrupa todos os status presentes
+    const allStatuses = [...new Set(allValidEntries.map(r => r.rawStatus || 'Sem Status'))];
+    const ecoMap = {}, mktMap = {}, mktRows = {};
+    for (const r of allValidEntries) {
       const s = r.rawStatus || 'Sem Status';
-      if (!statusMap[s]) statusMap[s] = { qtd: 0, valor: 0 };
-      statusMap[s].qtd++;
-      statusMap[s].valor += r.valor || 0;
+      if (!ecoMap[s]) ecoMap[s] = { qtd: 0, valor: 0 };
+      ecoMap[s].qtd++;
+      ecoMap[s].valor += r.valor || 0;
     }
-    const statusRows = Object.entries(statusMap)
-      .sort((a, b) => b[1].valor - a[1].valor)
-      .map(([status, d], i) => `
-        <tr>
-          <td class="muted" style="font-size:11px">${i+1}</td>
-          <td><strong>${status}</strong></td>
-          <td style="text-align:center">${d.qtd}</td>
-          <td style="text-align:right;font-family:monospace">${fmtBRL(d.valor)}</td>
-        </tr>`).join('');
-    const totalQtd   = validMktEntries.length;
-    const totalValor = validMktEntries.reduce((s, r) => s + (r.valor || 0), 0);
+    for (const r of mktValidEntries) {
+      const s = r.rawStatus || 'Sem Status';
+      if (!mktMap[s]) mktMap[s] = { qtd: 0, valor: 0 };
+      mktMap[s].qtd++;
+      mktMap[s].valor += r.valor || 0;
+      if (!mktRows[s]) mktRows[s] = [];
+      mktRows[s].push(r);
+    }
+
+    const totalEcoQtd   = allValidEntries.length;
+    const totalEcoValor = allValidEntries.reduce((s, r) => s + (r.valor || 0), 0);
+    const totalMktQtd   = mktValidEntries.length;
+    const totalMktValor = mktValidEntries.reduce((s, r) => s + (r.valor || 0), 0);
+
+    const rows = allStatuses
+      .sort((a, b) => (ecoMap[b]?.valor || 0) - (ecoMap[a]?.valor || 0))
+      .map((status, i) => {
+        const eco = ecoMap[status] || { qtd: 0, valor: 0 };
+        const mkt = mktMap[status] || { qtd: 0, valor: 0 };
+        const diffQtd = mkt.qtd - eco.qtd;
+        const diffValor = mkt.valor - eco.valor;
+        const diffColor = diffQtd === 0 ? '#22c55e' : diffQtd > 0 ? '#f87171' : '#9ca3af';
+        const diffLabel = diffQtd === 0 ? '✓' : (diffQtd > 0 ? `+${diffQtd}` : `${diffQtd}`);
+        const safeId = 'acc-' + status.replace(/[^a-z0-9]/gi, '_') + i;
+
+        // Sub-tabela das propostas de marketing para este status
+        const subRows = (mktRows[status] || []).map(r => `
+          <tr style="background:rgba(255,255,255,0.02)">
+            <td style="padding:6px 12px;font-size:12px"><strong>${r.cliente || '—'}</strong></td>
+            <td style="padding:6px 12px;font-size:11px;font-family:monospace;color:var(--gray)">${r.cpf || '—'}</td>
+            <td style="padding:6px 12px;font-size:12px;color:var(--gray)">${r.ecorbanOrigem || '—'}</td>
+            <td style="padding:6px 12px;font-size:12px;color:var(--gray)">${r.origem || '—'}</td>
+            <td style="padding:6px 12px;font-size:12px;text-align:right;font-family:monospace">${fmtBRL(r.valor || 0)}</td>
+            <td style="padding:6px 12px">
+              <button class="btn-nomkt" onclick="event.stopPropagation();undoFromClientes(${r._idx})" style="font-size:10px;padding:3px 7px">↩ Reclassificar</button>
+            </td>
+          </tr>`).join('');
+
+        const subTable = mktRows[status] ? `
+          <tr id="${safeId}" style="display:none">
+            <td colspan="6" style="padding:0;background:rgba(0,0,0,0.3)">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:rgba(255,255,255,0.03)">
+                  <th style="padding:8px 12px;font-size:11px;text-align:left">Cliente</th>
+                  <th style="padding:8px 12px;font-size:11px;text-align:left">CPF</th>
+                  <th style="padding:8px 12px;font-size:11px;text-align:left">Origem Ecorban</th>
+                  <th style="padding:8px 12px;font-size:11px;text-align:left">Origem Smart</th>
+                  <th style="padding:8px 12px;font-size:11px;text-align:right">Valor</th>
+                  <th style="padding:8px 12px;font-size:11px">Ação</th>
+                </tr></thead>
+                <tbody>${subRows}</tbody>
+              </table>
+            </td>
+          </tr>` : '';
+
+        return `
+          <tr onclick="toggleAccordion('${safeId}')" style="cursor:pointer" class="hover-row">
+            <td style="padding:10px 12px;font-size:11px;color:var(--gray)">${i+1}</td>
+            <td style="padding:10px 12px"><strong>${status}</strong></td>
+            <td style="padding:10px 12px;text-align:center">${eco.qtd}</td>
+            <td style="padding:10px 12px;text-align:right;font-family:monospace">${fmtBRL(eco.valor)}</td>
+            <td style="padding:10px 12px;text-align:center">${mkt.qtd}</td>
+            <td style="padding:10px 12px;text-align:right;font-family:monospace">${fmtBRL(mkt.valor)}</td>
+            <td style="padding:10px 12px;text-align:center;font-weight:700;color:${diffColor}">${diffLabel}</td>
+            <td style="padding:10px 12px;text-align:right;font-family:monospace;color:${diffColor}">${diffQtd !== 0 ? fmtBRL(Math.abs(diffValor)) : '—'}</td>
+            <td style="padding:10px 12px;color:var(--gray);font-size:12px">${mkt.qtd > 0 ? '▼' : ''}</td>
+          </tr>
+          ${subTable}`;
+      }).join('');
+
     h += `
-    <div class="section-title"><span class="bar"></span>Detalhamento por Status — Marketing Válidos</div>
+    <div class="section-title"><span class="bar"></span>Reconciliação por Status — Ecorban vs Sistema Marketing</div>
     <div class="info-box" style="margin-bottom:14px">
-      Compare esta tabela com o relatório do Ecorban para identificar onde estão as diferenças de quantidade e valor.
+      Compare o total do Ecorban com o que o sistema classificou como marketing. Clique em qualquer linha para ver as propostas daquele status. Use <strong>↩ Reclassificar</strong> para corrigir classificações erradas.
     </div>
     <div class="table-card" style="margin-bottom:20px">
       <div class="table-wrap"><table>
-        <thead><tr>
-          <th>#</th><th>Status</th><th style="text-align:center">Qtd</th><th style="text-align:right">Valor Multiplicador</th>
-        </tr></thead>
-        <tbody>${statusRows}</tbody>
-        <tfoot><tr style="border-top:1px solid var(--border)">
+        <thead>
+          <tr>
+            <th rowspan="2">#</th>
+            <th rowspan="2">Status</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:var(--gray)">Ecorban (Total)</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:#22c55e">Sistema (Marketing)</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--border);color:#f59e0b">Diferença</th>
+            <th rowspan="2"></th>
+          </tr>
+          <tr>
+            <th style="text-align:center">Qtd</th><th style="text-align:right">Valor</th>
+            <th style="text-align:center">Qtd</th><th style="text-align:right">Valor</th>
+            <th style="text-align:center">Qtd</th><th style="text-align:right">Valor</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="border-top:2px solid var(--border)">
           <td colspan="2" style="padding:10px 12px;font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--gray)">TOTAL</td>
-          <td style="text-align:center;padding:10px 12px;font-weight:700;color:var(--white)">${totalQtd}</td>
-          <td style="text-align:right;padding:10px 12px;font-family:monospace;font-weight:700;color:var(--white)">${fmtBRL(totalValor)}</td>
+          <td style="padding:10px 12px;text-align:center;font-weight:700;color:var(--white)">${totalEcoQtd}</td>
+          <td style="padding:10px 12px;text-align:right;font-family:monospace;font-weight:700;color:var(--white)">${fmtBRL(totalEcoValor)}</td>
+          <td style="padding:10px 12px;text-align:center;font-weight:700;color:#22c55e">${totalMktQtd}</td>
+          <td style="padding:10px 12px;text-align:right;font-family:monospace;font-weight:700;color:#22c55e">${fmtBRL(totalMktValor)}</td>
+          <td colspan="3"></td>
         </tr></tfoot>
       </table></div>
     </div>`;
