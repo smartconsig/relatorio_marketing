@@ -1215,8 +1215,9 @@ function renderOverview(k, fd) {
           <tr style="background:rgba(255,255,255,0.02)">
             <td style="padding:6px 12px;font-size:12px"><strong>${r.cliente || '—'}</strong></td>
             <td style="padding:6px 12px;font-size:11px;font-family:monospace;color:var(--gray)">${r.cpf || '—'}</td>
+            <td style="padding:6px 12px;font-size:11px;font-family:monospace;color:var(--gray)">${r.phone || r.smartPhone || '—'}</td>
             <td style="padding:6px 12px;font-size:12px;color:var(--gray)">${r.ecorbanOrigem || '—'}</td>
-            <td style="padding:6px 12px;font-size:12px;color:var(--gray)">${r.origem || '—'}</td>
+            <td style="padding:6px 12px;font-size:12px;color:${r.origem ? 'var(--white)' : 'var(--gray)'}">${r.origem || 'Não encontrado no Smart'}</td>
             <td style="padding:6px 12px;font-size:12px;text-align:right;font-family:monospace">${fmtBRL(r.valor || 0)}</td>
             <td style="padding:6px 12px">
               <button class="btn-nomkt" onclick="event.stopPropagation();undoFromClientes(${r._idx})" style="font-size:10px;padding:3px 7px">↩ Reclassificar</button>
@@ -1230,6 +1231,7 @@ function renderOverview(k, fd) {
                 <thead><tr style="background:rgba(255,255,255,0.03)">
                   <th style="padding:8px 12px;font-size:11px;text-align:left">Cliente</th>
                   <th style="padding:8px 12px;font-size:11px;text-align:left">CPF</th>
+                  <th style="padding:8px 12px;font-size:11px;text-align:left">Telefone</th>
                   <th style="padding:8px 12px;font-size:11px;text-align:left">Origem Ecorban</th>
                   <th style="padding:8px 12px;font-size:11px;text-align:left">Origem Smart</th>
                   <th style="padding:8px 12px;font-size:11px;text-align:right">Valor</th>
