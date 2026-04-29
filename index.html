@@ -1190,8 +1190,11 @@ function renderOverview(k, fd) {
       if (!mktMap[s]) mktMap[s] = { qtd: 0, valor: 0 };
       mktMap[s].qtd++;
       mktMap[s].valor += r.valor || 0;
-      if (!mktRows[s]) mktRows[s] = [];
-      mktRows[s].push(r);
+      // Accordion mostra apenas os ainda não confirmados manualmente
+      if (r.reviewReason !== 'manual') {
+        if (!mktRows[s]) mktRows[s] = [];
+        mktRows[s].push(r);
+      }
     }
 
     const totalEcoQtd   = allValidEntries.length;
