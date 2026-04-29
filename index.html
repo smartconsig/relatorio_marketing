@@ -1475,9 +1475,9 @@ function renderProcv(entries) {
         <td>
           ${e.reviewReason === 'manual'
             ? `<span class="badge badge-green" style="gap:4px">✔ Confirmado</span>`
-            : `<div style="display:flex;gap:5px">
-                <button class="btn-mkt"   onclick="classifyFromProcv(${e._idx},true)"  title="Confirmar como Marketing">✅</button>
-                <button class="btn-nomkt" onclick="classifyFromProcv(${e._idx},false)" title="Confirmar como Não Marketing">❌</button>
+            : `<div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="btn-mkt"   onclick="classifyFromProcv(${e._idx},true)"  title="Confirmar como Marketing" style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
+                <button class="btn-nomkt" onclick="classifyFromProcv(${e._idx},false)" title="Confirmar como Não Marketing" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
                </div>`
           }
         </td>
@@ -1565,6 +1565,39 @@ function classifyFromProcv(idx, isMkt) {
   const badge = document.getElementById('review-badge');
   badge.textContent = cnt;
   badge.classList.toggle('hidden', cnt === 0);
+}
+
+async function undoFromClientes(idx) {
+  if (!result) return;
+  const entry = result.entries[idx];
+  if (!entry) return;
+
+  // Reseta classificação — volta para PROCV como não identificado
+  entry.isMarketing  = null;
+  entry.reviewReason = null;
+
+  // Remove do localStorage overrides
+  if (entry.cpf) {
+    delete overrides[entry.cpf];
+    localStorage.setItem('sc_overrides_v1', JSON.stringify(overrides));
+  }
+
+  saveState();
+  toast('↩ Classificação desfeita — cliente voltou para o PROCV');
+
+  // Remove do Supabase
+  if (currentUser && entry.cpf) {
+    await sb.from('classifications').delete().eq('cpf', entry.cpf);
+  }
+
+  // Re-renderiza
+  const fd = filteredData();
+  if (fd) {
+    renderProcv(fd.entries);
+    renderClientes(fd.entries);
+    const k = calcKPIs(fd.entries, fd.facebook);
+    renderOverview(k, fd);
+  }
 }
 
 function exportProcvCSV(entries) {
@@ -1666,6 +1699,9 @@ function renderClientes(entries) {
         <td class="muted">${e.ecorbanOrigem || '—'}</td>
         <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td><span class="badge ${clsBadge(e)}">${clsLabel(e)}</span></td>
+        <td>
+          <button class="btn-nomkt" onclick="undoFromClientes(${e._idx})" title="Desfazer confirmação — volta para o PROCV" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+        </td>
       </tr>`).join('');
 
   document.getElementById('clientes-body').innerHTML = `
@@ -1701,7 +1737,7 @@ function renderClientes(entries) {
       <div class="table-wrap"><table>
         <thead><tr>
           <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th><th>Ação</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
