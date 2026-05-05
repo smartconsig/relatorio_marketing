@@ -208,6 +208,7 @@
     .badge-red { background: rgba(239,68,68,0.12); color: #ef4444; }
     .badge-gray { background: rgba(107,114,128,0.15); color: #9ca3af; }
     .badge-blue { background: rgba(59,130,246,0.12); color: #60a5fa; }
+    .badge-teal { background: rgba(20,184,166,0.12); color: #2dd4bf; }
 
     /* ── REVIEW BUTTONS ── */
     .btn-mkt, .btn-nomkt {
@@ -530,7 +531,10 @@
 // CONSTANTS
 // ══════════════════════════════════════════════════════════
 const STATUS_PAID = new Set([
-  'desaverbação','desaverbação master','integrado','pago'
+  'anuência','anuencia','integrado','pago','reapresentar conta'
+]);
+const STATUS_ALMOST_PAID = new Set([
+  'desaverbação','desaverbação master'
 ]);
 const STATUS_APPROVED = new Set([
   'aguardando banco','boleto','boleto reduzido','boleto master','consulta','fatura master','virada de fatura',
@@ -617,15 +621,17 @@ function normStr(v) {
     .replace(/\s+/g, ' ');
 }
 // Conjuntos normalizados — comparação robusta independente de acentuação
-const _PAID     = new Set([...STATUS_PAID].map(normStr));
-const _APPROVED = new Set([...STATUS_APPROVED].map(normStr));
-const _REJECTED = new Set([...STATUS_REJECTED].map(normStr));
+const _PAID        = new Set([...STATUS_PAID].map(normStr));
+const _ALMOST_PAID = new Set([...STATUS_ALMOST_PAID].map(normStr));
+const _APPROVED    = new Set([...STATUS_APPROVED].map(normStr));
+const _REJECTED    = new Set([...STATUS_REJECTED].map(normStr));
 
 function classifyStatus(raw) {
   const s = normStr(raw);
-  if (_PAID.has(s))     return 'pago';
-  if (_APPROVED.has(s)) return 'aprovado';
-  if (_REJECTED.has(s)) return 'reprovado';
+  if (_PAID.has(s))        return 'pago';
+  if (_ALMOST_PAID.has(s)) return 'quase pago';
+  if (_APPROVED.has(s))    return 'aprovado';
+  if (_REJECTED.has(s))    return 'reprovado';
   return 'desconhecido';
 }
 
@@ -1007,7 +1013,7 @@ function calcKPIs(entries, facebook) {
   const cplCalc = leads ? invest / leads : 0;
 
   // ── Esteira — Tráfego Pago (Marketing) ──
-  const inProgMkt   = entries.filter(r => r.isMarketing && r.statusCat === 'aprovado');
+  const inProgMkt   = entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'quase pago'));
   const paidMkt     = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
   const rejMkt      = entries.filter(r => r.isMarketing && r.statusCat === 'reprovado');
   const valueInProgMkt = inProgMkt.reduce((s,r)  => s + r.valor, 0);
@@ -1021,7 +1027,7 @@ function calcKPIs(entries, facebook) {
   const convRate       = leads ? (paidMkt.length / leads) * 100 : 0;
 
   // ── Esteira — Todas as Origens ──
-  const inProgAll   = entries.filter(r => r.statusCat === 'aprovado');
+  const inProgAll   = entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'quase pago');
   const paidAll     = entries.filter(r => r.statusCat === 'pago');
   const rejAll      = entries.filter(r => r.statusCat === 'reprovado');
   const valueInProgAll = inProgAll.reduce((s,r) => s + r.valor, 0);
@@ -1153,7 +1159,7 @@ function renderOverview(k, fd) {
   </div>`;
 
   // ── Alerta: propostas sem valor Multiplicador ──
-  const semValorValidas   = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'pago') && !r.valor);
+  const semValorValidas   = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
   const semValorReprov    = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
   const semValorTotal     = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
   if (semValorTotal.length > 0) {
@@ -1185,7 +1191,7 @@ function renderOverview(k, fd) {
     if (r.isMarketing && r.saleDate) {
       const key = new Date(r.saleDate).toISOString().slice(0,10);
       if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
-      if (r.statusCat === 'aprovado' || r.statusCat === 'pago') dayMap[key].valid += (r.valor || 0);
+      if (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') dayMap[key].valid += (r.valor || 0);
       if (r.statusCat === 'reprovado') dayMap[key].rejected += (r.valor || 0);
     }
   }
@@ -1282,7 +1288,7 @@ function renderRanking(entries) {
       paid:0, approved:0, value:0, mktPaid:0
     };
     const e = map[keyName];
-    if (r.statusCat==='aprovado'||r.statusCat==='pago') e.approved++;
+    if (r.statusCat==='aprovado'||r.statusCat==='quase pago'||r.statusCat==='pago') e.approved++;
     if (r.statusCat==='pago')  { e.paid++; e.value += r.valor; }
     if (r.isMarketing && r.statusCat==='pago') e.mktPaid++;
   }
@@ -1395,7 +1401,7 @@ function renderReview(toReview, unknownStatuses) {
             <td class="muted">${r.cpf||'—'}</td>
             <td class="muted">${r.phone||'—'}</td>
             <td>${fmtBRL(r.valor)}</td>
-            <td><span class="badge ${r.statusCat==='pago'?'badge-green':r.statusCat==='aprovado'?'badge-yellow':'badge-gray'}">${r.rawStatus}</span></td>
+            <td><span class="badge ${r.statusCat==='pago'?'badge-green':r.statusCat==='quase pago'?'badge-teal':r.statusCat==='aprovado'?'badge-yellow':'badge-gray'}">${r.rawStatus}</span></td>
             <td class="muted">${r.ecorbanOrigem||'—'}</td>
             <td class="muted">${r.origem||'—'}</td>
             <td class="muted" style="max-width:200px;white-space:normal;font-size:11px">${r.reviewReason||'—'}</td>
@@ -1493,9 +1499,10 @@ function renderProcv(entries) {
     return '❓ Não identificado';
   }
   function statusBadge(cat) {
-    if (cat === 'pago')      return 'badge-green';
-    if (cat === 'aprovado')  return 'badge-yellow';
-    if (cat === 'reprovado') return 'badge-red';
+    if (cat === 'pago')        return 'badge-green';
+    if (cat === 'quase pago')  return 'badge-teal';
+    if (cat === 'aprovado')    return 'badge-yellow';
+    if (cat === 'reprovado')   return 'badge-red';
     return 'badge-gray';
   }
 
@@ -1721,9 +1728,10 @@ function renderClientes(entries) {
     return e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing';
   }
   function statusBadge(cat) {
-    if (cat === 'pago')      return 'badge-green';
-    if (cat === 'aprovado')  return 'badge-yellow';
-    if (cat === 'reprovado') return 'badge-red';
+    if (cat === 'pago')        return 'badge-green';
+    if (cat === 'quase pago')  return 'badge-teal';
+    if (cat === 'aprovado')    return 'badge-yellow';
+    if (cat === 'reprovado')   return 'badge-red';
     return 'badge-gray';
   }
 
