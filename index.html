@@ -1467,6 +1467,7 @@ function classify(idx, isMkt) {
   toast(isMkt ? 'Classificado como marketing ✓' : 'Classificado como não marketing ✓');
   saveState();
   saveClassificationToSupabase(entry.cpf, isMkt);
+  scheduleSaveSnapshot();
   // Refresh overview silently
   const fd = filteredData();
   if (fd) {
@@ -1633,6 +1634,7 @@ function classifyFromProcv(idx, isMkt) {
   saveState();
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
   saveClassificationToSupabase(entry.cpf, isMkt);
+  scheduleSaveSnapshot();
   // Atualiza PROCV, Clientes e visão geral
   const fd = filteredData();
   if (fd) {
@@ -1979,6 +1981,12 @@ async function syncClassificationsFromSupabase() {
     }
   } catch(e) { console.warn('syncClassifications:', e); }
   return synced;
+}
+
+let _snapDebounce = null;
+function scheduleSaveSnapshot() {
+  clearTimeout(_snapDebounce);
+  _snapDebounce = setTimeout(() => saveSnapshotToSupabase(), 2000);
 }
 
 async function saveClassificationToSupabase(cpf, isMkt) {
