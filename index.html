@@ -1931,6 +1931,14 @@ async function onAuthenticated() {
   if (snap) {
     result = snap;
     await syncClassificationsFromSupabase();
+    try {
+      const savedFilter = localStorage.getItem('sc_filter_v1');
+      if (savedFilter) {
+        filterDates = JSON.parse(savedFilter);
+        if (filterDates.start) document.getElementById('date-start').value = filterDates.start;
+        if (filterDates.end)   document.getElementById('date-end').value   = filterDates.end;
+      }
+    } catch {}
     saveState();
     setCacheIndicator(true);
     renderAll();
