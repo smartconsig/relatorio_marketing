@@ -1881,28 +1881,25 @@ async function onAuthenticated() {
   }
   // 2. Classificações do Supabase → overrides
   await syncClassificationsFromSupabase();
-  // 3. Resultado em cache (localStorage primeiro, Supabase como fallback)
-  if (loadState()) {
-    await syncClassificationsFromSupabase(); // Supabase tem precedência
+  // 3. Supabase sempre primeiro; localStorage só se Supabase não tiver dados
+  toast('Carregando dados do servidor…');
+  const snap = await loadSnapshotFromSupabase();
+  if (snap) {
+    result = snap;
+    await syncClassificationsFromSupabase();
+    saveState();
     setCacheIndicator(true);
     renderAll();
     renderDiag(result.diag);
     navigate('overview');
-    toast('Dados restaurados ⚡');
-  } else {
-    // Sem dados locais — tenta carregar snapshot do Supabase
-    toast('Carregando dados do servidor…');
-    const snap = await loadSnapshotFromSupabase();
-    if (snap) {
-      result = snap;
-      await syncClassificationsFromSupabase();
-      saveState();
-      setCacheIndicator(true);
-      renderAll();
-      renderDiag(result.diag);
-      navigate('overview');
-      toast('Dados carregados do servidor ☁️');
-    }
+    toast('Dados carregados do servidor ☁️');
+  } else if (loadState()) {
+    await syncClassificationsFromSupabase();
+    setCacheIndicator(true);
+    renderAll();
+    renderDiag(result.diag);
+    navigate('overview');
+    toast('Dados restaurados do cache local ⚡');
   }
 }
 
@@ -1971,7 +1968,7 @@ async function saveSnapshotToSupabase() {
 
 async function loadSnapshotFromSupabase() {
   try {
-    const { data, error } = await sb.from('snapshots').select('data, updated_by, updated_at').limit(1).maybeSingle();
+    const { data, error } = await sb.from('snapshots').select('data, updated_by, updated_at').order('updated_at', { ascending: false }).limit(1).maybeSingle();
     if (error || !data?.data) return null;
     return JSON.parse(data.data);
   } catch(e) { console.warn('loadSnapshot:', e); return null; }
