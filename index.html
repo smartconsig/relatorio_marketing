@@ -305,20 +305,22 @@
     .pipeline-card::before {
       content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
     }
-    .pipeline-card.pc-inprog::before  { background: var(--yellow); }
-    .pipeline-card.pc-paid::before    { background: var(--green); }
-    .pipeline-card.pc-rej::before     { background: var(--danger); }
-    .pipeline-card.pc-valid::before   { background: #60a5fa; }
+    .pipeline-card.pc-inprog::before   { background: var(--yellow); }
+    .pipeline-card.pc-paid::before     { background: var(--green); }
+    .pipeline-card.pc-almost::before   { background: #2dd4bf; }
+    .pipeline-card.pc-rej::before      { background: var(--danger); }
+    .pipeline-card.pc-valid::before    { background: #60a5fa; }
     .pipeline-label {
       font-family: var(--font-h); font-size: 9px; font-weight: 700;
       color: var(--gray); text-transform: uppercase; letter-spacing: 1px;
       margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
     }
     .pipeline-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .pipeline-dot.pc-inprog  { background: var(--yellow); }
-    .pipeline-dot.pc-paid    { background: var(--green); }
-    .pipeline-dot.pc-rej     { background: var(--danger); }
-    .pipeline-dot.pc-valid   { background: #60a5fa; }
+    .pipeline-dot.pc-inprog   { background: var(--yellow); }
+    .pipeline-dot.pc-paid     { background: var(--green); }
+    .pipeline-dot.pc-almost   { background: #2dd4bf; }
+    .pipeline-dot.pc-rej      { background: var(--danger); }
+    .pipeline-dot.pc-valid    { background: #60a5fa; }
     .pipeline-count { font-family: var(--font-h); font-size: 30px; font-weight: 800; color: var(--white); line-height: 1; margin-bottom: 5px; }
     .pipeline-value { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--gray-light); margin-bottom: 3px; }
     .pipeline-sub { font-size: 10px; color: var(--gray); }
@@ -1013,8 +1015,9 @@ function calcKPIs(entries, facebook) {
   const cplCalc = leads ? invest / leads : 0;
 
   // ── Esteira — Tráfego Pago (Marketing) ──
-  const inProgMkt   = entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'quase pago'));
-  const paidMkt     = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
+  const inProgMkt      = entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'quase pago'));
+  const almostPaidMkt  = entries.filter(r => r.isMarketing && r.statusCat === 'quase pago');
+  const paidMkt        = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
   const rejMkt      = entries.filter(r => r.isMarketing && r.statusCat === 'reprovado');
   const valueInProgMkt = inProgMkt.reduce((s,r)  => s + r.valor, 0);
   const valueMkt       = paidMkt.reduce((s,r)    => s + r.valor, 0);
@@ -1027,8 +1030,9 @@ function calcKPIs(entries, facebook) {
   const convRate       = leads ? (paidMkt.length / leads) * 100 : 0;
 
   // ── Esteira — Todas as Origens ──
-  const inProgAll   = entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'quase pago');
-  const paidAll     = entries.filter(r => r.statusCat === 'pago');
+  const inProgAll      = entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'quase pago');
+  const almostPaidAll  = entries.filter(r => r.statusCat === 'quase pago');
+  const paidAll        = entries.filter(r => r.statusCat === 'pago');
   const rejAll      = entries.filter(r => r.statusCat === 'reprovado');
   const valueInProgAll = inProgAll.reduce((s,r) => s + r.valor, 0);
   const valuePaidAll   = paidAll.reduce((s,r)   => s + r.valor, 0);
@@ -1046,12 +1050,14 @@ function calcKPIs(entries, facebook) {
     // Facebook
     invest, leads, fbCpl, cplCalc,
     // Marketing pipeline
-    inProgMkt: inProgMkt.length, paidMkt: paidMkt.length, rejMkt: rejMkt.length,
-    valueInProgMkt, valueMkt, valueRejMkt, valueValidMkt, countValidMkt,
+    inProgMkt: inProgMkt.length, almostPaidMkt: almostPaidMkt.length, paidMkt: paidMkt.length, rejMkt: rejMkt.length,
+    valueInProgMkt, valueAlmostPaidMkt: almostPaidMkt.reduce((s,r) => s + r.valor, 0),
+    valueMkt, valueRejMkt, valueValidMkt, countValidMkt,
     ticketMkt, cac, roas, convRate,
     // All-origins pipeline
-    inProgAll: inProgAll.length, paidAll: paidAll.length, rejAll: rejAll.length,
-    valueInProgAll, valuePaidAll, valueRejAll, valueValidAll, countValidAll,
+    inProgAll: inProgAll.length, almostPaidAll: almostPaidAll.length, paidAll: paidAll.length, rejAll: rejAll.length,
+    valueInProgAll, valueAlmostPaidAll: almostPaidAll.reduce((s,r) => s + r.valor, 0),
+    valuePaidAll, valueRejAll, valueValidAll, countValidAll,
     ticketAll,
     // Legacy aliases (used by goals/ranking)
     approvedMkt: inProgMkt.length + paidMkt.length,
@@ -1135,6 +1141,7 @@ function renderOverview(k, fd) {
   h += `<div class="section-title"><span class="bar"></span>Esteira de Vendas — Tráfego Pago (Marketing)</div>
   <div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
     ${pipelineCard('Pagas', 'pc-paid', k.paidMkt, k.valueMkt, 'operações pagas no período')}
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
     ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas')}
@@ -1153,6 +1160,7 @@ function renderOverview(k, fd) {
   h += `<div class="section-title"><span class="bar"></span>Esteira de Vendas — Todas as Origens</div>
   <div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'propostas em análise / aprovadas')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'desaverbação em andamento')}
     ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'operações pagas no período')}
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'propostas reprovadas')}
     ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'em andamento + pagas')}
