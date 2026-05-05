@@ -1934,7 +1934,7 @@ async function onAuthenticated() {
   const snap = await loadSnapshotFromSupabase();
   if (snap) {
     result = snap;
-    await syncClassificationsFromSupabase();
+    const synced = await syncClassificationsFromSupabase();
     try {
       const savedFilter = localStorage.getItem('sc_filter_v1');
       if (savedFilter) {
@@ -1943,6 +1943,7 @@ async function onAuthenticated() {
         if (filterDates.end)   document.getElementById('date-end').value   = filterDates.end;
       }
     } catch {}
+    if (synced > 0) await saveSnapshotToSupabase();
     saveState();
     setCacheIndicator(true);
     renderAll();
@@ -1961,18 +1962,23 @@ async function onAuthenticated() {
 
 // ── Classifications ──
 async function syncClassificationsFromSupabase() {
+  let synced = 0;
   try {
     const { data, error } = await sb.from('classifications').select('cpf, is_marketing');
-    if (error || !data) return;
+    if (error || !data) return 0;
     for (const row of data) {
       const normCpf = normCPF(row.cpf);
       overrides[normCpf] = row.is_marketing;
       if (result) {
-        const entry = result.entries.find(e => normCPF(e.cpf) === normCpf);
-        if (entry) { entry.isMarketing = row.is_marketing; entry.reviewReason = 'manual'; }
+        const entry = result.entries.find(e =>
+          normCPF(e.cpf) === normCpf ||
+          String(e.cpf).replace(/\D/g,'') === String(row.cpf).replace(/\D/g,'')
+        );
+        if (entry) { entry.isMarketing = row.is_marketing; entry.reviewReason = 'manual'; synced++; }
       }
     }
   } catch(e) { console.warn('syncClassifications:', e); }
+  return synced;
 }
 
 async function saveClassificationToSupabase(cpf, isMkt) {
