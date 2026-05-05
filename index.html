@@ -28,6 +28,24 @@
       --font-h: 'Montserrat', sans-serif;
       --font-b: 'Open Sans', sans-serif;
     }
+    /* ── TEMA CLARO ── */
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --surface3: #f1f5f9;
+      --white: #0f172a;
+      --gray: #64748b;
+      --gray-light: #475569;
+      --border: #e2e8f0;
+    }
+    [data-theme="light"] .topbar { background: #ffffff; }
+    [data-theme="light"] tbody tr:hover { background: rgba(0,0,0,0.025); }
+    [data-theme="light"] .date-filter input[type="date"] { color: #0f172a; }
+    [data-theme="light"] .date-filter input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
+    [data-theme="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+    [data-theme="light"] .toast { background: #ffffff; }
+
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--white); font-family: var(--font-b); display: flex; min-height: 100vh; font-size: 14px; }
 
@@ -389,7 +407,8 @@
   <div class="sidebar-footer">
     <div class="user-chip" id="user-email"></div>
     <div class="version">v1.0 · Smart Consig</div>
-    <button class="btn-sm btn-ghost" style="margin-top:8px;width:100%;font-size:10px" onclick="doSignOut()">Sair</button>
+    <button class="btn-sm btn-ghost" id="theme-toggle" style="margin-top:8px;width:100%;font-size:10px" onclick="toggleTheme()">☀ Tema Claro</button>
+    <button class="btn-sm btn-ghost" style="margin-top:6px;width:100%;font-size:10px" onclick="doSignOut()">Sair</button>
   </div>
 </aside>
 
@@ -1859,6 +1878,25 @@ async function doSignIn() {
   document.getElementById('login-screen').style.display = 'none';
   await onAuthenticated();
 }
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('sc_theme', next);
+  document.getElementById('theme-toggle').textContent = next === 'light' ? '🌙 Tema Escuro' : '☀ Tema Claro';
+}
+
+(function () {
+  const saved = localStorage.getItem('sc_theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = '🌙 Tema Escuro';
+    });
+  }
+})();
 
 async function doSignOut() {
   await sb.auth.signOut();
