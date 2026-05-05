@@ -1965,9 +1965,10 @@ async function syncClassificationsFromSupabase() {
     const { data, error } = await sb.from('classifications').select('cpf, is_marketing');
     if (error || !data) return;
     for (const row of data) {
-      overrides[row.cpf] = row.is_marketing;
+      const normCpf = normCPF(row.cpf);
+      overrides[normCpf] = row.is_marketing;
       if (result) {
-        const entry = result.entries.find(e => e.cpf === row.cpf);
+        const entry = result.entries.find(e => normCPF(e.cpf) === normCpf);
         if (entry) { entry.isMarketing = row.is_marketing; entry.reviewReason = 'manual'; }
       }
     }
@@ -1976,12 +1977,17 @@ async function syncClassificationsFromSupabase() {
 
 async function saveClassificationToSupabase(cpf, isMkt) {
   if (!cpf || !currentUser) return;
+  const normCpf = normCPF(cpf);
   try {
-    await sb.from('classifications').upsert(
-      { cpf, is_marketing: isMkt, classified_by: currentUser.id, classified_at: new Date().toISOString() },
+    const { error } = await sb.from('classifications').upsert(
+      { cpf: normCpf, is_marketing: isMkt, classified_by: currentUser.id, classified_at: new Date().toISOString() },
       { onConflict: 'cpf' }
     );
-  } catch(e) { console.warn('saveClassification:', e); }
+    if (error) throw error;
+  } catch(e) {
+    console.warn('saveClassification:', e);
+    toast('⚠️ Erro ao salvar classificação no servidor. Verifique sua conexão.', 'err');
+  }
 }
 
 // ── Goals ──
