@@ -1,0 +1,14 @@
+export const state = {
+  raw: { smart: null, ecorban: null, fb03: null, fb06: null, overrides: null },
+  overrides: {},
+  result: null,
+  rankView: 'seller',
+  chart: null,
+  filterDates: { start: null, end: null },
+  goals: { leads: 0, invest: 0, cpl: 0, approved: 0, paid: 0, value: 0, cac: 0, roas: 0 },
+  currentUser: null,
+  procvFilter: 'mkt',
+  procvSearch: '',
+  clientesFilter: 'all',
+  clientesSearch: '',
+};

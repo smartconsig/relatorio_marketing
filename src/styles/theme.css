@@ -1,0 +1,30 @@
+[data-theme="light"] {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --surface3: #f1f5f9;
+  --white: #0f172a;
+  --gray: #64748b;
+  --gray-light: #475569;
+  --border: #e2e8f0;
+}
+
+[data-theme="light"] .topbar { background: #ffffff; }
+
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-process,
+[data-theme="light"] .filter-btn.active,
+[data-theme="light"] .login-btn { color: #ffffff; }
+
+[data-theme="light"] .sidebar {
+  --white: #ffffff;
+  --gray-light: #9ca3af;
+  --gray: #6b7280;
+  --border: #2a2a2a;
+}
+
+[data-theme="light"] tbody tr:hover { background: rgba(0,0,0,0.025); }
+[data-theme="light"] .date-filter input[type="date"] { color: #0f172a; }
+[data-theme="light"] .date-filter input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+[data-theme="light"] .toast { background: #ffffff; }

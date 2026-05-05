@@ -1,0 +1,142 @@
+import { state } from '../state.js';
+import { fmtN } from '../utils/currency.js';
+import { toast } from '../utils/ui.js';
+import { saveState } from '../core/storage.js';
+import { sb } from '../services/supabase.js';
+import { filteredData, calcKPIs } from '../core/calcKPIs.js';
+import { renderOverview } from './overview.js';
+import { renderProcv } from './procv.js';
+import { normCPF } from '../utils/cpf.js';
+
+export function renderClientes(entries) {
+  const confirmed = entries.filter(e => e.reviewReason === 'manual');
+
+  const badge = document.getElementById('clientes-badge');
+  badge.textContent = confirmed.length;
+  badge.classList.toggle('hidden', confirmed.length === 0);
+
+  if (confirmed.length === 0) {
+    document.getElementById('clientes-body').innerHTML = `
+      <div class="empty"><div class="empty-icon">👥</div>
+      <div class="empty-title">Nenhum cliente confirmado ainda</div>
+      <div class="empty-desc">Confirme clientes no PROCV para eles aparecerem aqui.</div></div>`;
+    return;
+  }
+
+  let filtered = confirmed;
+  if (state.clientesFilter === 'mkt') filtered = filtered.filter(e => e.isMarketing === true);
+  if (state.clientesFilter === 'no')  filtered = filtered.filter(e => e.isMarketing === false);
+
+  const q = state.clientesSearch.trim().toLowerCase();
+  if (q) filtered = filtered.filter(e =>
+    (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
+  );
+
+  const cMkt = confirmed.filter(e => e.isMarketing === true).length;
+  const cNo  = confirmed.filter(e => e.isMarketing === false).length;
+  const f    = state.clientesFilter;
+
+  function statusBadge(cat) {
+    if (cat === 'pago')       return 'badge-green';
+    if (cat === 'quase pago') return 'badge-teal';
+    if (cat === 'aprovado')   return 'badge-yellow';
+    if (cat === 'reprovado')  return 'badge-red';
+    return 'badge-gray';
+  }
+
+  const rowsHtml = filtered.length === 0
+    ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado.</td></tr>`
+    : filtered.map((e, i) => `
+      <tr>
+        <td class="muted" style="font-size:11px">${i + 1}</td>
+        <td><strong>${e.cliente || '—'}</strong></td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+        <td class="muted">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
+        <td>
+          <button class="btn-nomkt" onclick="undoFromClientes(${e._idx})" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+        </td>
+      </tr>`).join('');
+
+  document.getElementById('clientes-body').innerHTML = `
+    <div class="section-title"><span class="bar"></span>Clientes Confirmados</div>
+    <div class="info-box" style="margin-bottom:16px">
+      Todos os clientes que passaram pela sua confirmação no PROCV. Total de <strong>${confirmed.length} confirmados</strong>.
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px;position:relative">
+        <input type="text" placeholder="Buscar por nome ou CPF…"
+          value="${state.clientesSearch.replace(/"/g, '&quot;')}"
+          oninput="setClientesSearch(this.value)"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--white);
+                 padding:8px 12px 8px 34px;border-radius:7px;font-size:13px;font-family:var(--font-b);outline:none"
+          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--gray);pointer-events:none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <div class="table-filters">
+        <button class="filter-btn ${f === 'all' ? 'active' : ''}" onclick="setClientesFilter('all')">Todos (${confirmed.length})</button>
+        <button class="filter-btn ${f === 'mkt' ? 'active' : ''}" onclick="setClientesFilter('mkt')">✅ Marketing (${cMkt})</button>
+        <button class="filter-btn ${f === 'no'  ? 'active' : ''}" onclick="setClientesFilter('no')">❌ Não Marketing (${cNo})</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-header-title">${fmtN(filtered.length)} clientes</div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th><th>Ação</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>`;
+}
+
+export function setClientesFilter(v) {
+  state.clientesFilter = v;
+  const fd = filteredData();
+  if (fd) renderClientes(fd.entries);
+}
+
+export function setClientesSearch(v) {
+  state.clientesSearch = v;
+  const fd = filteredData();
+  if (fd) renderClientes(fd.entries);
+}
+
+export async function undoFromClientes(idx) {
+  if (!state.result) return;
+  const entry = state.result.entries[idx];
+  if (!entry) return;
+
+  entry.isMarketing  = null;
+  entry.reviewReason = null;
+
+  if (entry.cpf) {
+    delete state.overrides[normCPF(entry.cpf)];
+    localStorage.setItem('sc_overrides_v1', JSON.stringify(state.overrides));
+  }
+
+  saveState();
+  toast('↩ Classificação desfeita — cliente voltou para o PROCV');
+
+  if (state.currentUser && entry.cpf) {
+    await sb.from('classifications').delete().eq('cpf', normCPF(entry.cpf));
+  }
+
+  const fd = filteredData();
+  if (fd) {
+    renderProcv(fd.entries);
+    renderClientes(fd.entries);
+    const k = calcKPIs(fd.entries, fd.facebook);
+    renderOverview(k, fd);
+  }
+}
