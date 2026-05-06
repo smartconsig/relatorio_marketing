@@ -23,6 +23,11 @@ export const STATUS_APPROVED = new Set([
   'aguardando pagamento', 'aguardando averbação banco',
   'pendente',
   'assinado', 'boleto', 'virada de fatura',
+  'boleto master', 'boleto reduzido', 'fatura master',
+  'desautorização', 'desautorizacao',
+  'analise banco', 'análise banco', 'auditoria banco',
+  'consulta', 'anexar link', 'assinar link',
+  'aguardando banco',
 ]);
 
 export const STATUS_REJECTED = new Set([
@@ -38,6 +43,16 @@ export const STATUS_REJECTED = new Set([
   'bloqueado', 'bloqueada',
   'vencido', 'expirado',
   'inativo', 'inativa',
+  'tratativa interna', 'perda', 'black list',
+  'politica interna', 'política interna',
+  'venda errada', 'cliente desistiu',
+  'troco abaixo', 'margem negativa',
+  'boleto agencia', 'boleto agência',
+  'não resolvido', 'nao resolvido',
+  'acordo', 'não compra', 'nao compra',
+  'cliente retido', 'sem margem',
+  'contrato temporario', 'contrato temporário',
+  'bloqueio tbm',
 ]);
 
 export const HIERARCHY = {
