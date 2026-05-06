@@ -22,6 +22,7 @@ export const STATUS_APPROVED = new Set([
   'solicitado', 'em processamento',
   'aguardando pagamento', 'aguardando averbação banco',
   'pendente',
+  'assinado', 'boleto', 'virada de fatura',
 ]);
 
 export const STATUS_REJECTED = new Set([

@@ -3,7 +3,7 @@ import { filteredData, calcKPIs } from './core/calcKPIs.js';
 import { renderOverview } from './pages/overview.js';
 import { renderRanking } from './pages/ranking.js';
 import { renderReview } from './pages/review.js';
-import { renderProcv } from './pages/procv.js';
+import { renderProcv, procvPendingCount } from './pages/procv.js';
 import { renderClientes } from './pages/clientes.js';
 import { saveState } from './core/storage.js';
 
@@ -32,10 +32,20 @@ export function renderAll() {
   renderReview(kpis.toReview, state.result.unknownStatuses);
   renderProcv(fd.entries);
   renderClientes(fd.entries);
-  const badge = document.getElementById('review-badge');
-  const cnt   = kpis.toReview.length + state.result.unknownStatuses.length;
-  badge.textContent = cnt;
-  badge.classList.toggle('hidden', cnt === 0);
+
+  // Badge "Revisão Manual" → só statuses desconhecidos
+  const reviewBadge = document.getElementById('review-badge');
+  const reviewCnt   = state.result.unknownStatuses.length;
+  reviewBadge.textContent = reviewCnt;
+  reviewBadge.classList.toggle('hidden', reviewCnt === 0);
+
+  // Badge "PROCV" → registros de marketing pendentes de revisão
+  const procvBadge  = document.getElementById('procv-badge');
+  const procvCnt    = procvPendingCount(fd.entries);
+  if (procvBadge) {
+    procvBadge.textContent = procvCnt;
+    procvBadge.classList.toggle('hidden', procvCnt === 0);
+  }
 }
 
 export function applyFilter() {

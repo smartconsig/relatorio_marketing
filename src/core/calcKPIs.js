@@ -84,9 +84,8 @@ export function calcKPIs(entries, facebook) {
   const countValidAll  = inProgAll.length + paidAll.length;
   const ticketAll      = paidAll.length ? valuePaidAll / paidAll.length : 0;
 
-  const toReview = state.result.entries.filter(r =>
-    r.reviewReason && r.reviewReason !== 'manual' && r.isMarketing === null
-  );
+  // Revisões agora acontecem no PROCV; toReview só serve para compatibilidade
+  const toReview = [];
 
   return {
     invest, leads, fbCpl, cplCalc,

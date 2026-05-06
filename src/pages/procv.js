@@ -7,20 +7,36 @@ import { scheduleSaveSnapshot } from '../services/snapshot.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
-import { sb } from '../services/supabase.js';
+
+/** Conta quantos registros de marketing estão pendentes de revisão manual. */
+export function procvPendingCount(entries) {
+  return entries.filter(e =>
+    e.isMarketing === true &&
+    e.smartSignal !== 'confirmed' &&
+    e.reviewReason !== 'manual'
+  ).length;
+}
 
 export function renderProcv(entries) {
-  entries = entries.filter(e => e.reviewReason !== 'manual');
+  // Apenas registros que o Ecorban classifica como marketing
+  const mktEntries = entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
 
-  const cAll  = entries.length;
-  const cMkt  = entries.filter(e => e.isMarketing === true).length;
-  const cNo   = entries.filter(e => e.isMarketing === false).length;
-  const cUnkn = entries.filter(e => e.isMarketing === null).length;
+  // Contadores por categoria
+  const cPending      = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
+  const cDoubt        = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
+  const cContradition = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual').length;
+  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed').length;
+  const cManual       = mktEntries.filter(e => e.reviewReason === 'manual').length;
+  const cAll          = mktEntries.length;
 
-  let filtered = entries;
-  if (state.procvFilter === 'mkt')  filtered = filtered.filter(e => e.isMarketing === true);
-  if (state.procvFilter === 'no')   filtered = filtered.filter(e => e.isMarketing === false);
-  if (state.procvFilter === 'unkn') filtered = filtered.filter(e => e.isMarketing === null);
+  const f = state.procvFilter;
+
+  let filtered = mktEntries;
+  if (f === 'pending')      filtered = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
+  if (f === 'doubt')        filtered = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
+  if (f === 'contradiction') filtered = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
+  if (f === 'smart')        filtered = mktEntries.filter(e => e.smartSignal === 'confirmed');
+  if (f === 'manual')       filtered = mktEntries.filter(e => e.reviewReason === 'manual');
 
   const q = state.procvSearch.trim().toLowerCase();
   if (q) {
@@ -34,18 +50,14 @@ export function renderProcv(entries) {
   const capped  = filtered.slice(0, 500);
   const hasMore = total > 500;
 
-  const f = state.procvFilter;
+  function signalBadge(e) {
+    if (e.reviewReason === 'manual') return `<span class="badge badge-green">✔ Revisado</span>`;
+    if (e.smartSignal === 'confirmed')    return `<span class="badge badge-green">✅ Smart confirma</span>`;
+    if (e.smartSignal === 'contradiction') return `<span class="badge badge-red">🔴 Smart contradiz</span>`;
+    if (e.smartSignal === 'not_found')    return `<span class="badge badge-yellow">🔍 Não encontrado</span>`;
+    return `<span class="badge badge-yellow">❓ Dúvida</span>`;
+  }
 
-  function clsBadge(e) {
-    if (e.isMarketing === true)  return 'badge-green';
-    if (e.isMarketing === false) return 'badge-gray';
-    return 'badge-yellow';
-  }
-  function clsLabel(e) {
-    if (e.isMarketing === true)  return '✅ Marketing';
-    if (e.isMarketing === false) return 'Não é Marketing';
-    return '❓ Não identificado';
-  }
   function statusBadge(cat) {
     if (cat === 'pago')       return 'badge-green';
     if (cat === 'quase pago') return 'badge-teal';
@@ -55,7 +67,7 @@ export function renderProcv(entries) {
   }
 
   const rowsHtml = capped.length === 0
-    ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
+    ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
     : capped.map((e, i) => `
       <tr>
         <td class="muted" style="font-size:11px">${i + 1}</td>
@@ -65,7 +77,8 @@ export function renderProcv(entries) {
         <td class="muted">${e.ecorbanOrigem || '—'}</td>
         <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td>${e.origem ? `<span class="badge badge-blue">${e.origem}</span>` : '<span class="muted">—</span>'}</td>
-        <td><span class="badge ${clsBadge(e)}">${clsLabel(e)}</span></td>
+        <td class="muted" style="font-size:12px">${e.audiencia || '—'}</td>
+        <td>${signalBadge(e)}</td>
         <td>
           ${e.reviewReason === 'manual'
             ? `<span class="badge badge-green" style="gap:4px">✔ Confirmado</span>`
@@ -78,9 +91,9 @@ export function renderProcv(entries) {
       </tr>`).join('');
 
   document.getElementById('procv-body').innerHTML = `
-    <div class="section-title"><span class="bar"></span>PROCV — Consulta de Clientes por Origem</div>
+    <div class="section-title"><span class="bar"></span>PROCV — Revisão de Clientes de Marketing</div>
     <div class="info-box" style="margin-bottom:16px">
-      Use esta tabela para identificar clientes classificados como <strong>Marketing</strong> que estão com a origem errada no Ecorban.
+      Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
@@ -98,10 +111,12 @@ export function renderProcv(entries) {
         </svg>
       </div>
       <div class="table-filters">
-        <button class="filter-btn ${f === 'all'  ? 'active' : ''}" onclick="setProcvFilter('all')">Todos (${cAll})</button>
-        <button class="filter-btn ${f === 'mkt'  ? 'active' : ''}" onclick="setProcvFilter('mkt')" style="${f === 'mkt' ? '' : 'color:#22c55e'}">✅ Marketing (${cMkt})</button>
-        <button class="filter-btn ${f === 'no'   ? 'active' : ''}" onclick="setProcvFilter('no')">Não Marketing (${cNo})</button>
-        <button class="filter-btn ${f === 'unkn' ? 'active' : ''}" onclick="setProcvFilter('unkn')" style="${f === 'unkn' ? '' : 'color:#f59e0b'}">❓ Não Identificado (${cUnkn})</button>
+        <button class="filter-btn ${f === 'pending'      ? 'active' : ''}" onclick="setProcvFilter('pending')"      style="${f === 'pending'      ? '' : 'color:#f59e0b'}">⏳ Pendentes (${cPending})</button>
+        <button class="filter-btn ${f === 'doubt'        ? 'active' : ''}" onclick="setProcvFilter('doubt')"        style="${f === 'doubt'        ? '' : 'color:#f59e0b'}">❓ Dúvida (${cDoubt})</button>
+        <button class="filter-btn ${f === 'contradiction'? 'active' : ''}" onclick="setProcvFilter('contradiction')" style="${f === 'contradiction'? '' : 'color:#ef4444'}">🔴 Contradição (${cContradition})</button>
+        <button class="filter-btn ${f === 'smart'        ? 'active' : ''}" onclick="setProcvFilter('smart')"        style="${f === 'smart'        ? '' : 'color:#22c55e'}">✅ Smart confirma (${cConfirmedSmart})</button>
+        <button class="filter-btn ${f === 'manual'       ? 'active' : ''}" onclick="setProcvFilter('manual')"       style="${f === 'manual'       ? '' : 'color:#22c55e'}">✔ Revisados (${cManual})</button>
+        <button class="filter-btn ${f === 'all'          ? 'active' : ''}" onclick="setProcvFilter('all')">Todos (${cAll})</button>
       </div>
       <button class="btn-sm btn-ghost" onclick="exportProcvCSV()">⬇ Exportar CSV</button>
     </div>
@@ -113,13 +128,13 @@ export function renderProcv(entries) {
       <div class="table-wrap"><table>
         <thead><tr>
           <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th>
-          <th>Classificação</th><th>Confirmar</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th><th>Audiência Smart</th>
+          <th>Sinal Smart</th><th>Confirmar</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
     </div>
-    ${hasMore ? `<div style="text-align:center;padding:12px;font-size:12px;color:var(--gray)">Refinando a busca acima você encontra os registros restantes.</div>` : ''}
+    ${hasMore ? `<div style="text-align:center;padding:12px;font-size:12px;color:var(--gray)">Refine a busca acima para encontrar os registros restantes.</div>` : ''}
   `;
 }
 
@@ -153,31 +168,36 @@ export function classifyFromProcv(idx, isMkt) {
     const k = calcKPIs(fd.entries, fd.facebook);
     renderOverview(k, fd);
   }
-  const cnt = state.result.entries.filter(r =>
-    r.reviewReason && r.reviewReason !== 'manual' && r.isMarketing === null
-  ).length + state.result.unknownStatuses.length;
-  const badge = document.getElementById('review-badge');
-  badge.textContent = cnt;
-  badge.classList.toggle('hidden', cnt === 0);
+  // Atualiza badge do PROCV
+  const pending = state.result
+    ? procvPendingCount(state.result.entries)
+    : 0;
+  const badge = document.getElementById('procv-badge');
+  if (badge) {
+    badge.textContent = pending;
+    badge.classList.toggle('hidden', pending === 0);
+  }
 }
 
 export function exportProcvCSV() {
   const fd = filteredData();
   if (!fd) return;
-  let filtered = fd.entries.filter(e => e.reviewReason !== 'manual');
-  if (state.procvFilter === 'mkt')  filtered = filtered.filter(e => e.isMarketing === true);
-  if (state.procvFilter === 'no')   filtered = filtered.filter(e => e.isMarketing === false);
-  if (state.procvFilter === 'unkn') filtered = filtered.filter(e => e.isMarketing === null);
+  let filtered = fd.entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
+  if (state.procvFilter === 'pending')      filtered = filtered.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
+  if (state.procvFilter === 'doubt')        filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
+  if (state.procvFilter === 'contradiction') filtered = filtered.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
+  if (state.procvFilter === 'smart')        filtered = filtered.filter(e => e.smartSignal === 'confirmed');
+  if (state.procvFilter === 'manual')       filtered = filtered.filter(e => e.reviewReason === 'manual');
   const q = state.procvSearch.trim().toLowerCase();
   if (q) filtered = filtered.filter(e =>
     (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
   );
 
-  const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Origem Ecorban', 'Telefone Smart', 'Origem Smart', 'Audiencia Smart', 'Classificacao'];
+  const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Origem Ecorban', 'Telefone Smart', 'Origem Smart', 'Audiencia Smart', 'Sinal Smart'];
   const rows   = filtered.map(e => [
     e.cliente || '', e.cpf || '', e.rawStatus || '', e.statusCat || '',
     e.ecorbanOrigem || '', e.smartPhone || '', e.origem || '', e.audiencia || '',
-    e.isMarketing === true ? 'Marketing' : e.isMarketing === false ? 'Nao e Marketing' : 'Nao Identificado',
+    e.reviewReason === 'manual' ? 'Revisado' : (e.smartSignal || 'desconhecido'),
   ]);
 
   const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
@@ -186,7 +206,7 @@ export function exportProcvCSV() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
-  a.download = `procv_clientes_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `procv_marketing_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   toast('CSV exportado com sucesso');

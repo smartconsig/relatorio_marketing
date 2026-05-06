@@ -1,9 +1,35 @@
 import { state } from '../state.js';
 import { normCPF } from '../utils/cpf.js';
-import { normPhone, getCol } from '../utils/string.js';
+import { normPhone, getCol, normStr } from '../utils/string.js';
 import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
 import { classifyStatus } from './calcKPIs.js';
+
+/**
+ * Returns 'confirmed' | 'doubt' | 'contradiction' based on Smart origem/audiencia.
+ *
+ * confirmed     → Smart corrobora que é marketing (Instagram, Storie, NÃO MAPEADO + público numerado/remarketing)
+ * contradiction → Smart nega explicitamente (Disparo Compra / Disparo Margem)
+ * doubt         → Smart não sabe (Sem Origem, NÃO MAPEADO+NÃO MAPEADO, vazios, etc.)
+ */
+function getSmartSignal(origem, audiencia) {
+  const o = normStr(origem);
+  const a = normStr(audiencia);
+
+  if (o === 'instagram' || o === 'storie instagram') return 'confirmed';
+
+  if (o === 'nao mapeado') {
+    // Público 01–10, Públicos 01, Remarketing, Remarketing Storie → confirma
+    if (/^publicos? \d+$/.test(a) || a === 'remarketing' || a === 'remarketing storie') return 'confirmed';
+    // NÃO MAPEADO + Polícia Militar ou NÃO MAPEADO → dúvida
+    return 'doubt';
+  }
+
+  if (o === 'disparo compra' || o === 'disparo margem') return 'contradiction';
+
+  // Sem Origem, vazios, qualquer outra coisa
+  return 'doubt';
+}
 
 export function buildResult() {
   const byCPF   = {};
@@ -42,8 +68,12 @@ export function buildResult() {
     const statusCat = classifyStatus(rawStatus);
     if (statusCat === 'desconhecido' && rawStatus) unknownStats.add(rawStatus);
 
-    const valor    = parseBRL(getCol(row, 'Multiplicador', 'Valor Multiplicador', 'Valor'));
-    const saleDate = parseExcelDate(getCol(row, 'Data', 'data', 'Data Cadastro'));
+    const valor         = parseBRL(getCol(row, 'Multiplicador', 'Valor Multiplicador', 'Valor'));
+    const saleDate      = parseExcelDate(getCol(row, 'Data', 'data', 'Data Cadastro'));
+    const ecorbanOrigem = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();
+
+    // ── Critério primário: Origem do Ecorban ──────────────────────────────
+    const isMarketingByEcorban = ecorbanOrigem.toUpperCase() === 'MARKETING';
 
     const entry = {
       _idx: i, cpf, phone,
@@ -53,61 +83,67 @@ export function buildResult() {
       produto:       String(getCol(row, 'Produto', 'produto') || ''),
       loja:          String(getCol(row, 'Loja', 'loja', 'Time') || ''),
       vendedor:      String(getCol(row, 'Vendedor', 'vendedor', 'Consultor') || ''),
-      isMarketing:   null,
+      isMarketing:   isMarketingByEcorban,
       matchMethod:   null,
       origem:        null,
       audiencia:     null,
-      ecorbanOrigem: String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || ''),
+      ecorbanOrigem,
       smartPhone:    null,
       reviewReason:  null,
+      smartSignal:   null,   // 'confirmed' | 'doubt' | 'contradiction' | 'not_found'
     };
 
+    // ── Override manual tem prioridade absoluta ───────────────────────────
     if (cpf && state.overrides[cpf] !== undefined) {
       entry.isMarketing  = state.overrides[cpf];
       entry.reviewReason = 'manual';
-      entries.push(entry);
-      matched++;
-      continue;
     }
 
+    // ── Cruzamento com Smart (sinalização, não mais decisão) ──────────────
     let smartMatches = null;
     if (cpf && cpf !== '00000000000' && byCPF[cpf]) {
       smartMatches = byCPF[cpf];
       entry.matchMethod = 'cpf';
+      matched++;
     } else if (phone && byPhone[phone]) {
       smartMatches = byPhone[phone];
       entry.matchMethod = 'telefone';
+      matched++;
     }
 
     if (!smartMatches) {
-      entry.reviewReason = 'Não encontrado no Smart';
-      entries.push(entry);
-      continue;
-    }
-
-    matched++;
-
-    const oldest = smartMatches.slice().sort((a, b) => {
-      const da = parseExcelDate(getCol(a, 'Data de Criação', 'Data Criação', 'DataCriacao'));
-      const db = parseExcelDate(getCol(b, 'Data de Criação', 'Data Criação', 'DataCriacao'));
-      if (!da && !db) return 0;
-      if (!da) return 1;
-      if (!db) return -1;
-      return da - db;
-    })[0];
-
-    const origem    = String(getCol(oldest, 'Origem', 'origem') || '').trim();
-    const audiencia = String(getCol(oldest, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
-    entry.origem     = origem;
-    entry.audiencia  = audiencia;
-    entry.smartPhone = normPhone(String(getCol(oldest, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
-
-    if (['Instagram', 'Storie Instagram', 'Sem Origem'].includes(origem)) {
-      entry.isMarketing = true;
-    } else if (origem === 'NÃO MAPEADO' && audiencia === 'NÃO MAPEADO') {
-      entry.isMarketing = true;
+      // CPF/telefone não encontrado no Smart
+      if (isMarketingByEcorban && entry.reviewReason !== 'manual') {
+        entry.smartSignal  = 'not_found';
+        entry.reviewReason = 'CPF não encontrado no Smart';
+      }
     } else {
-      entry.isMarketing = false;
+      // Pega o registro mais antigo do Smart para obter a origem real
+      const oldest = smartMatches.slice().sort((a, b) => {
+        const da = parseExcelDate(getCol(a, 'Data de Criação', 'Data Criação', 'DataCriacao'));
+        const db = parseExcelDate(getCol(b, 'Data de Criação', 'Data Criação', 'DataCriacao'));
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return da - db;
+      })[0];
+
+      const origem    = String(getCol(oldest, 'Origem', 'origem') || '').trim();
+      const audiencia = String(getCol(oldest, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
+      entry.origem     = origem;
+      entry.audiencia  = audiencia;
+      entry.smartPhone = normPhone(String(getCol(oldest, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
+
+      // Sinal Smart só é relevante para registros de marketing ainda não revisados
+      if (isMarketingByEcorban && entry.reviewReason !== 'manual') {
+        const sig = getSmartSignal(origem, audiencia);
+        entry.smartSignal = sig;
+        if (sig !== 'confirmed') {
+          entry.reviewReason = sig === 'contradiction'
+            ? `Smart diz: ${origem}`
+            : `Dúvida: ${origem || 'sem origem'} / ${audiencia || 'sem audiência'}`;
+        }
+      }
     }
 
     entries.push(entry);
