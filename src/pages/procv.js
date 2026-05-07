@@ -159,12 +159,12 @@ export function classifyFromProcv(idx, isMkt) {
   if (!state.result) return;
   const entry = state.result.entries[idx];
   if (!entry) return;
-  entry.isMarketing        = isMkt;
-  entry.reviewReason       = 'manual';
-  entry._justConfirmed     = true;          // flag temporária — não salva no storage
-  entry._confirmedInFilter = state.procvFilter;
+  entry.isMarketing  = isMkt;
+  entry.reviewReason = 'manual';
   if (entry.cpf) state.overrides[entry.cpf] = isMkt;
-  saveState();
+  saveState();                              // salva ANTES das flags temporárias
+  entry._justConfirmed     = true;          // flag só em memória — nunca chega ao storage
+  entry._confirmedInFilter = state.procvFilter;
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
   saveClassificationToSupabase(entry.cpf, isMkt);
   scheduleSaveSnapshot();
