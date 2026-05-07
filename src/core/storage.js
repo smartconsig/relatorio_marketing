@@ -10,7 +10,7 @@ export function saveState() {
   if (!state.result) return;
   try {
     localStorage.setItem(STORE_RESULT, JSON.stringify({
-      entries:         state.result.entries,
+      entries:         state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
       facebook:        state.result.facebook,
       unknownStatuses: state.result.unknownStatuses,
       diag:            state.result.diag,
