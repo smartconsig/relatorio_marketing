@@ -25,18 +25,21 @@ export function renderProcv(entries) {
   const cPending      = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
   const cDoubt        = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
   const cContradition = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual').length;
-  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed').length;
+  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed' && e.reviewReason !== 'manual').length;
   const cManual       = mktEntries.filter(e => e.reviewReason === 'manual').length;
   const cAll          = mktEntries.length;
 
   const f = state.procvFilter;
 
+  // Registro confirmado nesta sessão permanece visível na aba onde foi confirmado
+  const here = (e) => e._justConfirmed && e._confirmedInFilter === f;
+
   let filtered = mktEntries;
-  if (f === 'pending')      filtered = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
-  if (f === 'doubt')        filtered = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
-  if (f === 'contradiction') filtered = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
-  if (f === 'smart')        filtered = mktEntries.filter(e => e.smartSignal === 'confirmed');
-  if (f === 'manual')       filtered = mktEntries.filter(e => e.reviewReason === 'manual');
+  if (f === 'pending')       filtered = mktEntries.filter(e => (e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'doubt')         filtered = mktEntries.filter(e => ((e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual') || here(e));
+  if (f === 'contradiction') filtered = mktEntries.filter(e => (e.smartSignal === 'contradiction' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'smart')         filtered = mktEntries.filter(e => (e.smartSignal === 'confirmed' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'manual')        filtered = mktEntries.filter(e => e.reviewReason === 'manual');
 
   const q = state.procvSearch.trim().toLowerCase();
   if (q) {
@@ -81,7 +84,9 @@ export function renderProcv(entries) {
         <td>${signalBadge(e)}</td>
         <td>
           ${e.reviewReason === 'manual'
-            ? `<span class="badge badge-green" style="gap:4px">✔ Confirmado</span>`
+            ? e.isMarketing
+              ? `<span class="badge badge-green">✅ Confirmado: Marketing</span>`
+              : `<span class="badge badge-red">❌ Confirmado: Não é Marketing</span>`
             : `<div style="display:flex;gap:5px;flex-wrap:wrap">
                 <button class="btn-mkt"   onclick="classifyFromProcv(${e._idx},true)"  style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
                 <button class="btn-nomkt" onclick="classifyFromProcv(${e._idx},false)" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
@@ -154,8 +159,10 @@ export function classifyFromProcv(idx, isMkt) {
   if (!state.result) return;
   const entry = state.result.entries[idx];
   if (!entry) return;
-  entry.isMarketing  = isMkt;
-  entry.reviewReason = 'manual';
+  entry.isMarketing        = isMkt;
+  entry.reviewReason       = 'manual';
+  entry._justConfirmed     = true;          // flag temporária — não salva no storage
+  entry._confirmedInFilter = state.procvFilter;
   if (entry.cpf) state.overrides[entry.cpf] = isMkt;
   saveState();
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
