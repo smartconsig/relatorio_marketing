@@ -327,7 +327,15 @@ export function renderOverview(k, fd) {
     ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), false, 'var(--white)')}
   </div>`;
 
-  // ── 2. INDICADORES ───────────────────────────────────────────────────────
+  // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
+  h += `<div class="section-title"><span class="bar"></span>Pipeline Marketing</div>
+  <div class="pipeline-row pipeline-3">
+    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
+    ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
+  </div>`;
+
+  // ── 3. INDICADORES ───────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Indicadores de Performance</div>
   <div class="kpi-grid">
     ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
@@ -335,14 +343,6 @@ export function renderOverview(k, fd) {
     ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false)}
     ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
     ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true)}
-  </div>`;
-
-  // ── 3. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
-  h += `<div class="section-title"><span class="bar"></span>Pipeline Marketing</div>
-  <div class="pipeline-row pipeline-3">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
-    ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
   </div>`;
 
   // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
