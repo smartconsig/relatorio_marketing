@@ -14,7 +14,7 @@
   padding: 24px 20px 18px;
   border-bottom: 1px solid var(--border);
 }
-.sidebar-logo .brand { font-family: var(--font-h); font-weight: 800; font-size: 17px; letter-spacing: -0.3px; }
+.sidebar-logo .brand { font-family: var(--font-h); font-weight: 800; font-size: 17px; letter-spacing: -0.3px; color: var(--white); }
 .sidebar-logo .brand em { color: var(--red); font-style: normal; }
 .sidebar-logo .sub {
   font-size: 10px; color: var(--gray); margin-top: 3px;
