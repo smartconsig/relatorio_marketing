@@ -12,10 +12,12 @@ export async function saveSnapshotToSupabase() {
   if (!state.currentUser || !state.result) return;
   try {
     const payload = JSON.stringify({
-      entries:         state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
-      facebook:        state.result.facebook,
-      unknownStatuses: state.result.unknownStatuses,
-      diag:            state.result.diag,
+      entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
+      facebook:             state.result.facebook,
+      unknownStatuses:      state.result.unknownStatuses,
+      diag:                 state.result.diag,
+      smartLeadsByOperador: state.result.smartLeadsByOperador || {},
+      smartLeadsByTime:     state.result.smartLeadsByTime     || {},
     });
     const { data } = await sb.from('snapshots').select('id').limit(1).maybeSingle();
     if (data?.id) {

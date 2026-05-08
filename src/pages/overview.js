@@ -2,27 +2,32 @@ import { state } from '../state.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
-import { getCol } from '../utils/string.js';
+import { getCol, normStr } from '../utils/string.js';
 
-export function kpiCard(label, val, meta, pct, inv) {
+// ── helpers ────────────────────────────────────────────────────────────────
+export function pct(v, g) { return g ? (v / g) * 100 : null; }
+
+function toTitle(s) {
+  return String(s || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+}
+
+export function kpiCard(label, val, meta, p, inv) {
   let cls = 'accent';
-  if (pct !== null && state.goals) {
-    if (inv) {
-      cls = pct <= 90 ? 'good' : pct <= 110 ? 'warn' : 'bad';
-    } else {
-      cls = pct >= 100 ? 'good' : pct >= 70 ? 'warn' : 'bad';
-    }
+  if (p !== null && state.goals) {
+    cls = inv
+      ? (p <= 90 ? 'good' : p <= 110 ? 'warn' : 'bad')
+      : (p >= 100 ? 'good' : p >= 70 ? 'warn' : 'bad');
   }
-  const barW    = pct !== null ? Math.min(Math.max(pct, 0), 100).toFixed(1) : 0;
-  const metaStr = pct !== null ? `${fmtPct(pct)} da meta` : (meta || '—');
+  const barW    = p !== null ? Math.min(Math.max(p, 0), 100).toFixed(1) : 0;
+  const metaStr = p !== null ? `${fmtPct(p)} da meta` : (meta || '—');
   const vStr    = String(val);
   const vStyle  = vStr.length > 14 ? ' style="font-size:15px"' : vStr.length > 11 ? ' style="font-size:20px"' : '';
   return `
-    <div class="kpi-card ${pct !== null ? cls : 'accent'}">
+    <div class="kpi-card ${p !== null ? cls : 'accent'}">
       <div class="kpi-label">${label}</div>
       <div class="kpi-value"${vStyle}>${val}</div>
       <div class="kpi-meta">${metaStr}</div>
-      ${pct !== null ? `<div class="kpi-progress"><div class="kpi-bar ${cls}" style="width:${barW}%"></div></div>` : ''}
+      ${p !== null ? `<div class="kpi-progress"><div class="kpi-bar ${cls}" style="width:${barW}%"></div></div>` : ''}
     </div>`;
 }
 
@@ -36,65 +41,201 @@ export function pipelineCard(label, cls, count, value, sub) {
     </div>`;
 }
 
-export function pct(v, g) { return g ? (v / g) * 100 : null; }
-
-export function renderOverview(k, fd) {
-  const g = state.goals;
-  let h = '';
-
-  h += `<div class="section-title"><span class="bar"></span>Facebook Ads</div>
-  <div class="kpi-grid">
-    ${kpiCard('Investimento', fmtBRL(k.invest), null, pct(k.invest, g.invest), false)}
-    ${kpiCard('Leads Gerados', fmtN(k.leads), null, pct(k.leads, g.leads), false)}
-    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), 'Reportado pelo Facebook', null, false)}
-    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true)}
-  </div>`;
-
-  h += `<div class="section-title"><span class="bar"></span>Esteira de Vendas — Tráfego Pago (Marketing)</div>
-  <div class="pipeline-row">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
-    ${pipelineCard('Pagas', 'pc-paid', k.paidMkt, k.valueMkt, 'operações pagas no período')}
-    ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
-    ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas')}
-  </div>`;
-
-  h += `<div class="section-title"><span class="bar"></span>Indicadores de Performance — Marketing</div>
-  <div class="kpi-grid">
-    ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'Vendas pagas de marketing', null, false)}
-    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true)}
-    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false)}
-    ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
-  </div>`;
-
-  h += `<div class="section-title"><span class="bar"></span>Esteira de Vendas — Todas as Origens</div>
-  <div class="pipeline-row">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'propostas em análise / aprovadas')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'desaverbação em andamento')}
-    ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'operações pagas no período')}
-    ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'propostas reprovadas')}
-    ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'em andamento + pagas')}
-  </div>`;
-
-  const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
-  const semValorReprov  = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
-  const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
-  if (semValorTotal.length > 0) {
-    h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">⚠️</div>
-      <div style="flex:1;min-width:200px">
-        <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
-        <div style="font-size:13px;color:var(--white)">
-          <strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.
-        </div>
-        <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
-          <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
-          <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
-        </div>
-      </div>
+function heroCard(label, count, value, sub, accentColor, p, inv) {
+  const cls = p === null ? '' : inv
+    ? (p <= 90 ? 'good' : p <= 110 ? 'warn' : 'bad')
+    : (p >= 100 ? 'good' : p >= 70 ? 'warn' : 'bad');
+  const barColor = cls === 'good' ? 'var(--green)' : cls === 'warn' ? 'var(--yellow)' : cls === 'bad' ? 'var(--danger)' : accentColor;
+  return `
+    <div class="hero-card" style="border-top:3px solid ${accentColor}">
+      <div class="hero-label">${label}</div>
+      ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
+      <div class="hero-value">${fmtBRL(value)}</div>
+      <div class="hero-sub">${sub}</div>
+      ${p !== null ? `
+        <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
+        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${fmtPct(p)} da meta</div>` : ''}
     </div>`;
-  }
+}
 
+// ── ranking helpers ────────────────────────────────────────────────────────
+function rankNum(i) {
+  return `<div class="rank-num ${i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : ''}">${i + 1}</div>`;
+}
+
+function renderTopPublicos(entries) {
+  const map = {};
+  for (const e of entries.filter(e => e.isMarketing)) {
+    const key = e.audiencia || '—';
+    if (!map[key]) map[key] = { validas: 0, pagas: 0, valor: 0 };
+    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
+      map[key].validas++;
+      map[key].valor += e.valor || 0;
+    }
+    if (e.statusCat === 'pago') map[key].pagas++;
+  }
+  const top = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas).slice(0, 5);
+  if (!top.length) return '';
+  const rows = top.map(([name, d], i) => `
+    <tr>
+      <td>${rankNum(i)}</td>
+      <td><strong>${name}</strong></td>
+      <td>${fmtN(d.validas)}</td>
+      <td>${fmtN(d.pagas)}</td>
+      <td class="muted">${fmtBRL(d.valor)}</td>
+    </tr>`).join('');
+  return `
+  <div class="section-title"><span class="bar"></span>Top Públicos</div>
+  <div class="table-card">
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Audiência</th><th>Válidas</th><th>Pagas</th><th>Valor</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderTopProdutosBancos(entries) {
+  const mkt = entries.filter(e => e.isMarketing && (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago'));
+  const buildMap = key => {
+    const m = {};
+    for (const e of mkt) {
+      const k = e[key] || '—';
+      if (!m[k]) m[k] = { count: 0, valor: 0 };
+      m[k].count++;
+      m[k].valor += e.valor || 0;
+    }
+    return Object.entries(m).sort((a, b) => b[1].count - a[1].count).slice(0, 5);
+  };
+  const topProd   = buildMap('produto');
+  const topBancos = buildMap('banco');
+
+  const makeRows = (top, cols) => top.length
+    ? top.map(([name, d], i) => `
+        <tr>
+          <td>${rankNum(i)}</td>
+          <td><strong>${name}</strong></td>
+          <td>${fmtN(d.count)}</td>
+          <td class="muted">${fmtBRL(d.valor)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="${cols}" style="text-align:center;color:var(--gray);padding:20px">Sem dados</td></tr>`;
+
+  return `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div>
+      <div class="section-title"><span class="bar"></span>Top Produtos</div>
+      <div class="table-card" style="margin:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Produto</th><th>Válidas</th><th>Valor</th></tr></thead>
+          <tbody>${makeRows(topProd, 4)}</tbody>
+        </table></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title"><span class="bar"></span>Top Bancos</div>
+      <div class="table-card" style="margin:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Banco</th><th>Válidas</th><th>Valor</th></tr></thead>
+          <tbody>${makeRows(topBancos, 4)}</tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function convBadge(validas, leads) {
+  if (!leads) return `<span class="muted">—</span>`;
+  const p = (validas / leads) * 100;
+  const color = p >= 20 ? '#22c55e' : p >= 10 ? '#f59e0b' : '#ef4444';
+  return `<strong style="color:${color}">${fmtPct(p)}</strong>`;
+}
+
+function renderVendedores(entries) {
+  const smartLeads = state.result?.smartLeadsByOperador || {};
+  const map = {};
+  for (const e of entries.filter(e => e.isMarketing)) {
+    const key = e.vendedor || '—';
+    if (!map[key]) map[key] = { lancados: 0, validas: 0, pagas: 0, valor: 0 };
+    map[key].lancados++;
+    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
+      map[key].validas++;
+      map[key].valor += e.valor || 0;
+    }
+    if (e.statusCat === 'pago') map[key].pagas++;
+  }
+  const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
+  if (!sorted.length) return '';
+  const rows = sorted.map(([name, d], i) => {
+    const leads = smartLeads[normStr(name)] || 0;
+    return `
+      <tr>
+        <td>${rankNum(i)}</td>
+        <td><strong>${toTitle(name)}</strong></td>
+        <td class="muted">${leads ? fmtN(leads) : '—'}</td>
+        <td>${fmtN(d.lancados)}</td>
+        <td>${fmtN(d.validas)}</td>
+        <td>${fmtN(d.pagas)}</td>
+        <td>${convBadge(d.validas, leads)}</td>
+      </tr>`;
+  }).join('');
+  return `
+  <div class="section-title"><span class="bar"></span>Vendedores — Marketing</div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-header-title">Performance individual</div>
+      <div style="font-size:11px;color:var(--gray)">Conversão = Válidas ÷ Leads recebidos</div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Vendedor</th><th>Leads</th><th>Lançados</th><th>Válidos</th><th>Pagas</th><th>Conversão</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderTimes(entries) {
+  const smartLeads = state.result?.smartLeadsByTime || {};
+  const map = {};
+  for (const e of entries.filter(e => e.isMarketing)) {
+    const key = e.loja || '—';
+    if (!map[key]) map[key] = { lancados: 0, validas: 0, pagas: 0, valor: 0 };
+    map[key].lancados++;
+    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
+      map[key].validas++;
+      map[key].valor += e.valor || 0;
+    }
+    if (e.statusCat === 'pago') map[key].pagas++;
+  }
+  const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
+  if (!sorted.length) return '';
+  const rows = sorted.map(([name, d], i) => {
+    const leads = smartLeads[normStr(name)] || 0;
+    return `
+      <tr>
+        <td>${rankNum(i)}</td>
+        <td><strong>${name}</strong></td>
+        <td class="muted">${leads ? fmtN(leads) : '—'}</td>
+        <td>${fmtN(d.lancados)}</td>
+        <td>${fmtN(d.validas)}</td>
+        <td>${fmtN(d.pagas)}</td>
+        <td>${convBadge(d.validas, leads)}</td>
+      </tr>`;
+  }).join('');
+  return `
+  <div class="section-title"><span class="bar"></span>Times — Marketing</div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-header-title">Performance por time</div>
+      <div style="font-size:11px;color:var(--gray)">Conversão = Válidas ÷ Leads recebidos</div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Time</th><th>Leads</th><th>Lançados</th><th>Válidos</th><th>Pagas</th><th>Conversão</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ── chart helper ───────────────────────────────────────────────────────────
+function renderChart(fd) {
+  if (state.chart) { state.chart.destroy(); state.chart = null; }
   const dayMap = {};
   for (const r of fd.facebook) {
     const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
@@ -112,78 +253,147 @@ export function renderOverview(k, fd) {
     }
   }
   const days = Object.keys(dayMap).sort();
+  if (!days.length) return;
+  const ctx = document.getElementById('main-chart')?.getContext('2d');
+  if (!ctx) return;
+  state.chart = new Chart(ctx, {
+    data: {
+      labels: days.map(d => { const [, m, dd] = d.split('-'); return `${dd}/${m}`; }),
+      datasets: [
+        {
+          type: 'bar', label: 'Investimento (R$)',
+          data: days.map(d => dayMap[d]?.invest || 0),
+          backgroundColor: 'rgba(148,11,16,0.5)', borderColor: '#940b10', borderWidth: 1,
+          yAxisID: 'y',
+        },
+        {
+          type: 'line', label: 'Válidos (Em Andamento + Pagas)',
+          data: days.map(d => dayMap[d]?.valid || 0),
+          borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)',
+          pointBackgroundColor: '#22c55e', pointRadius: 4, tension: 0.3, yAxisID: 'y2',
+        },
+        {
+          type: 'line', label: 'Reprovados',
+          data: days.map(d => dayMap[d]?.rejected || 0),
+          borderColor: '#f87171', backgroundColor: 'rgba(248,113,113,0.08)',
+          pointBackgroundColor: '#f87171', pointRadius: 4, tension: 0.3, yAxisID: 'y2',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: { family: 'Open Sans', size: 12 }, boxWidth: 12, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#1e1e1e', borderColor: '#2a2a2a', borderWidth: 1,
+          titleColor: '#fff', bodyColor: '#9ca3af',
+          callbacks: {
+            label: c => {
+              if (c.datasetIndex === 0) return ` Investimento: ${fmtBRL(c.raw)}`;
+              if (c.datasetIndex === 1) return ` Válidos: ${fmtBRL(c.raw)}`;
+              return ` Reprovados: ${fmtBRL(c.raw)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: {
+          position: 'left',
+          ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+        },
+        y2: {
+          position: 'right',
+          ticks: { color: '#9ca3af', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
+          grid: { drawOnChartArea: false },
+        },
+      },
+    },
+  });
+}
 
+// ── main render ────────────────────────────────────────────────────────────
+export function renderOverview(k, fd) {
+  const g = state.goals;
+  let h = '';
+
+  // ── 1. HERO ──────────────────────────────────────────────────────────────
+  h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
+  <div class="hero-grid">
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false)}
+    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.paidMkt, g.paid), false)}
+    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), false)}
+  </div>`;
+
+  // ── 2. INDICADORES ───────────────────────────────────────────────────────
+  h += `<div class="section-title"><span class="bar"></span>Indicadores de Performance</div>
+  <div class="kpi-grid">
+    ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
+    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true)}
+    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false)}
+    ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
+    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true)}
+  </div>`;
+
+  // ── 3. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
+  h += `<div class="section-title"><span class="bar"></span>Pipeline Marketing</div>
+  <div class="pipeline-row pipeline-3">
+    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
+    ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
+  </div>`;
+
+  // ── 4. RANKINGS ──────────────────────────────────────────────────────────
+  h += renderTopPublicos(fd.entries);
+  h += renderTopProdutosBancos(fd.entries);
+  h += renderVendedores(fd.entries);
+  h += renderTimes(fd.entries);
+
+  // ── 5. SECUNDÁRIO ────────────────────────────────────────────────────────
+  h += `<div class="section-title" style="margin-top:8px;opacity:0.55"><span class="bar" style="background:var(--gray)"></span>Facebook Ads & Todas as Origens</div>
+  <div class="kpi-grid" style="opacity:0.7">
+    ${kpiCard('Leads Gerados', fmtN(k.leads), null, pct(k.leads, g.leads), false)}
+    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), 'Reportado pelo Facebook', null, false)}
+  </div>
+  <div class="pipeline-row" style="opacity:0.7">
+    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
+    ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'todas as origens')}
+    ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'todas as origens')}
+    ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
+  </div>`;
+
+  // ── 6. AVISO SEM VALOR ───────────────────────────────────────────────────
+  const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
+  const semValorReprov  = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
+  const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
+  if (semValorTotal.length > 0) {
+    h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
+        <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.</div>
+        <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
+          <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
+          <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Evolução Diária</div>
   <div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
     <canvas id="main-chart" height="75"></canvas>
   </div>`;
 
   document.getElementById('overview-body').innerHTML = h;
-
-  if (state.chart) { state.chart.destroy(); state.chart = null; }
-  if (days.length > 0) {
-    const ctx = document.getElementById('main-chart').getContext('2d');
-    state.chart = new Chart(ctx, {
-      data: {
-        labels: days.map(d => { const [y, m, dd] = d.split('-'); return `${dd}/${m}`; }),
-        datasets: [
-          {
-            type: 'bar', label: 'Investimento (R$)',
-            data: days.map(d => dayMap[d]?.invest || 0),
-            backgroundColor: 'rgba(148,11,16,0.5)', borderColor: '#940b10', borderWidth: 1,
-            yAxisID: 'y',
-          },
-          {
-            type: 'line', label: 'Válidos (Em Andamento + Pagas)',
-            data: days.map(d => dayMap[d]?.valid || 0),
-            borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)',
-            pointBackgroundColor: '#22c55e', pointRadius: 4,
-            tension: 0.3, yAxisID: 'y2',
-          },
-          {
-            type: 'line', label: 'Reprovados',
-            data: days.map(d => dayMap[d]?.rejected || 0),
-            borderColor: '#f87171', backgroundColor: 'rgba(248,113,113,0.08)',
-            pointBackgroundColor: '#f87171', pointRadius: 4,
-            tension: 0.3, yAxisID: 'y2',
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { labels: { color: '#9ca3af', font: { family: 'Open Sans', size: 12 }, boxWidth: 12, padding: 16 } },
-          tooltip: {
-            backgroundColor: '#1e1e1e', borderColor: '#2a2a2a', borderWidth: 1,
-            titleColor: '#fff', bodyColor: '#9ca3af',
-            callbacks: {
-              label: c => {
-                if (c.datasetIndex === 0) return ` Investimento: ${fmtBRL(c.raw)}`;
-                if (c.datasetIndex === 1) return ` Válidos: ${fmtBRL(c.raw)}`;
-                return ` Reprovados: ${fmtBRL(c.raw)}`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: { ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: {
-            position: 'left',
-            ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
-            grid: { color: 'rgba(255,255,255,0.04)' },
-          },
-          y2: {
-            position: 'right',
-            ticks: { color: '#9ca3af', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
-            grid: { drawOnChartArea: false },
-          },
-        },
-      },
-    });
-  }
+  renderChart(fd);
 }
 
+// ── diag (unchanged) ──────────────────────────────────────────────────────
 export function renderDiag(diag) {
   const panel = document.getElementById('diag-panel');
   if (!panel) return;

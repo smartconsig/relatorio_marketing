@@ -10,10 +10,12 @@ export function saveState() {
   if (!state.result) return;
   try {
     localStorage.setItem(STORE_RESULT, JSON.stringify({
-      entries:         state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
-      facebook:        state.result.facebook,
-      unknownStatuses: state.result.unknownStatuses,
-      diag:            state.result.diag,
+      entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
+      facebook:             state.result.facebook,
+      unknownStatuses:      state.result.unknownStatuses,
+      diag:                 state.result.diag,
+      smartLeadsByOperador: state.result.smartLeadsByOperador || {},
+      smartLeadsByTime:     state.result.smartLeadsByTime     || {},
     }));
     localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates));
     localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides));

@@ -143,9 +143,11 @@ export function buildResult() {
 
       const origem    = String(getCol(oldest, 'Origem', 'origem') || '').trim();
       const audiencia = String(getCol(oldest, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
-      entry.origem     = origem;
-      entry.audiencia  = audiencia;
-      entry.smartPhone = normPhone(String(getCol(oldest, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
+      entry.origem        = origem;
+      entry.audiencia     = audiencia;
+      entry.smartPhone    = normPhone(String(getCol(oldest, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
+      entry.smartOperador = normStr(getCol(oldest, 'Operador', 'operador') || '');
+      entry.smartTime     = normStr(getCol(oldest, 'Time', 'time') || '');
 
       // Sinal Smart só é relevante para registros de marketing ainda não revisados
       if (isMarketingByEcorban && entry.reviewReason !== 'manual') {
@@ -162,6 +164,20 @@ export function buildResult() {
     entries.push(entry);
   }
 
+  // ── Leads de marketing por Operador e Time (todo o Smart, sem filtro de data) ──
+  const smartLeadsByOperador = {};
+  const smartLeadsByTime     = {};
+  for (const row of state.raw.smart) {
+    const o = String(getCol(row, 'Origem', 'origem') || '').trim();
+    const a = String(getCol(row, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
+    if (getSmartSignal(o, a) !== 'contradiction') {
+      const op = normStr(getCol(row, 'Operador', 'operador') || '');
+      const tm = normStr(getCol(row, 'Time', 'time') || '');
+      if (op) smartLeadsByOperador[op] = (smartLeadsByOperador[op] || 0) + 1;
+      if (tm) smartLeadsByTime[tm]     = (smartLeadsByTime[tm]     || 0) + 1;
+    }
+  }
+
   const statusDist = {};
   for (const e of entries) {
     statusDist[e.statusCat] = (statusDist[e.statusCat] || 0) + 1;
@@ -176,5 +192,5 @@ export function buildResult() {
     statusSample,
   };
 
-  return { entries, facebook: fbRows, unknownStatuses: [...unknownStats], diag };
+  return { entries, facebook: fbRows, unknownStatuses: [...unknownStats], diag, smartLeadsByOperador, smartLeadsByTime };
 }
