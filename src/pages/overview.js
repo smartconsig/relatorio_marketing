@@ -345,13 +345,7 @@ export function renderOverview(k, fd) {
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
   </div>`;
 
-  // ── 4. RANKINGS ──────────────────────────────────────────────────────────
-  h += renderTopPublicos(fd.entries);
-  h += renderTopProdutosBancos(fd.entries);
-  h += renderVendedores(fd.entries);
-  h += renderTimes(fd.entries);
-
-  // ── 5. SECUNDÁRIO ────────────────────────────────────────────────────────
+  // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
   h += `<div class="section-title" style="margin-top:8px;opacity:0.55"><span class="bar" style="background:var(--gray)"></span>Facebook Ads & Todas as Origens</div>
   <div class="kpi-grid" style="opacity:0.7">
     ${kpiCard('Leads Gerados', fmtN(k.leads), null, pct(k.leads, g.leads), false)}
@@ -364,6 +358,12 @@ export function renderOverview(k, fd) {
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'todas as origens')}
     ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
   </div>`;
+
+  // ── 5. RANKINGS ──────────────────────────────────────────────────────────
+  h += renderTopPublicos(fd.entries);
+  h += renderTopProdutosBancos(fd.entries);
+  h += renderVendedores(fd.entries);
+  h += renderTimes(fd.entries);
 
   // ── 6. AVISO SEM VALOR ───────────────────────────────────────────────────
   const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
