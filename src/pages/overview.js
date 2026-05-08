@@ -41,7 +41,7 @@ export function pipelineCard(label, cls, count, value, sub) {
     </div>`;
 }
 
-function heroCard(label, count, value, sub, accentColor, p, inv) {
+function heroCard(label, count, value, sub, accentColor, p, inv, valueColor) {
   const cls = p === null ? '' : inv
     ? (p <= 90 ? 'good' : p <= 110 ? 'warn' : 'bad')
     : (p >= 100 ? 'good' : p >= 70 ? 'warn' : 'bad');
@@ -50,7 +50,7 @@ function heroCard(label, count, value, sub, accentColor, p, inv) {
     <div class="hero-card" style="border-top:3px solid ${accentColor}">
       <div class="hero-label">${label}</div>
       ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
-      <div class="hero-value" style="color:${accentColor}">${fmtBRL(value)}</div>
+      <div class="hero-value" style="color:${valueColor || accentColor}">${fmtBRL(value)}</div>
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
@@ -322,9 +322,9 @@ export function renderOverview(k, fd) {
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
   <div class="hero-grid">
-    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false)}
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false, '#60a5fa')}
     ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.paidMkt, g.paid), false)}
-    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), false)}
+    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), false, 'var(--white)')}
   </div>`;
 
   // ── 2. INDICADORES ───────────────────────────────────────────────────────
