@@ -346,12 +346,12 @@ export function renderOverview(k, fd) {
   </div>`;
 
   // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
-  h += `<div class="section-title" style="margin-top:8px;opacity:0.55"><span class="bar" style="background:var(--gray)"></span>Facebook Ads & Todas as Origens</div>
-  <div class="kpi-grid" style="opacity:0.7">
+  h += `<div class="section-title" style="margin-top:8px"><span class="bar"></span>Facebook Ads & Todas as Origens</div>
+  <div class="kpi-grid">
     ${kpiCard('Leads Gerados', fmtN(k.leads), null, pct(k.leads, g.leads), false)}
     ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), 'Reportado pelo Facebook', null, false)}
   </div>
-  <div class="pipeline-row" style="opacity:0.7">
+  <div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
     ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
     ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'todas as origens')}
