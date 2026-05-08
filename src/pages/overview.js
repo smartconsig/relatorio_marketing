@@ -50,7 +50,7 @@ function heroCard(label, count, value, sub, accentColor, p, inv) {
     <div class="hero-card" style="border-top:3px solid ${accentColor}">
       <div class="hero-label">${label}</div>
       ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
-      <div class="hero-value">${fmtBRL(value)}</div>
+      <div class="hero-value" style="color:${accentColor}">${fmtBRL(value)}</div>
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
