@@ -99,8 +99,8 @@
   border-radius: 10px; padding: 28px 24px; position: relative; overflow: hidden;
 }
 .hero-label { font-family: var(--font-h); font-size: 10px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.hero-count { font-family: var(--font-h); font-size: 52px; font-weight: 800; color: var(--white); line-height: 1; margin-bottom: 4px; }
-.hero-value { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: var(--gray-light); margin-bottom: 4px; }
+.hero-count { font-family: var(--font-h); font-size: 18px; font-weight: 700; color: var(--gray-light); line-height: 1; margin-bottom: 4px; }
+.hero-value { font-family: var(--font-h); font-size: 48px; font-weight: 800; color: var(--white); line-height: 1; margin-bottom: 4px; }
 .hero-sub   { font-size: 11px; color: var(--gray); }
 
 /* pipeline com 3 colunas fixas */
