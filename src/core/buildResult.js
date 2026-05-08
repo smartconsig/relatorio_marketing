@@ -69,7 +69,20 @@ export function buildResult() {
     if (statusCat === 'desconhecido' && rawStatus) unknownStats.add(rawStatus);
 
     const valor         = parseBRL(getCol(row, 'Multiplicador', 'Valor Multiplicador', 'Valor'));
-    const saleDate      = parseExcelDate(getCol(row, 'Data', 'data', 'Data Cadastro'));
+    const saleDate      = parseExcelDate(
+      getCol(row,
+        'Data', 'data', 'Data Cadastro', 'Data de Cadastro',
+        'Data Início', 'Data Inicio', 'Data Início Contrato', 'Data Inicio Contrato',
+        'Data Proposta', 'Data de Proposta', 'Data da Proposta',
+        'Data Contrato', 'Data do Contrato',
+        'Data Operação', 'Data Operacao', 'Data de Operação', 'Data de Operacao',
+        'Data Digitação', 'Data Digitacao', 'Data de Digitação', 'Data de Digitacao',
+        'Data Criação', 'Data Criacao', 'Data de Criação', 'Data de Criacao',
+        'Data Venda', 'Data da Venda',
+        'Data Aprovação', 'Data Aprovacao',
+        'DT_CADASTRO', 'DT_INICIO', 'DT_PROPOSTA',
+      )
+    );
     const ecorbanOrigem = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();
 
     // ── Critério primário: Origem do Ecorban ──────────────────────────────
@@ -157,7 +170,7 @@ export function buildResult() {
 
   const diag = {
     smart:   diagSmart,
-    ecorban: { total: state.raw.ecorban.length, matched, toReview: state.raw.ecorban.length - matched, cols: ecorbanCols.slice(0, 8) },
+    ecorban: { total: state.raw.ecorban.length, matched, toReview: state.raw.ecorban.length - matched, cols: ecorbanCols, withDate: entries.filter(e => e.saleDate).length },
     facebook: { total: fbRows.length, bm03: state.raw.fb03?.length || 0, bm06: state.raw.fb06?.length || 0 },
     statusDist,
     statusSample,

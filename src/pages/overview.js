@@ -209,6 +209,7 @@ export function renderDiag(diag) {
           <div>Propostas lidas: <strong>${fmtN(diag.ecorban.total)}</strong></div>
           <div>Encontradas no Smart: <strong style="color:${matchColor}">${fmtN(diag.ecorban.matched)} (${matchPct}%)</strong></div>
           <div>Para revisão manual: <strong style="color:${diag.ecorban.toReview > 0 ? '#f59e0b' : '#22c55e'}">${fmtN(diag.ecorban.toReview)}</strong></div>
+          <div>Com data lida: <strong style="color:${(diag.ecorban.withDate || 0) > 0 ? '#22c55e' : '#ef4444'}">${fmtN(diag.ecorban.withDate || 0)}</strong> de ${fmtN(diag.ecorban.total)} ${(diag.ecorban.withDate || 0) === 0 ? '<span style="color:#ef4444">⚠ coluna de data não encontrada</span>' : ''}</div>
           <div style="margin-top:6px;color:var(--gray);font-size:11px">Distribuição de status:</div>
           <div style="font-size:11px;margin-bottom:4px">
             Pago: <strong style="color:#22c55e">${diag.statusDist?.pago || 0}</strong> &nbsp;
