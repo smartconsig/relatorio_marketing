@@ -263,6 +263,6 @@ td.muted { color: var(--gray-light); }
 .pipeline-dot.pc-almost { background: #2dd4bf; }
 .pipeline-dot.pc-rej    { background: var(--danger); }
 .pipeline-dot.pc-valid  { background: #60a5fa; }
-.pipeline-count { font-family: var(--font-h); font-size: 30px; font-weight: 800; color: var(--white); line-height: 1; margin-bottom: 5px; }
-.pipeline-value { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--gray-light); margin-bottom: 3px; }
+.pipeline-count { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--gray-light); line-height: 1; margin-bottom: 5px; }
+.pipeline-value { font-family: var(--font-h); font-size: 26px; font-weight: 800; color: var(--white); margin-bottom: 3px; }
 .pipeline-sub   { font-size: 10px; color: var(--gray); }
