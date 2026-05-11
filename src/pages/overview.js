@@ -433,8 +433,8 @@ export function renderOverview(k, fd) {
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
   <div class="hero-grid">
-    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtN(g.approved)}` : null)}
-    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.paidMkt, g.paid), false, null, g.paid ? `meta: ${fmtN(g.paid)}` : null)}
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
+    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
     ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
   </div>`;
 
