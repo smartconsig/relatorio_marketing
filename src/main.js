@@ -3,7 +3,7 @@ import './styles/sidebar.css';
 import './styles/components.css';
 import './styles/theme.css';
 
-import { initNavigation, navigate, applyFilter, clearFilter, renderAll } from './navigation.js';
+import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV } from './pages/overview.js';
@@ -20,6 +20,8 @@ import { toggleAccordion } from './utils/ui.js';
 window.navigate          = navigate;
 window.applyFilter       = applyFilter;
 window.clearFilter       = clearFilter;
+window.quickFilter       = quickFilter;
+window.toggleQuickFilter = toggleQuickFilter;
 window.doSignIn          = doSignIn;
 window.doSignOut         = doSignOut;
 window.toggleTheme       = toggleTheme;

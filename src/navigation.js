@@ -62,6 +62,52 @@ export function clearFilter() {
   if (state.result) { renderAll(); saveState(); }
 }
 
+const _pad = n => String(n).padStart(2, '0');
+const _fmt = d => `${d.getFullYear()}-${_pad(d.getMonth()+1)}-${_pad(d.getDate())}`;
+
+export function quickFilter(preset) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let start, end;
+  switch (preset) {
+    case 'today':
+      start = end = _fmt(today); break;
+    case 'yesterday': {
+      const y = new Date(today); y.setDate(y.getDate() - 1);
+      start = end = _fmt(y); break;
+    }
+    case 'this-month':
+      start = _fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+      end   = _fmt(today); break;
+    case 'last-month': {
+      start = _fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      end   = _fmt(new Date(today.getFullYear(), today.getMonth(), 0)); break;
+    }
+    case '7d': { const s = new Date(today); s.setDate(s.getDate()-6);  start=_fmt(s); end=_fmt(today); break; }
+    case '15d':{ const s = new Date(today); s.setDate(s.getDate()-14); start=_fmt(s); end=_fmt(today); break; }
+    case '30d':{ const s = new Date(today); s.setDate(s.getDate()-29); start=_fmt(s); end=_fmt(today); break; }
+    default: return;
+  }
+  document.getElementById('date-start').value = start;
+  document.getElementById('date-end').value   = end;
+  document.getElementById('qf-menu').classList.remove('open');
+  applyFilter();
+}
+
+export function toggleQuickFilter() {
+  const menu = document.getElementById('qf-menu');
+  const isOpen = menu.classList.toggle('open');
+  if (isOpen) {
+    setTimeout(() => {
+      document.addEventListener('click', function handler(e) {
+        if (!document.getElementById('qf-btn').contains(e.target)) {
+          menu.classList.remove('open');
+          document.removeEventListener('click', handler);
+        }
+      });
+    }, 0);
+  }
+}
+
 export function initNavigation() {
   document.querySelectorAll('.nav-item').forEach(el =>
     el.addEventListener('click', () => navigate(el.dataset.sec))

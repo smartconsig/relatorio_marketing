@@ -27,6 +27,22 @@
 .btn-primary:hover { background: var(--red-hover); }
 .btn-ghost { background: var(--surface2); color: var(--gray-light); border: 1px solid var(--border); }
 .btn-ghost:hover { border-color: var(--red); color: var(--white); }
+
+/* ── QUICK FILTER DROPDOWN ── */
+.qf-wrap { position: relative; }
+.qf-menu {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 200; min-width: 170px; padding: 4px 0; overflow: hidden;
+}
+.qf-menu.open { display: block; }
+.qf-item {
+  padding: 9px 16px; font-size: 13px; font-family: var(--font-b);
+  color: var(--gray-light); cursor: pointer; transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.qf-item:hover { background: var(--surface2); color: var(--white); }
 .content { padding: 28px; flex: 1; }
 
 /* ── SECTIONS ── */
