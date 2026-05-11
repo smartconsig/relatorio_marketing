@@ -59,11 +59,23 @@ export function clearFilter() {
   state.filterDates = { start: null, end: null };
   document.getElementById('date-start').value = '';
   document.getElementById('date-end').value   = '';
+  const btn = document.getElementById('qf-btn');
+  if (btn) btn.textContent = 'Período ▾';
   if (state.result) { renderAll(); saveState(); }
 }
 
 const _pad = n => String(n).padStart(2, '0');
 const _fmt = d => `${d.getFullYear()}-${_pad(d.getMonth()+1)}-${_pad(d.getDate())}`;
+
+const QF_LABELS = {
+  'today':      'Hoje',
+  'yesterday':  'Ontem',
+  'this-month': 'Esse Mês',
+  'last-month': 'Último Mês',
+  '7d':         'Últimos 7 dias',
+  '15d':        'Últimos 15 dias',
+  '30d':        'Últimos 30 dias',
+};
 
 export function quickFilter(preset) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -90,6 +102,8 @@ export function quickFilter(preset) {
   document.getElementById('date-start').value = start;
   document.getElementById('date-end').value   = end;
   document.getElementById('qf-menu').classList.remove('open');
+  const btn = document.getElementById('qf-btn');
+  if (btn) btn.textContent = (QF_LABELS[preset] || 'Período') + ' ▾';
   applyFilter();
 }
 
