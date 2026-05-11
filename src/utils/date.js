@@ -17,7 +17,7 @@ export function parseExcelDate(v) {
 }
 
 export function inRange(date, start, end) {
-  if (!date) return true;
+  if (!date) return !start && !end;
   const d = new Date(date); d.setHours(0, 0, 0, 0);
   if (start) {
     const [sy, sm, sd] = start.split('-').map(Number);
