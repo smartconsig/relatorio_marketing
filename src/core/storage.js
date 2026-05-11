@@ -60,7 +60,7 @@ export function loadSnapshotTimestamp() {
 }
 
 export function clearState() {
-  [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS].forEach(k => localStorage.removeItem(k));
+  [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS, 'sc_last_section'].forEach(k => localStorage.removeItem(k));
   state.result = null;
   state.overrides = {};
   state.filterDates = { start: null, end: null };

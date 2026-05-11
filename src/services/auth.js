@@ -60,11 +60,12 @@ export async function onAuthenticated() {
 
   // 1. Carrega cache local imediatamente — tela aparece na hora
   const hasLocal = loadState();
+  const lastSection = localStorage.getItem('sc_last_section') || 'overview';
   if (hasLocal) {
     setCacheIndicator(true);
     renderAll();
     renderDiag(state.result.diag);
-    navigate('overview');
+    navigate(lastSection);
   }
 
   // 2. Consulta leve ao Supabase: só o updated_at
@@ -115,7 +116,7 @@ export async function onAuthenticated() {
   setCacheIndicator(true);
   renderAll();
   renderDiag(state.result.diag);
-  if (!hasLocal) navigate('overview');
+  if (!hasLocal) navigate(lastSection);
   toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
 }
 
