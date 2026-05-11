@@ -8,6 +8,61 @@ import { renderOverview } from './overview.js';
 import { renderProcv } from './procv.js';
 import { normCPF } from '../utils/cpf.js';
 
+function statusBadge(cat) {
+  if (cat === 'pago')       return 'badge-green';
+  if (cat === 'quase pago') return 'badge-teal';
+  if (cat === 'aprovado')   return 'badge-yellow';
+  if (cat === 'reprovado')  return 'badge-red';
+  return 'badge-gray';
+}
+
+/** Aplica filtro de aba + busca por texto nos clientes confirmados. */
+function applyClientesFilters(confirmed) {
+  let filtered = confirmed;
+  if (state.clientesFilter === 'mkt') filtered = filtered.filter(e => e.isMarketing === true);
+  if (state.clientesFilter === 'no')  filtered = filtered.filter(e => e.isMarketing === false);
+
+  const q = state.clientesSearch.trim().toLowerCase();
+  if (q) filtered = filtered.filter(e =>
+    (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
+  );
+  return filtered;
+}
+
+/** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa). */
+function buildClientesResultsHTML(filtered) {
+  const rowsHtml = filtered.length === 0
+    ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado.</td></tr>`
+    : filtered.map((e, i) => `
+      <tr data-clientes-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}">
+        <td class="muted" style="font-size:11px">${i + 1}</td>
+        <td><strong>${e.cliente || '—'}</strong></td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+        <td class="muted">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
+        <td>
+          <button class="btn-nomkt" onclick="undoFromClientes(${e._idx})" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+        </td>
+      </tr>`).join('');
+
+  return `
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-header-title">${fmtN(filtered.length)} clientes</div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th><th>Ação</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
 export function renderClientes(entries) {
   const confirmed = entries.filter(e => e.reviewReason === 'manual');
 
@@ -23,42 +78,10 @@ export function renderClientes(entries) {
     return;
   }
 
-  let filtered = confirmed;
-  if (state.clientesFilter === 'mkt') filtered = filtered.filter(e => e.isMarketing === true);
-  if (state.clientesFilter === 'no')  filtered = filtered.filter(e => e.isMarketing === false);
-
-  const q = state.clientesSearch.trim().toLowerCase();
-  if (q) filtered = filtered.filter(e =>
-    (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
-  );
-
+  const filtered = applyClientesFilters(confirmed);
   const cMkt = confirmed.filter(e => e.isMarketing === true).length;
   const cNo  = confirmed.filter(e => e.isMarketing === false).length;
   const f    = state.clientesFilter;
-
-  function statusBadge(cat) {
-    if (cat === 'pago')       return 'badge-green';
-    if (cat === 'quase pago') return 'badge-teal';
-    if (cat === 'aprovado')   return 'badge-yellow';
-    if (cat === 'reprovado')  return 'badge-red';
-    return 'badge-gray';
-  }
-
-  const rowsHtml = filtered.length === 0
-    ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado.</td></tr>`
-    : filtered.map((e, i) => `
-      <tr>
-        <td class="muted" style="font-size:11px">${i + 1}</td>
-        <td><strong>${e.cliente || '—'}</strong></td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
-        <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
-        <td class="muted">${e.ecorbanOrigem || '—'}</td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
-        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
-        <td>
-          <button class="btn-nomkt" onclick="undoFromClientes(${e._idx})" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
-        </td>
-      </tr>`).join('');
 
   document.getElementById('clientes-body').innerHTML = `
     <div class="section-title"><span class="bar"></span>Clientes Confirmados</div>
@@ -68,7 +91,7 @@ export function renderClientes(entries) {
 
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:220px;position:relative">
-        <input type="text" placeholder="Buscar por nome ou CPF…"
+        <input type="text" id="clientes-search" placeholder="Buscar por nome ou CPF…"
           value="${state.clientesSearch.replace(/"/g, '&quot;')}"
           oninput="setClientesSearch(this.value)"
           style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--white);
@@ -86,18 +109,8 @@ export function renderClientes(entries) {
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="table-header">
-        <div class="table-header-title">${fmtN(filtered.length)} clientes</div>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr>
-          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th><th>Ação</th>
-        </tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table></div>
-    </div>`;
+    <div id="clientes-results">${buildClientesResultsHTML(filtered)}</div>
+  `;
 }
 
 export function setClientesFilter(v) {
@@ -108,8 +121,22 @@ export function setClientesFilter(v) {
 
 export function setClientesSearch(v) {
   state.clientesSearch = v;
-  const fd = filteredData();
-  if (fd) renderClientes(fd.entries);
+  const resultsEl = document.getElementById('clientes-results');
+  if (!resultsEl) {
+    const fd = filteredData();
+    if (fd) renderClientes(fd.entries);
+    return;
+  }
+  // Filtra as linhas existentes sem reconstruir o DOM (preserva o foco)
+  const q = v.trim().toLowerCase();
+  let visible = 0;
+  resultsEl.querySelectorAll('tr[data-clientes-row]').forEach(row => {
+    const show = !q || row.dataset.name.includes(q) || row.dataset.cpf.includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const titleEl = resultsEl.querySelector('.table-header-title');
+  if (titleEl) titleEl.textContent = `${fmtN(visible)} clientes`;
 }
 
 export async function undoFromClientes(idx) {

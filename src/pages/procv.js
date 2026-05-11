@@ -17,21 +17,26 @@ export function procvPendingCount(entries) {
   ).length;
 }
 
-export function renderProcv(entries) {
-  // Apenas registros que o Ecorban classifica como marketing
+function signalBadge(e) {
+  if (e.reviewReason === 'manual')         return `<span class="badge badge-green">✔ Revisado</span>`;
+  if (e.smartSignal === 'confirmed')        return `<span class="badge badge-green">✅ Smart confirma</span>`;
+  if (e.smartSignal === 'contradiction')    return `<span class="badge badge-red">🔴 Smart contradiz</span>`;
+  if (e.smartSignal === 'not_found')        return `<span class="badge badge-yellow">🔍 Não encontrado</span>`;
+  return `<span class="badge badge-yellow">❓ Dúvida</span>`;
+}
+
+function statusBadge(cat) {
+  if (cat === 'pago')       return 'badge-green';
+  if (cat === 'quase pago') return 'badge-teal';
+  if (cat === 'aprovado')   return 'badge-yellow';
+  if (cat === 'reprovado')  return 'badge-red';
+  return 'badge-gray';
+}
+
+/** Aplica filtro de aba + busca por texto e retorna os dados paginados. */
+function applyProcvFilters(entries) {
   const mktEntries = entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
-
-  // Contadores por categoria
-  const cPending      = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
-  const cDoubt        = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
-  const cContradition = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual').length;
-  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed' && e.reviewReason !== 'manual').length;
-  const cManual       = mktEntries.filter(e => e.reviewReason === 'manual').length;
-  const cAll          = mktEntries.length;
-
-  const f = state.procvFilter;
-
-  // Registro confirmado nesta sessão permanece visível na aba onde foi confirmado
+  const f    = state.procvFilter;
   const here = (e) => e._justConfirmed && e._confirmedInFilter === f;
 
   let filtered = mktEntries;
@@ -42,37 +47,23 @@ export function renderProcv(entries) {
   if (f === 'manual')        filtered = mktEntries.filter(e => e.reviewReason === 'manual');
 
   const q = state.procvSearch.trim().toLowerCase();
-  if (q) {
-    filtered = filtered.filter(e =>
-      (e.cliente || '').toLowerCase().includes(q) ||
-      (e.cpf     || '').includes(q)
-    );
-  }
+  if (q) filtered = filtered.filter(e =>
+    (e.cliente || '').toLowerCase().includes(q) ||
+    (e.cpf     || '').includes(q)
+  );
 
   const total   = filtered.length;
   const capped  = filtered.slice(0, 500);
   const hasMore = total > 500;
+  return { mktEntries, total, capped, hasMore };
+}
 
-  function signalBadge(e) {
-    if (e.reviewReason === 'manual') return `<span class="badge badge-green">✔ Revisado</span>`;
-    if (e.smartSignal === 'confirmed')    return `<span class="badge badge-green">✅ Smart confirma</span>`;
-    if (e.smartSignal === 'contradiction') return `<span class="badge badge-red">🔴 Smart contradiz</span>`;
-    if (e.smartSignal === 'not_found')    return `<span class="badge badge-yellow">🔍 Não encontrado</span>`;
-    return `<span class="badge badge-yellow">❓ Dúvida</span>`;
-  }
-
-  function statusBadge(cat) {
-    if (cat === 'pago')       return 'badge-green';
-    if (cat === 'quase pago') return 'badge-teal';
-    if (cat === 'aprovado')   return 'badge-yellow';
-    if (cat === 'reprovado')  return 'badge-red';
-    return 'badge-gray';
-  }
-
+/** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa). */
+function buildProcvResultsHTML(total, hasMore, capped) {
   const rowsHtml = capped.length === 0
     ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
     : capped.map((e, i) => `
-      <tr>
+      <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}">
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
@@ -95,6 +86,35 @@ export function renderProcv(entries) {
         </td>
       </tr>`).join('');
 
+  return `
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-header-title">${fmtN(total)} clientes encontrados${hasMore ? ' — exibindo os primeiros 500' : ''}</div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
+          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th><th>Audiência Smart</th>
+          <th>Sinal Smart</th><th>Confirmar</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>
+    ${hasMore ? `<div style="text-align:center;padding:12px;font-size:12px;color:var(--gray)">Refine a busca acima para encontrar os registros restantes.</div>` : ''}
+  `;
+}
+
+export function renderProcv(entries) {
+  const { mktEntries, total, capped, hasMore } = applyProcvFilters(entries);
+
+  const cPending        = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
+  const cDoubt          = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
+  const cContradition   = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual').length;
+  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed' && e.reviewReason !== 'manual').length;
+  const cManual         = mktEntries.filter(e => e.reviewReason === 'manual').length;
+  const cAll            = mktEntries.length;
+  const f               = state.procvFilter;
+
   document.getElementById('procv-body').innerHTML = `
     <div class="section-title"><span class="bar"></span>PROCV — Revisão de Clientes de Marketing</div>
     <div class="info-box" style="margin-bottom:16px">
@@ -116,30 +136,17 @@ export function renderProcv(entries) {
         </svg>
       </div>
       <div class="table-filters">
-        <button class="filter-btn ${f === 'pending'      ? 'active' : ''}" onclick="setProcvFilter('pending')"      style="${f === 'pending'      ? '' : 'color:#f59e0b'}">⏳ Pendentes (${cPending})</button>
-        <button class="filter-btn ${f === 'doubt'        ? 'active' : ''}" onclick="setProcvFilter('doubt')"        style="${f === 'doubt'        ? '' : 'color:#f59e0b'}">❓ Dúvida (${cDoubt})</button>
+        <button class="filter-btn ${f === 'pending'      ? 'active' : ''}" onclick="setProcvFilter('pending')"       style="${f === 'pending'      ? '' : 'color:#f59e0b'}">⏳ Pendentes (${cPending})</button>
+        <button class="filter-btn ${f === 'doubt'        ? 'active' : ''}" onclick="setProcvFilter('doubt')"         style="${f === 'doubt'        ? '' : 'color:#f59e0b'}">❓ Dúvida (${cDoubt})</button>
         <button class="filter-btn ${f === 'contradiction'? 'active' : ''}" onclick="setProcvFilter('contradiction')" style="${f === 'contradiction'? '' : 'color:#ef4444'}">🔴 Contradição (${cContradition})</button>
-        <button class="filter-btn ${f === 'smart'        ? 'active' : ''}" onclick="setProcvFilter('smart')"        style="${f === 'smart'        ? '' : 'color:#22c55e'}">✅ Smart confirma (${cConfirmedSmart})</button>
-        <button class="filter-btn ${f === 'manual'       ? 'active' : ''}" onclick="setProcvFilter('manual')"       style="${f === 'manual'       ? '' : 'color:#22c55e'}">✔ Revisados (${cManual})</button>
+        <button class="filter-btn ${f === 'smart'        ? 'active' : ''}" onclick="setProcvFilter('smart')"         style="${f === 'smart'        ? '' : 'color:#22c55e'}">✅ Smart confirma (${cConfirmedSmart})</button>
+        <button class="filter-btn ${f === 'manual'       ? 'active' : ''}" onclick="setProcvFilter('manual')"        style="${f === 'manual'       ? '' : 'color:#22c55e'}">✔ Revisados (${cManual})</button>
         <button class="filter-btn ${f === 'all'          ? 'active' : ''}" onclick="setProcvFilter('all')">Todos (${cAll})</button>
       </div>
       <button class="btn-sm btn-ghost" onclick="exportProcvCSV()">⬇ Exportar CSV</button>
     </div>
 
-    <div class="table-card">
-      <div class="table-header">
-        <div class="table-header-title">${fmtN(total)} clientes encontrados${hasMore ? ' — exibindo os primeiros 500' : ''}</div>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr>
-          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th><th>Audiência Smart</th>
-          <th>Sinal Smart</th><th>Confirmar</th>
-        </tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table></div>
-    </div>
-    ${hasMore ? `<div style="text-align:center;padding:12px;font-size:12px;color:var(--gray)">Refine a busca acima para encontrar os registros restantes.</div>` : ''}
+    <div id="procv-results">${buildProcvResultsHTML(total, hasMore, capped)}</div>
   `;
 }
 
@@ -151,8 +158,23 @@ export function setProcvFilter(v) {
 
 export function setProcvSearch(v) {
   state.procvSearch = v;
-  const fd = filteredData();
-  if (fd) renderProcv(fd.entries);
+  const resultsEl = document.getElementById('procv-results');
+  if (!resultsEl) {
+    // tabela ainda não foi renderizada — faz render completo
+    const fd = filteredData();
+    if (fd) renderProcv(fd.entries);
+    return;
+  }
+  // Filtra as linhas existentes sem reconstruir o DOM (preserva o foco)
+  const q = v.trim().toLowerCase();
+  let visible = 0;
+  resultsEl.querySelectorAll('tr[data-procv-row]').forEach(row => {
+    const show = !q || row.dataset.name.includes(q) || row.dataset.cpf.includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const titleEl = resultsEl.querySelector('.table-header-title');
+  if (titleEl) titleEl.textContent = `${fmtN(visible)} clientes encontrados`;
 }
 
 export function classifyFromProcv(idx, isMkt) {
@@ -190,11 +212,11 @@ export function exportProcvCSV() {
   const fd = filteredData();
   if (!fd) return;
   let filtered = fd.entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
-  if (state.procvFilter === 'pending')      filtered = filtered.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
-  if (state.procvFilter === 'doubt')        filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
+  if (state.procvFilter === 'pending')       filtered = filtered.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
+  if (state.procvFilter === 'doubt')         filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
   if (state.procvFilter === 'contradiction') filtered = filtered.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
-  if (state.procvFilter === 'smart')        filtered = filtered.filter(e => e.smartSignal === 'confirmed');
-  if (state.procvFilter === 'manual')       filtered = filtered.filter(e => e.reviewReason === 'manual');
+  if (state.procvFilter === 'smart')         filtered = filtered.filter(e => e.smartSignal === 'confirmed');
+  if (state.procvFilter === 'manual')        filtered = filtered.filter(e => e.reviewReason === 'manual');
   const q = state.procvSearch.trim().toLowerCase();
   if (q) filtered = filtered.filter(e =>
     (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
