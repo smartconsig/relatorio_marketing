@@ -26,8 +26,8 @@ export const STATUS_APPROVED = new Set([
   'boleto master', 'boleto reduzido', 'fatura master',
   'desautorização', 'desautorizacao',
   'analise banco', 'análise banco', 'auditoria banco',
-  'consulta', 'anexar link', 'assinar link',
-  'aguardando banco',
+  'consulta', 'anexar link', 'assinar link', 'assinar termo',
+  'aguardando banco', 'resolvido',
 ]);
 
 export const STATUS_REJECTED = new Set([
