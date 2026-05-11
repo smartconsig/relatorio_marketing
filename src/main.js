@@ -7,6 +7,7 @@ import { initNavigation, navigate, applyFilter, clearFilter, renderAll } from '.
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV } from './pages/overview.js';
+import { confirmDivergence, rejectDivergence } from './pages/divergences.js';
 import { classifyFromProcv, setProcvFilter, setProcvSearch, exportProcvCSV } from './pages/procv.js';
 import { undoFromClientes, setClientesFilter, setClientesSearch } from './pages/clientes.js';
 import { setRankView } from './pages/ranking.js';
@@ -29,6 +30,8 @@ window.setProcvSearch    = setProcvSearch;
 window.exportProcvCSV    = exportProcvCSV;
 window.exportOverrides   = exportOverrides;
 window.exportNoDatesCSV  = exportNoDatesCSV;
+window.confirmDivergence = confirmDivergence;
+window.rejectDivergence  = rejectDivergence;
 window.undoFromClientes  = undoFromClientes;
 window.setClientesFilter = setClientesFilter;
 window.setClientesSearch = setClientesSearch;

@@ -336,6 +336,67 @@ export function exportNoDatesCSV() {
   toast(`${fmtN(noDate.length)} entradas exportadas`);
 }
 
+function divStatusBadge(cat) {
+  if (cat === 'pago')       return 'badge-green';
+  if (cat === 'quase pago') return 'badge-teal';
+  if (cat === 'aprovado')   return 'badge-yellow';
+  if (cat === 'reprovado')  return 'badge-red';
+  return 'badge-gray';
+}
+
+function renderDivergencias(entries) {
+  const divs = entries.filter(e =>
+    e.reviewReason === 'manual' &&
+    e.isMarketing === true &&
+    (e.ecorbanOrigem || '').toUpperCase() !== 'MARKETING' &&
+    !e.divergenceConfirmed
+  );
+  if (!divs.length) return '';
+
+  const rows = divs.map((e, i) => `
+    <tr>
+      <td class="muted" style="font-size:11px">${i + 1}</td>
+      <td><strong>${e.cliente || '—'}</strong></td>
+      <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+      <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+      <td><span class="badge ${divStatusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+      <td class="muted">${fmtBRL(e.valor)}</td>
+      <td><span style="color:#f59e0b;font-weight:600">${e.ecorbanOrigem || '—'}</span></td>
+      <td class="muted">${e.loja || '—'}</td>
+      <td class="muted">${toTitle(e.vendedor || '—')}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
+          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  return `
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:8px;padding:14px 18px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:18px">⚠️</span>
+        <div>
+          <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b">
+            ${fmtN(divs.length)} ENTRADAS CONFIRMADAS COMO MARKETING MAS COM ORIGEM DIFERENTE NO ECORBAN
+          </div>
+          <div style="font-size:12px;color:var(--gray-light);margin-top:2px">
+            Revise cada uma — confirme se é realmente marketing ou remova para corrigir os números.
+          </div>
+        </div>
+      </div>
+      <div class="table-card" style="margin:0">
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>#</th><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Status</th>
+            <th>Valor</th><th>Origem Ecorban</th><th>Loja</th><th>Vendedor</th><th>Ação</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+}
+
 // ── main render ────────────────────────────────────────────────────────────
 export function renderOverview(k, fd) {
   const g = state.goals;
@@ -363,6 +424,9 @@ export function renderOverview(k, fd) {
       </div>
     </div>`;
   }
+
+  // ── 0b. DIVERGÊNCIAS ECORBAN ─────────────────────────────────────────────
+  h += renderDivergencias(fd.entries);
 
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
