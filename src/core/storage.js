@@ -2,9 +2,10 @@ import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { fmtN } from '../utils/currency.js';
 
-const STORE_RESULT = 'sc_result_v1';
-const STORE_FILTER = 'sc_filter_v1';
-const STORE_OVR    = 'sc_overrides_v1';
+const STORE_RESULT  = 'sc_result_v1';
+const STORE_FILTER  = 'sc_filter_v1';
+const STORE_OVR     = 'sc_overrides_v1';
+const STORE_SNAP_TS = 'sc_snap_ts_v1';
 
 export function saveState() {
   if (!state.result) return;
@@ -50,8 +51,16 @@ export function loadState() {
   }
 }
 
+export function saveSnapshotTimestamp(ts) {
+  try { if (ts) localStorage.setItem(STORE_SNAP_TS, ts); } catch {}
+}
+
+export function loadSnapshotTimestamp() {
+  return localStorage.getItem(STORE_SNAP_TS) || null;
+}
+
 export function clearState() {
-  [STORE_RESULT, STORE_FILTER, STORE_OVR].forEach(k => localStorage.removeItem(k));
+  [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS].forEach(k => localStorage.removeItem(k));
   state.result = null;
   state.overrides = {};
   state.filterDates = { start: null, end: null };

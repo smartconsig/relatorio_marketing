@@ -3,8 +3,8 @@ import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { loadSupabaseGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
-import { loadSnapshotFromSupabase, saveSnapshotToSupabase } from './snapshot.js';
-import { saveState, loadState, setCacheIndicator } from '../core/storage.js';
+import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
+import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
 import { renderAll } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
@@ -47,6 +47,7 @@ export function toggleTheme() {
 }
 
 export async function onAuthenticated() {
+  // Metas e classificações (queries leves)
   const sbGoals = await loadSupabaseGoals();
   if (sbGoals) {
     state.goals = sbGoals;
@@ -56,34 +57,66 @@ export async function onAuthenticated() {
     loadGoalsFromStorage();
   }
   await syncClassificationsFromSupabase();
-  toast('Carregando dados do servidor…');
-  const snap = await loadSnapshotFromSupabase();
-  if (snap) {
-    state.result = snap;
-    const synced = await syncClassificationsFromSupabase();
-    try {
-      const savedFilter = localStorage.getItem('sc_filter_v1');
-      if (savedFilter) {
-        state.filterDates = JSON.parse(savedFilter);
-        if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-        if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
-      }
-    } catch {}
-    if (synced > 0) await saveSnapshotToSupabase();
-    saveState();
+
+  // 1. Carrega cache local imediatamente — tela aparece na hora
+  const hasLocal = loadState();
+  if (hasLocal) {
     setCacheIndicator(true);
     renderAll();
     renderDiag(state.result.diag);
     navigate('overview');
-    toast('Dados carregados do servidor ☁️');
-  } else if (loadState()) {
-    await syncClassificationsFromSupabase();
-    setCacheIndicator(true);
-    renderAll();
-    renderDiag(state.result.diag);
-    navigate('overview');
-    toast('Dados restaurados do cache local ⚡');
   }
+
+  // 2. Consulta leve ao Supabase: só o updated_at
+  const serverTs = await checkSnapshotTimestamp();
+  const localTs  = loadSnapshotTimestamp();
+
+  if (!serverTs) {
+    // Supabase não tem dados — usa só o local
+    if (!hasLocal) { /* sem dados em lugar nenhum, fica na tela de importar */ }
+    else toast('Dados carregados ⚡');
+    return;
+  }
+
+  if (serverTs === localTs) {
+    // Cache local está em dia — não precisa baixar nada
+    toast('Dados carregados ⚡');
+    return;
+  }
+
+  // 3. Servidor tem dados mais novos — baixa o snapshot completo
+  if (hasLocal) toast('Sincronizando novos dados…');
+  else toast('Carregando dados do servidor…');
+
+  const result = await loadSnapshotFromSupabase();
+  if (!result) return;
+
+  const { snapshot, updatedAt } = result;
+  state.result = snapshot;
+
+  try {
+    const savedFilter = localStorage.getItem('sc_filter_v1');
+    if (savedFilter) {
+      state.filterDates = JSON.parse(savedFilter);
+      if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
+      if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+    }
+  } catch {}
+
+  const synced = await syncClassificationsFromSupabase();
+  if (synced > 0) {
+    const newTs = await saveSnapshotToSupabase();
+    saveSnapshotTimestamp(newTs || updatedAt);
+  } else {
+    saveSnapshotTimestamp(updatedAt);
+  }
+
+  saveState();
+  setCacheIndicator(true);
+  renderAll();
+  renderDiag(state.result.diag);
+  if (!hasLocal) navigate('overview');
+  toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
 }
 
 function loadGoalsFromStorage() {

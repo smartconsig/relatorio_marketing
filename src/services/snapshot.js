@@ -9,8 +9,9 @@ export function scheduleSaveSnapshot() {
 }
 
 export async function saveSnapshotToSupabase() {
-  if (!state.currentUser || !state.result) return;
+  if (!state.currentUser || !state.result) return null;
   try {
+    const now     = new Date().toISOString();
     const payload = JSON.stringify({
       entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
       facebook:             state.result.facebook,
@@ -22,20 +23,36 @@ export async function saveSnapshotToSupabase() {
     const { data } = await sb.from('snapshots').select('id').limit(1).maybeSingle();
     if (data?.id) {
       await sb.from('snapshots').update({
-        data: payload,
+        data:       payload,
         updated_by: state.currentUser.email,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       }).eq('id', data.id);
     } else {
       await sb.from('snapshots').insert({
-        data: payload,
+        data:       payload,
         updated_by: state.currentUser.email,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       });
     }
-  } catch (e) { console.warn('saveSnapshot:', e); }
+    return now;
+  } catch (e) { console.warn('saveSnapshot:', e); return null; }
 }
 
+/** Consulta leve: retorna apenas o updated_at do snapshot mais recente. */
+export async function checkSnapshotTimestamp() {
+  try {
+    const { data, error } = await sb
+      .from('snapshots')
+      .select('updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.updated_at;
+  } catch (e) { console.warn('checkSnapshotTimestamp:', e); return null; }
+}
+
+/** Baixa o snapshot completo. Retorna { snapshot, updatedAt } ou null. */
 export async function loadSnapshotFromSupabase() {
   try {
     const { data, error } = await sb
@@ -45,6 +62,6 @@ export async function loadSnapshotFromSupabase() {
       .limit(1)
       .maybeSingle();
     if (error || !data?.data) return null;
-    return JSON.parse(data.data);
+    return { snapshot: JSON.parse(data.data), updatedAt: data.updated_at };
   } catch (e) { console.warn('loadSnapshot:', e); return null; }
 }
