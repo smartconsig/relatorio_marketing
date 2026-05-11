@@ -71,16 +71,8 @@ export function buildResult() {
     const valor         = parseBRL(getCol(row, 'Multiplicador', 'Valor Multiplicador', 'Valor'));
     const saleDate      = parseExcelDate(
       getCol(row,
-        'Data', 'data', 'Data Cadastro', 'Data de Cadastro',
-        'Data Início', 'Data Inicio', 'Data Início Contrato', 'Data Inicio Contrato',
-        'Data Proposta', 'Data de Proposta', 'Data da Proposta',
-        'Data Contrato', 'Data do Contrato',
-        'Data Operação', 'Data Operacao', 'Data de Operação', 'Data de Operacao',
-        'Data Digitação', 'Data Digitacao', 'Data de Digitação', 'Data de Digitacao',
-        'Data Criação', 'Data Criacao', 'Data de Criação', 'Data de Criacao',
-        'Data Venda', 'Data da Venda',
-        'Data Aprovação', 'Data Aprovacao',
-        'DT_CADASTRO', 'DT_INICIO', 'DT_PROPOSTA',
+        'Data Cadastro', 'Data de Cadastro', 'data cadastro', 'data de cadastro',
+        'DT_CADASTRO', 'dt_cadastro',
       )
     );
     const ecorbanOrigem = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();

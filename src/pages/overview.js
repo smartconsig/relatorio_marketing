@@ -3,6 +3,7 @@ import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
 import { getCol, normStr } from '../utils/string.js';
+import { toast } from '../utils/ui.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -314,10 +315,54 @@ function renderChart(fd) {
   });
 }
 
+export function exportNoDatesCSV() {
+  if (!state.result) return;
+  const noDate = state.result.entries.filter(e => !e.saleDate);
+  if (!noDate.length) { toast('Nenhuma entrada sem data'); return; }
+  const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Valor', 'Origem Ecorban', 'Loja', 'Vendedor', 'É Marketing'];
+  const rows   = noDate.map(e => [
+    e.cliente || '', e.cpf || '', e.rawStatus || '', e.statusCat || '',
+    e.valor || 0, e.ecorbanOrigem || '', e.loja || '', e.vendedor || '',
+    e.isMarketing ? 'Sim' : 'Não',
+  ]);
+  const csv  = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `entradas_sem_data_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${fmtN(noDate.length)} entradas exportadas`);
+}
+
 // ── main render ────────────────────────────────────────────────────────────
 export function renderOverview(k, fd) {
   const g = state.goals;
   let h = '';
+
+  // ── 0. AVISO ENTRADAS SEM DATA ───────────────────────────────────────────
+  const semData     = (state.result?.entries || []).filter(e => !e.saleDate);
+  const semDataMkt  = semData.filter(e => e.isMarketing);
+  if (semData.length > 0) {
+    h += `
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px">ENTRADAS SEM DATA DE CADASTRO</div>
+        <div style="font-size:13px;color:var(--white)">
+          <strong>${fmtN(semData.length)}</strong> entradas não têm Data de Cadastro reconhecida —
+          estão sendo incluídas em <strong>qualquer filtro de período</strong> e podem estar inflando os números.
+          ${semDataMkt.length > 0 ? `<span style="color:#fca5a5"> (${fmtN(semDataMkt.length)} são de marketing)</span>` : ''}
+        </div>
+        <div style="margin-top:10px">
+          <button onclick="exportNoDatesCSV()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
+            ⬇ Exportar lista completa (CSV)
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
 
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
