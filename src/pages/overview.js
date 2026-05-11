@@ -12,15 +12,17 @@ function toTitle(s) {
   return String(s || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
 }
 
-export function kpiCard(label, val, meta, p, inv) {
+export function kpiCard(label, val, meta, p, inv, goalLabel) {
   let cls = 'accent';
   if (p !== null && state.goals) {
     cls = inv
-      ? (p <= 90 ? 'good' : p <= 110 ? 'warn' : 'bad')
-      : (p >= 100 ? 'good' : p >= 70 ? 'warn' : 'bad');
+      ? (p <= 100 ? 'good' : p <= 120 ? 'warn' : 'bad')
+      : (p >= 100 ? 'good' : p >= 70  ? 'warn' : 'bad');
   }
   const barW    = p !== null ? Math.min(Math.max(p, 0), 100).toFixed(1) : 0;
-  const metaStr = p !== null ? `${fmtPct(p)} da meta` : (meta || '—');
+  const metaStr = p !== null
+    ? (goalLabel ? `${goalLabel} · ` : '') + `${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}`
+    : (meta || '—');
   const vStr    = String(val);
   const vStyle  = vStr.length > 14 ? ' style="font-size:15px"' : vStr.length > 11 ? ' style="font-size:20px"' : '';
   return `
@@ -42,10 +44,10 @@ export function pipelineCard(label, cls, count, value, sub) {
     </div>`;
 }
 
-function heroCard(label, count, value, sub, accentColor, p, inv, valueColor) {
+function heroCard(label, count, value, sub, accentColor, p, inv, valueColor, goalLabel) {
   const cls = p === null ? '' : inv
-    ? (p <= 90 ? 'good' : p <= 110 ? 'warn' : 'bad')
-    : (p >= 100 ? 'good' : p >= 70 ? 'warn' : 'bad');
+    ? (p <= 100 ? 'good' : p <= 120 ? 'warn' : 'bad')
+    : (p >= 100 ? 'good' : p >= 70  ? 'warn' : 'bad');
   const barColor = cls === 'good' ? 'var(--green)' : cls === 'warn' ? 'var(--yellow)' : cls === 'bad' ? 'var(--danger)' : accentColor;
   return `
     <div class="hero-card" style="border-top:3px solid ${accentColor}">
@@ -55,7 +57,7 @@ function heroCard(label, count, value, sub, accentColor, p, inv, valueColor) {
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
-        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${fmtPct(p)} da meta</div>` : ''}
+        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
     </div>`;
 }
 
@@ -431,9 +433,9 @@ export function renderOverview(k, fd) {
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
   <div class="hero-grid">
-    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false, '#60a5fa')}
-    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.paidMkt, g.paid), false)}
-    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), false, 'var(--white)')}
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.countValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtN(g.approved)}` : null)}
+    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.paidMkt, g.paid), false, null, g.paid ? `meta: ${fmtN(g.paid)}` : null)}
+    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
   </div>`;
 
   // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
@@ -448,11 +450,11 @@ export function renderOverview(k, fd) {
   h += `<div class="section-title"><span class="bar"></span>Indicadores de Performance</div>
   <div class="kpi-grid">
     ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
-    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true)}
-    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false)}
+    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true, g.cac ? `máx. ${fmtBRL(g.cac)}` : null)}
+    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false, g.roas ? `mín. ${g.roas.toFixed(2)}x` : null)}
     ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
-    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true)}
-    ${kpiCard('Leads Gerados', fmtN(k.leads), null, pct(k.leads, g.leads), false)}
+    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true, g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null)}
+    ${kpiCard('Leads Gerados', fmtN(k.leads), 'leads recebidos no período', null, false)}
     ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), 'Reportado pelo Facebook', null, false)}
   </div>`;
 
