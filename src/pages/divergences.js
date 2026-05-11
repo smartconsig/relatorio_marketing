@@ -14,6 +14,7 @@ export function confirmDivergence(idx) {
   const entry = state.result.entries[idx];
   if (!entry) return;
   entry.divergenceConfirmed = true;
+  if (entry.cpf) state.confirmedDivergences[normCPF(entry.cpf)] = true;
   saveState();
   scheduleSaveSnapshot();
   toast('✅ Confirmado como Marketing');
@@ -33,7 +34,9 @@ export async function rejectDivergence(idx) {
   entry.reviewReason        = null;
   entry.divergenceConfirmed = false;
   if (entry.cpf) {
-    delete state.overrides[normCPF(entry.cpf)];
+    const key = normCPF(entry.cpf);
+    delete state.overrides[key];
+    delete state.confirmedDivergences[key];
     localStorage.setItem('sc_overrides_v1', JSON.stringify(state.overrides));
   }
   saveState();

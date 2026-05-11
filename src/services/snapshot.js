@@ -19,6 +19,7 @@ export async function saveSnapshotToSupabase() {
       diag:                 state.result.diag,
       smartLeadsByOperador: state.result.smartLeadsByOperador || {},
       smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+      confirmedDivergences: state.confirmedDivergences,
     });
     const { data } = await sb.from('snapshots').select('id').limit(1).maybeSingle();
     if (data?.id) {

@@ -17,6 +17,7 @@ export function saveState() {
       diag:                 state.result.diag,
       smartLeadsByOperador: state.result.smartLeadsByOperador || {},
       smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+      confirmedDivergences: state.confirmedDivergences,
     }));
     localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates));
     localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides));
@@ -36,6 +37,7 @@ export function loadState() {
       saleDate: e.saleDate ? new Date(e.saleDate) : null,
     }));
     state.result = parsed;
+    state.confirmedDivergences = parsed.confirmedDivergences || {};
     const ov = localStorage.getItem(STORE_OVR);
     if (ov) state.overrides = JSON.parse(ov);
     const flt = localStorage.getItem(STORE_FILTER);
@@ -63,6 +65,7 @@ export function clearState() {
   [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS, 'sc_last_section'].forEach(k => localStorage.removeItem(k));
   state.result = null;
   state.overrides = {};
+  state.confirmedDivergences = {};
   state.filterDates = { start: null, end: null };
   document.getElementById('date-start').value = '';
   document.getElementById('date-end').value   = '';

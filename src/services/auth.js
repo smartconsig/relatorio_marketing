@@ -94,6 +94,7 @@ export async function onAuthenticated() {
 
   const { snapshot, updatedAt } = result;
   state.result = snapshot;
+  state.confirmedDivergences = snapshot.confirmedDivergences || {};
 
   try {
     const savedFilter = localStorage.getItem('sc_filter_v1');

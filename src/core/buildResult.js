@@ -153,6 +153,10 @@ export function buildResult() {
       }
     }
 
+    if (cpf && state.confirmedDivergences[normCPF(cpf)]) {
+      entry.divergenceConfirmed = true;
+    }
+
     entries.push(entry);
   }
 

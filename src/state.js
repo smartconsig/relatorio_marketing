@@ -1,6 +1,7 @@
 export const state = {
   raw: { smart: null, ecorban: null, fb03: null, fb06: null, overrides: null },
   overrides: {},
+  confirmedDivergences: {},
   result: null,
   rankView: 'seller',
   chart: null,
