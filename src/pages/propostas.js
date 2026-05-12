@@ -77,7 +77,7 @@ function propostaCard(e) {
           <span class="proposta-cpf">${fmtCPF(e.cpf)}</span>
         </div>
         <div class="proposta-header-right">
-          <span class="badge ${sb.cls}">${sb.label}</span>
+          <span class="badge ${sb.cls}">${e.rawStatus || sb.label}</span>
           <span class="proposta-valor">${e.valor ? fmtBRL(e.valor) : '—'}</span>
         </div>
       </div>
