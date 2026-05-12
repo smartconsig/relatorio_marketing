@@ -72,6 +72,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
       Metas
     </div>
+    <div class="nav-item" data-sec="bsc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/></svg>
+      Ranking BSC
+    </div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-chip" id="user-email"></div>
@@ -256,8 +260,20 @@
       </div>
     </div>
 
+    <!-- ── RANKING BSC ── -->
+    <div class="section" id="sec-bsc">
+      <div id="bsc-body">
+        <div class="empty"><div class="empty-icon">🏆</div><div class="empty-title">Nenhum ranking importado</div><div class="empty-desc">Importe a planilha BSC para visualizar o ranking.</div></div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </main>
+
+<!-- ══ TV MODE OVERLAY ══ -->
+<div id="bsc-tv-overlay" style="display:none">
+  <div id="bsc-tv-body"></div>
+</div>
 
 <div class="toast" id="toast"></div>
 

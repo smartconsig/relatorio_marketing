@@ -2,6 +2,7 @@ import './styles/base.css';
 import './styles/sidebar.css';
 import './styles/components.css';
 import './styles/theme.css';
+import './styles/bsc.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
@@ -12,6 +13,7 @@ import { classifyFromProcv, setProcvFilter, setProcvSearch, exportProcvCSV } fro
 import { undoFromClientes, setClientesFilter, setClientesSearch } from './pages/clientes.js';
 import { setRankView } from './pages/ranking.js';
 import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput } from './pages/goals-page.js';
+import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
@@ -46,6 +48,11 @@ window.loadFile          = loadFile;
 window.processAll        = processAll;
 window.clearState        = clearState;
 window.toggleAccordion   = toggleAccordion;
+window.renderBSC         = renderBSC;
+window.importBSCFile     = importBSCFile;
+window.onBSCFileChange   = onBSCFileChange;
+window.enterTVMode       = enterTVMode;
+window.exitTVMode        = exitTVMode;
 
 initNavigation();
 initAuth();

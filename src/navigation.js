@@ -15,6 +15,7 @@ const TITLES = {
   procv:    'PROCV — Fila de Confirmação',
   clientes: 'Clientes Confirmados',
   goals:    'Configurar Metas',
+  bsc:      'Ranking BSC',
 };
 
 export function navigate(sec) {

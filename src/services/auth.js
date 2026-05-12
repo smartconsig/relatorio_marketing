@@ -9,6 +9,7 @@ import { renderAll } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
+import { initBSC } from '../pages/bsc-page.js';
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -47,6 +48,9 @@ export function toggleTheme() {
 }
 
 export async function onAuthenticated() {
+  // BSC — carrega em paralelo, não bloqueia o resto
+  initBSC();
+
   // Metas e classificações (queries leves)
   const sbGoals = await loadSupabaseGoals();
   if (sbGoals) {
