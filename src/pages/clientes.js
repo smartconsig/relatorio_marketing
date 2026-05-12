@@ -67,8 +67,10 @@ export function renderClientes(entries) {
   const confirmed = entries.filter(e => e.reviewReason === 'manual');
 
   const badge = document.getElementById('clientes-badge');
-  badge.textContent = confirmed.length;
-  badge.classList.toggle('hidden', confirmed.length === 0);
+  if (badge) {
+    badge.textContent = confirmed.length;
+    badge.classList.toggle('hidden', confirmed.length === 0);
+  }
 
   if (confirmed.length === 0) {
     document.getElementById('clientes-body').innerHTML = `
