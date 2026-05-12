@@ -7,6 +7,8 @@ import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderProcv } from './procv.js';
 import { normCPF } from '../utils/cpf.js';
+import { scheduleSaveSnapshot } from '../services/snapshot.js';
+import { saveSnapshotTimestamp } from '../core/storage.js';
 
 function statusBadge(cat) {
   if (cat === 'pago')       return 'badge-green';
@@ -158,7 +160,10 @@ export async function undoFromClientes(idx) {
   toast('↩ Classificação desfeita — cliente voltou para o PROCV');
 
   if (state.currentUser && entry.cpf) {
+    // Remove da tabela de classificações
     await sb.from('classifications').delete().eq('cpf', normCPF(entry.cpf));
+    // Atualiza o snapshot no Supabase para o F5 não reverter a ação
+    scheduleSaveSnapshot();
   }
 
   const fd = filteredData();
