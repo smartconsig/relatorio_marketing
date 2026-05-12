@@ -13,7 +13,7 @@ import { classifyFromProcv, setProcvFilter, setProcvSearch, exportProcvCSV } fro
 import { undoFromClientes, setClientesFilter, setClientesSearch } from './pages/clientes.js';
 import { setRankView } from './pages/ranking.js';
 import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput } from './pages/goals-page.js';
-import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC } from './pages/bsc-page.js';
+import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
@@ -53,6 +53,7 @@ window.importBSCFile     = importBSCFile;
 window.onBSCFileChange   = onBSCFileChange;
 window.enterTVMode       = enterTVMode;
 window.exitTVMode        = exitTVMode;
+window.saveTVDurations   = saveTVDurations;
 
 initNavigation();
 initAuth();

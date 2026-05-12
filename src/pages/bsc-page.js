@@ -133,6 +133,24 @@ export async function initBSC() {
   }
 }
 
+// ── TV durations (saved in localStorage) ──────────────────────────────────
+
+function loadTVDurations() {
+  try {
+    const s = localStorage.getItem('sc_tv_durations');
+    if (s) { const d = JSON.parse(s); TV_DURATIONS[0] = d[0]; TV_DURATIONS[1] = d[1]; TV_DURATIONS[2] = d[2]; }
+  } catch {}
+}
+
+export function saveTVDurations() {
+  const get = id => Math.max(5, parseInt(document.getElementById(id)?.value) || 15) * 1000;
+  TV_DURATIONS[0] = get('tv-dur-0');
+  TV_DURATIONS[1] = get('tv-dur-1');
+  TV_DURATIONS[2] = get('tv-dur-2');
+  try { localStorage.setItem('sc_tv_durations', JSON.stringify(TV_DURATIONS)); } catch {}
+  toast('✅ Durações salvas');
+}
+
 // ── Normal mode render ─────────────────────────────────────────────────────
 
 function importBar() {
@@ -140,13 +158,29 @@ function importBar() {
   const updatedStr = bsc?.importedAt
     ? `Atualizado em ${new Date(bsc.importedAt).toLocaleString('pt-BR')}${bsc.importedBy ? ' por ' + bsc.importedBy : ''}`
     : 'Nenhum dado importado';
+  const d = TV_DURATIONS.map(ms => ms / 1000);
   return `
     <div class="bsc-import-bar">
       <div>
         <div class="bsc-import-period">${bsc?.monthYear ? '📅 ' + bsc.monthYear : 'Ranking BSC'}</div>
         <div class="bsc-import-info">${updatedStr}</div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)">
+          <span style="white-space:nowrap">⏱ Tela 1</span>
+          <input type="number" id="tv-dur-0" value="${d[0]}" min="5" max="120"
+            style="width:52px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-size:12px;text-align:center">
+          <span>s</span>
+          <span style="white-space:nowrap;margin-left:4px">Tela 2</span>
+          <input type="number" id="tv-dur-1" value="${d[1]}" min="5" max="120"
+            style="width:52px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-size:12px;text-align:center">
+          <span>s</span>
+          <span style="white-space:nowrap;margin-left:4px">Tela 3</span>
+          <input type="number" id="tv-dur-2" value="${d[2]}" min="5" max="120"
+            style="width:52px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--white);font-size:12px;text-align:center">
+          <span>s</span>
+          <button class="btn-sm btn-ghost" onclick="saveTVDurations()" style="margin-left:4px">Salvar</button>
+        </div>
         <button class="btn-sm btn-ghost" onclick="importBSCFile()">📥 Importar BSC</button>
         <input type="file" id="bsc-file-input" accept=".xlsx,.xls" style="display:none" onchange="onBSCFileChange(event)">
         ${bsc ? `<button class="btn-sm btn-primary" onclick="enterTVMode()">📺 Modo TV</button>` : ''}
@@ -239,6 +273,7 @@ const TV_DURATIONS = [15000, 15000, 20000];
 
 export function enterTVMode() {
   if (!state.bsc?.sellers?.length) { toast('Importe o BSC antes de entrar no Modo TV', 'err'); return; }
+  loadTVDurations();
   _tvScreen = 0;
   document.getElementById('bsc-tv-overlay').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -247,6 +282,7 @@ export function enterTVMode() {
   _tvClock = setInterval(updateTVClock, 1000);
   _scheduleNext();
   document.addEventListener('keydown', _escHandler);
+  document.getElementById('bsc-tv-overlay').addEventListener('click', _tvClickHandler);
 }
 
 function _scheduleNext() {
@@ -276,9 +312,30 @@ export function exitTVMode() {
   clearInterval(_tvClock);
   clearTimeout(_tvRotation);
   document.removeEventListener('keydown', _escHandler);
+  document.getElementById('bsc-tv-overlay').removeEventListener('click', _tvClickHandler);
 }
 
-function _escHandler(e) { if (e.key === 'Escape') exitTVMode(); }
+function _tvClickHandler(e) {
+  // Ignore clicks on the exit button
+  if (e.target.closest('.tv-exit-btn')) return;
+  _tvScreen = (_tvScreen + 1) % 3;
+  _renderTVScreen(_tvScreen);
+  _scheduleNext();
+}
+
+function _escHandler(e) {
+  if (e.key === 'Escape') { exitTVMode(); return; }
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    _tvScreen = (_tvScreen + 1) % 3;
+    _renderTVScreen(_tvScreen);
+    _scheduleNext();
+  }
+  if (e.key === 'ArrowLeft') {
+    _tvScreen = (_tvScreen + 2) % 3;
+    _renderTVScreen(_tvScreen);
+    _scheduleNext();
+  }
+}
 
 function updateTVClock() {
   const el = document.getElementById('tv-clock');
