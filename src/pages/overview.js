@@ -402,7 +402,12 @@ function renderDivergencias(entries) {
 // ── main render ────────────────────────────────────────────────────────────
 export function renderOverview(k, fd) {
   const g = state.goals;
-  let h = '';
+  const userName = state.currentUser?.user_metadata?.full_name || state.currentUser?.email || '';
+  let h = `
+    <div style="margin-bottom:24px">
+      <div style="font-size:22px;font-family:var(--font-h);font-weight:700;color:var(--white)">Olá, ${userName} 👋</div>
+      <div style="font-size:13px;color:var(--gray-light);margin-top:4px">Aqui está o resumo do período selecionado.</div>
+    </div>`;
 
   // ── 0. AVISO ENTRADAS SEM DATA ───────────────────────────────────────────
   const semData     = (state.result?.entries || []).filter(e => !e.saleDate);
