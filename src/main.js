@@ -16,7 +16,7 @@ import { setRankView } from './pages/ranking.js';
 import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput } from './pages/goals-page.js';
 import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
-import { setPropostasSearch, setPropostasStatus, setPropostasProduto, openExportModal, closeExportModal, doExportCSV } from './pages/propostas.js';
+import { setPropostasSearch, setPropostasStatus, setPropostasProduto, openExportModal, closeExportModal, doExportCSV, goToPropostasPage } from './pages/propostas.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 
@@ -55,6 +55,7 @@ window.setPropostasProduto = setPropostasProduto;
 window.openExportModal     = openExportModal;
 window.closeExportModal    = closeExportModal;
 window.doExportCSV         = doExportCSV;
+window.goToPropostasPage   = goToPropostasPage;
 window.toggleAccordion   = toggleAccordion;
 window.renderBSC         = renderBSC;
 window.importBSCFile     = importBSCFile;

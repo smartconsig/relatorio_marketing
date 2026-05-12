@@ -2,6 +2,8 @@ import { state }        from '../state.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { fmtBRL, fmtN } from '../utils/currency.js';
 
+const PAGE_SIZE = 12;
+
 // ── Column definitions ─────────────────────────────────────────────────────
 const COLS = [
   { key: 'cliente',       label: 'Cliente'          },
@@ -169,13 +171,42 @@ export function renderPropostas(entries) {
     ...prods.map(p => `<option value="${p.replace(/"/g,'&quot;')}" ${produto === p ? 'selected':''}>${p}</option>`)
   ].join('');
 
-  const cards = filtered.length
-    ? filtered.map(propostaCard).join('')
-    : `<div class="empty" style="grid-column:1/-1;margin-top:24px">
+  // ── Paginação ──────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const page       = Math.min(Math.max(1, state.propostasFilter.page || 1), totalPages);
+  state.propostasFilter.page = page;
+  const pageItems  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const cards = pageItems.length
+    ? pageItems.map(propostaCard).join('')
+    : `<div class="empty" style="margin-top:24px">
         <div class="empty-icon">🔍</div>
         <div class="empty-title">Nenhuma proposta encontrada</div>
         <div class="empty-desc">Tente ajustar os filtros.</div>
        </div>`;
+
+  // Botões de paginação
+  const pageStart = (page - 1) * PAGE_SIZE + 1;
+  const pageEnd   = Math.min(page * PAGE_SIZE, filtered.length);
+
+  // Gera no máx 5 páginas visíveis ao redor da atual
+  const pageButtons = (() => {
+    if (totalPages <= 1) return '';
+    let btns = '';
+    const range = 2;
+    const lo = Math.max(1, page - range);
+    const hi = Math.min(totalPages, page + range);
+    if (lo > 1) btns += `<button class="pg-btn" onclick="goToPropostasPage(1)">1</button>${lo > 2 ? '<span class="pg-dots">…</span>' : ''}`;
+    for (let i = lo; i <= hi; i++)
+      btns += `<button class="pg-btn ${i === page ? 'pg-active' : ''}" onclick="goToPropostasPage(${i})">${i}</button>`;
+    if (hi < totalPages) btns += `${hi < totalPages - 1 ? '<span class="pg-dots">…</span>' : ''}<button class="pg-btn" onclick="goToPropostasPage(${totalPages})">${totalPages}</button>`;
+    return `
+      <div class="propostas-pagination">
+        <button class="pg-btn" onclick="goToPropostasPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹ Anterior</button>
+        ${btns}
+        <button class="pg-btn" onclick="goToPropostasPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Próxima ›</button>
+      </div>`;
+  })();
 
   const selectStyle = `background:var(--surface);border:1px solid var(--border);color:var(--white);
     padding:8px 12px;border-radius:7px;font-size:13px;font-family:var(--font-b);cursor:pointer;outline:none`;
@@ -198,11 +229,14 @@ export function renderPropostas(entries) {
       </div>
       <select onchange="setPropostasStatus(this.value)" style="${selectStyle}">${statusOpts}</select>
       <select onchange="setPropostasProduto(this.value)" style="${selectStyle}">${prodOpts}</select>
-      <span style="color:var(--gray);font-size:13px;white-space:nowrap">${fmtN(filtered.length)} de ${fmtN(allMkt.length)}</span>
+      <span style="color:var(--gray);font-size:13px;white-space:nowrap">
+        ${filtered.length ? `${pageStart}–${pageEnd} de ${fmtN(filtered.length)}` : '0 resultados'}
+      </span>
       <button class="btn-sm btn-primary" onclick="openExportModal()">⬇ Exportar CSV</button>
     </div>
 
     <div class="propostas-grid">${cards}</div>
+    ${pageButtons}
 
     <!-- Export Modal -->
     <div id="propostas-export-modal" style="display:none;position:fixed;inset:0;z-index:1000;
@@ -225,14 +259,19 @@ export function renderPropostas(entries) {
 }
 
 export function setPropostasSearch(v) {
-  state.propostasFilter.search = v;
+  state.propostasFilter.search = v; state.propostasFilter.page = 1;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);
 }
 export function setPropostasStatus(v) {
-  state.propostasFilter.status = v;
+  state.propostasFilter.status = v; state.propostasFilter.page = 1;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);
 }
 export function setPropostasProduto(v) {
-  state.propostasFilter.produto = v;
+  state.propostasFilter.produto = v; state.propostasFilter.page = 1;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);
+}
+export function goToPropostasPage(p) {
+  state.propostasFilter.page = p;
+  const fd = filteredData(); if (fd) renderPropostas(fd.entries);
+  document.getElementById('propostas-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

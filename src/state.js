@@ -12,6 +12,6 @@ export const state = {
   procvSearch: '',
   clientesFilter: 'all',
   clientesSearch: '',
-  propostasFilter: { status: 'all', produto: 'all', search: '' },
+  propostasFilter: { status: 'all', produto: 'all', search: '', page: 1 },
   bsc: null,
 };
