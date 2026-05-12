@@ -23,6 +23,8 @@ export function navigate(sec) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
+  // keep float rail in sync
+  document.querySelectorAll('.nav-float-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
 }
 
 export function renderAll() {
@@ -47,6 +49,7 @@ export function renderAll() {
     reviewBadgeInner.textContent = reviewCnt;
     reviewBadgeInner.classList.toggle('hidden', reviewCnt === 0);
   }
+  _syncFloatBadges();
 
   // Badge "PROCV" → registros de marketing pendentes de revisão
   const procvBadge  = document.getElementById('procv-badge');
@@ -141,11 +144,60 @@ export function switchGestaoTab(tab) {
   });
 }
 
+// ── Float rail (shown when sidebar is collapsed) ──────────────────────
+const NAV_ITEMS = [
+  { sec: 'import',    title: 'Importar',    badgeId: null,         svg: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>' },
+  { sec: 'overview',  title: 'Visão Geral', badgeId: null,         svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+  { sec: 'ranking',   title: 'Ranking',     badgeId: null,         svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+  { sec: 'gestao',    title: 'Gestão',      badgeId: 'review-badge', svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>' },
+  { sec: 'propostas', title: 'Propostas',   badgeId: null,         svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
+  { sec: 'goals',     title: 'Metas',       badgeId: null,         svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
+  { sec: 'bsc',       title: 'Ranking BSC', badgeId: null,         svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
+];
+
+let _floatRail = null;
+
+function _buildFloatRail() {
+  if (_floatRail) return;
+  _floatRail = document.createElement('div');
+  _floatRail.className = 'nav-float';
+  _floatRail.id = 'nav-float-rail';
+  const activeSec = localStorage.getItem('sc_last_section') || 'import';
+  NAV_ITEMS.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'nav-float-item' + (item.sec === activeSec ? ' active' : '');
+    el.dataset.sec = item.sec;
+    el.dataset.title = item.title;
+    el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${item.svg}</svg>`
+      + (item.badgeId ? `<span class="nf-badge" id="nf-badge-${item.sec}" style="display:none"></span>` : '');
+    el.addEventListener('click', () => navigate(item.sec));
+    _floatRail.appendChild(el);
+  });
+  document.body.appendChild(_floatRail);
+  _syncFloatBadges();
+}
+
+function _destroyFloatRail() {
+  if (_floatRail) { _floatRail.remove(); _floatRail = null; }
+}
+
+function _syncFloatBadges() {
+  if (!_floatRail) return;
+  // review badge
+  const rb = document.getElementById('review-badge');
+  const nfb = document.getElementById('nf-badge-gestao');
+  if (rb && nfb) {
+    const hidden = rb.classList.contains('hidden');
+    nfb.style.display = hidden ? 'none' : '';
+  }
+}
+
 export function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const isCollapsed = sidebar.classList.toggle('collapsed');
   document.body.classList.toggle('sidebar-collapsed', isCollapsed);
   localStorage.setItem('sc_sidebar_collapsed', isCollapsed ? '1' : '0');
+  if (isCollapsed) { _buildFloatRail(); } else { _destroyFloatRail(); }
 }
 
 export function initNavigation() {
@@ -158,5 +210,6 @@ export function initNavigation() {
   if (collapsed) {
     document.getElementById('sidebar').classList.add('collapsed');
     document.body.classList.add('sidebar-collapsed');
+    _buildFloatRail();
   }
 }
