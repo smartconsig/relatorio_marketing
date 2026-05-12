@@ -262,22 +262,29 @@ function tvPodiumCard(seller) {
   if (!seller) return '<div></div>';
   const tc  = teamColor(seller.equipe);
   const ti  = tempoInfo(seller.tempoAdmissao);
+  const qi  = quartilInfo(seller.quartil);
   const is1 = seller.rank === 1;
+  const avatarSize = is1 ? 140 : 110;
   return `
-    <div class="tv-podium-card ${is1 ? 'tv-podium-1st' : ''}" style="border-top:5px solid ${tc}">
-      <div class="tv-medal">${medalIcon(seller.rank)}</div>
-      <div style="display:flex;justify-content:center;margin:14px 0">
-        ${avatarHtml(seller, is1 ? 120 : 96)}
+    <div class="tv-podium-card ${is1 ? 'tv-podium-1st' : ''}" style="border-left:6px solid ${tc}">
+      <!-- Left: medal + avatar -->
+      <div class="tv-podium-left">
+        <div class="tv-medal">${medalIcon(seller.rank)}</div>
+        ${avatarHtml(seller, avatarSize)}
       </div>
-      <div class="tv-seller-name">${seller.nome}</div>
-      <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0">
-        <span class="bsc-badge tv-badge" style="background:${tc}25;color:${tc};border-color:${tc}50">${teamLabel(seller.equipe)}</span>
-        <span class="bsc-badge tv-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)">${ti.label}</span>
-      </div>
-      <div class="tv-nota">${seller.nota.toFixed(1)}</div>
-      <div class="tv-metrics">
-        <div><span>Pagamentos</span><strong>${fmtBRL(seller.pgtos)}</strong></div>
-        <div><span>Propostas</span><strong>${fmtBRL(seller.propostas)}</strong></div>
+      <!-- Right: info -->
+      <div class="tv-podium-right">
+        <div class="tv-seller-name">${seller.nome}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <span class="bsc-badge tv-badge" style="background:${tc}20;color:${tc};border-color:${tc}50">${teamLabel(seller.equipe)}</span>
+          <span class="bsc-badge tv-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)">${ti.label}</span>
+        </div>
+        <div class="tv-nota">${seller.nota.toFixed(1)}</div>
+        <div class="tv-quartil" style="color:${qi.color}">${qi.label}</div>
+        <div class="tv-metrics">
+          <div><span>Pagamentos</span><strong>${fmtBRL(seller.pgtos)}</strong></div>
+          <div><span>Propostas</span><strong>${fmtBRL(seller.propostas)}</strong></div>
+        </div>
       </div>
     </div>`;
 }

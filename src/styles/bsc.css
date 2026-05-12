@@ -100,22 +100,27 @@
 /* ── TV Podium ───────────────────────────────────────── */
 .tv-podium {
   display: grid; grid-template-columns: 1fr 1.2fr 1fr;
-  align-items: end; gap: 16px; flex: 1; min-height: 0;
+  align-items: stretch; gap: 16px; flex: 1; min-height: 0;
 }
 .tv-podium-card {
   background: #f4f4f5; border: 1px solid #e4e4e7;
-  border-radius: 16px; padding: 20px 16px; text-align: center;
+  border-radius: 16px; padding: 20px 20px;
+  display: flex; flex-direction: row; align-items: center; gap: 20px;
 }
-.tv-podium-1st { background: #fff; box-shadow: 0 0 40px rgba(148,11,16,.15); padding: 28px 20px; }
-.tv-medal      { font-size: 44px; line-height: 1; }
-.tv-seller-name { font-family: var(--font-h); font-size: 17px; font-weight: 800; color: #111; margin: 8px 0 0; line-height: 1.2; }
+.tv-podium-1st { background: #fff; box-shadow: 0 0 40px rgba(148,11,16,.15); padding: 28px 24px; }
+.tv-podium-left  { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+.tv-podium-right { display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0; }
+.tv-medal      { font-size: 40px; line-height: 1; }
+.tv-podium-1st .tv-medal { font-size: 52px; }
+.tv-seller-name { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: #111; line-height: 1.2; }
 .tv-podium-1st .tv-seller-name { font-size: 22px; }
-.tv-nota       { font-family: var(--font-h); font-size: 38px; font-weight: 900; color: #111; margin: 12px 0 4px; line-height: 1; }
-.tv-podium-1st .tv-nota { font-size: 52px; }
+.tv-nota       { font-family: var(--font-h); font-size: 42px; font-weight: 900; color: #111; line-height: 1; margin: 6px 0 2px; }
+.tv-podium-1st .tv-nota { font-size: 56px; }
+.tv-quartil    { font-family: var(--font-h); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
 .tv-badge      { font-size: 12px !important; padding: 4px 12px !important; }
 .tv-metrics {
-  border-top: 1px solid #e4e4e7; padding-top: 10px; margin-top: 8px;
-  display: flex; flex-direction: column; gap: 4px;
+  border-top: 1px solid #e4e4e7; padding-top: 8px; margin-top: 4px;
+  display: flex; flex-direction: column; gap: 3px;
 }
 .tv-metrics > div { display: flex; justify-content: space-between; font-size: 12px; }
 .tv-metrics span  { color: #888; }
