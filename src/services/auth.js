@@ -25,7 +25,7 @@ export async function doSignIn() {
     return;
   }
   state.currentUser = data.user;
-  document.getElementById('user-email').textContent = data.user.email;
+  document.getElementById('user-email').textContent = data.user.user_metadata?.full_name || data.user.email;
   document.getElementById('login-screen').style.display = 'none';
   await onAuthenticated();
 }
@@ -143,8 +143,11 @@ export async function initAuth() {
   }
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
-    state.currentUser = session.user;
-    document.getElementById('user-email').textContent = session.user.email;
+    // Refresh para garantir que o user_metadata (nome) está atualizado
+    const { data: refreshed } = await sb.auth.refreshSession();
+    const user = refreshed?.session?.user || session.user;
+    state.currentUser = user;
+    document.getElementById('user-email').textContent = user.user_metadata?.full_name || user.email;
     document.getElementById('login-screen').style.display = 'none';
     await onAuthenticated();
   }
