@@ -8,6 +8,7 @@ export const state = {
   filterDates: { start: null, end: null },
   goals: { leads: 0, invest: 0, cpl: 0, approved: 0, paid: 0, value: 0, cac: 0, roas: 0 },
   currentUser: null,
+  gestaoTab: 'procv',
   procvFilter: 'pending',
   procvSearch: '',
   clientesFilter: 'all',

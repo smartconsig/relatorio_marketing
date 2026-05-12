@@ -55,6 +55,30 @@
 }
 .section-title .bar { width: 3px; height: 18px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
 
+/* ── GESTÃO SUB-TABS ── */
+.gestao-tabs {
+  display: flex; gap: 6px; margin-bottom: 20px;
+  border-bottom: 1px solid var(--border); padding-bottom: 0;
+}
+.gestao-tab-btn {
+  position: relative; display: flex; align-items: center; gap: 7px;
+  padding: 9px 18px; background: transparent; border: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  font-family: var(--font-h); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--gray); cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  border-radius: 4px 4px 0 0;
+}
+.gestao-tab-btn:hover { color: var(--white); }
+.gestao-tab-btn.active { color: var(--white); border-bottom-color: var(--red); }
+.gestao-tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  background: var(--red); color: #fff;
+  border-radius: 9px; font-size: 10px; font-weight: 700;
+}
+.gestao-tab-badge.hidden { display: none; }
+
 /* ── UPLOAD ── */
 .upload-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px; }
 .upload-card {

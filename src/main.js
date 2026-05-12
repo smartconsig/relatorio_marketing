@@ -5,7 +5,7 @@ import './styles/theme.css';
 import './styles/bsc.css';
 import './styles/propostas.css';
 
-import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter } from './navigation.js';
+import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV } from './pages/overview.js';
@@ -26,6 +26,7 @@ window.applyFilter       = applyFilter;
 window.clearFilter       = clearFilter;
 window.quickFilter       = quickFilter;
 window.toggleQuickFilter = toggleQuickFilter;
+window.switchGestaoTab   = switchGestaoTab;
 window.doSignIn          = doSignIn;
 window.doSignOut         = doSignOut;
 window.toggleTheme       = toggleTheme;
