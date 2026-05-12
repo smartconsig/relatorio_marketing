@@ -12,9 +12,7 @@ const TITLES = {
   import:    'Importar Dados',
   overview:  'Visão Geral',
   ranking:   'Ranking de Vendas',
-  review:    'Revisão Manual',
-  procv:     'PROCV — Fila de Confirmação',
-  clientes:  'Clientes Confirmados',
+  gestao:    'Gestão de Classificações',
   propostas: 'Propostas de Marketing',
   goals:     'Configurar Metas',
   bsc:       'Ranking BSC',
@@ -37,12 +35,18 @@ export function renderAll() {
   renderProcv(fd.entries);
   renderClientes(fd.entries);
   renderPropostas(fd.entries);
+  switchGestaoTab(state.gestaoTab || 'procv');
 
   // Badge "Revisão Manual" → só statuses desconhecidos
-  const reviewBadge = document.getElementById('review-badge');
   const reviewCnt   = state.result.unknownStatuses.length;
+  const reviewBadge = document.getElementById('review-badge');
   reviewBadge.textContent = reviewCnt;
   reviewBadge.classList.toggle('hidden', reviewCnt === 0);
+  const reviewBadgeInner = document.getElementById('review-badge-inner');
+  if (reviewBadgeInner) {
+    reviewBadgeInner.textContent = reviewCnt;
+    reviewBadgeInner.classList.toggle('hidden', reviewCnt === 0);
+  }
 
   // Badge "PROCV" → registros de marketing pendentes de revisão
   const procvBadge  = document.getElementById('procv-badge');
@@ -124,6 +128,17 @@ export function toggleQuickFilter() {
       });
     }, 0);
   }
+}
+
+export function switchGestaoTab(tab) {
+  state.gestaoTab = tab;
+  ['procv','review','clientes'].forEach(t => {
+    const body = document.getElementById(`${t}-body`);
+    if (body) body.style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.gestao-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
 }
 
 export function initNavigation() {
