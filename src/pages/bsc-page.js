@@ -305,6 +305,46 @@ function tvListCard(seller) {
     </div>`;
 }
 
+function teamScoreboard(sellers) {
+  // Build stats per team from all sellers in the ranking
+  const stats = {};
+  sellers.forEach(s => {
+    const key = normEquipe(s.equipe);
+    if (!key) return;
+    if (!stats[key]) stats[key] = { total: 0, count: 0 };
+    stats[key].total += s.nota;
+    stats[key].count += 1;
+  });
+
+  const teams = Object.entries(stats)
+    .map(([key, v]) => ({ key, avg: v.total / v.count, count: v.count }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (!teams.length) return '';
+
+  const maxAvg = teams[0].avg;
+
+  const cards = teams.map((t, i) => {
+    const tc  = TEAM_COLORS[t.key] || '#6b7280';
+    const lbl = TEAM_LABELS[t.key] || t.key;
+    const pct = ((t.avg / maxAvg) * 100).toFixed(1);
+    const medal = i === 0 ? '🏆 ' : '';
+    return `
+      <div class="tv-team-card" style="border-top:4px solid ${tc}">
+        <div class="tv-team-name" style="color:${tc}">${medal}${lbl}</div>
+        <div class="tv-team-avg">${t.avg.toFixed(1)}</div>
+        <div class="tv-team-bar-wrap">
+          <div class="tv-team-bar" style="width:${pct}%;background:${tc}"></div>
+        </div>
+        <div class="tv-team-count">${t.count} vendedor${t.count > 1 ? 'es' : ''}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="tv-strip-title" style="margin-top:14px">Placar por Equipes</div>
+    <div class="tv-teams">${cards}</div>`;
+}
+
 function renderTV() {
   const { sellers, monthYear } = state.bsc;
   const top3  = sellers.filter(s => s.rank <= 3).sort((a, b) => a.rank - b.rank);
@@ -326,6 +366,7 @@ function renderTV() {
       <div class="tv-strip">
         ${top10.map(s => tvListCard(s)).join('')}
       </div>` : ''}
+      ${teamScoreboard(sellers)}
     </div>
     <button class="tv-exit-btn" onclick="exitTVMode()" title="Sair (Esc)">✕</button>
   `;
