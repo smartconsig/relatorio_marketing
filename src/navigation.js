@@ -5,17 +5,19 @@ import { renderRanking } from './pages/ranking.js';
 import { renderReview } from './pages/review.js';
 import { renderProcv, procvPendingCount } from './pages/procv.js';
 import { renderClientes } from './pages/clientes.js';
+import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
 
 const TITLES = {
-  import:   'Importar Dados',
-  overview: 'Visão Geral',
-  ranking:  'Ranking de Vendas',
-  review:   'Revisão Manual',
-  procv:    'PROCV — Fila de Confirmação',
-  clientes: 'Clientes Confirmados',
-  goals:    'Configurar Metas',
-  bsc:      'Ranking BSC',
+  import:    'Importar Dados',
+  overview:  'Visão Geral',
+  ranking:   'Ranking de Vendas',
+  review:    'Revisão Manual',
+  procv:     'PROCV — Fila de Confirmação',
+  clientes:  'Clientes Confirmados',
+  propostas: 'Propostas de Marketing',
+  goals:     'Configurar Metas',
+  bsc:       'Ranking BSC',
 };
 
 export function navigate(sec) {
@@ -34,6 +36,7 @@ export function renderAll() {
   renderReview(kpis.toReview, state.result.unknownStatuses);
   renderProcv(fd.entries);
   renderClientes(fd.entries);
+  renderPropostas(fd.entries);
 
   // Badge "Revisão Manual" → só statuses desconhecidos
   const reviewBadge = document.getElementById('review-badge');
