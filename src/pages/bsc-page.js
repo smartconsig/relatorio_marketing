@@ -113,8 +113,11 @@ export async function initBSC() {
   // Load from localStorage first (instant)
   try {
     const raw = localStorage.getItem('sc_bsc_v1');
-    if (raw) { state.bsc = JSON.parse(raw); renderBSC(); }
+    if (raw) state.bsc = JSON.parse(raw);
   } catch {}
+
+  // Always render (shows import bar even with no data)
+  renderBSC();
 
   // Then check Supabase for newer data
   if (state.currentUser) {
