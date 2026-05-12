@@ -83,7 +83,7 @@
 #bsc-tv-overlay {
   position: fixed; inset: 0; z-index: 9999;
   display: none; flex-direction: column;
-  background: radial-gradient(ellipse at center, #121212 30%, #940b10 100%);
+  background: #ffffff;
   overflow: hidden; padding: 24px 32px 20px;
   font-family: var(--font-b);
 }
@@ -94,8 +94,8 @@
   margin-bottom: 24px; flex-shrink: 0;
 }
 .tv-logo   { height: 44px; object-fit: contain; }
-.tv-title  { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
-.tv-clock  { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: rgba(255,255,255,.7); min-width: 110px; text-align: right; }
+.tv-title  { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
+.tv-clock  { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: #555; min-width: 110px; text-align: right; }
 
 /* ── TV Podium ───────────────────────────────────────── */
 .tv-podium {
@@ -103,48 +103,47 @@
   align-items: end; gap: 16px; flex: 1; min-height: 0;
 }
 .tv-podium-card {
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
-  backdrop-filter: blur(4px); border-radius: 16px;
-  padding: 20px 16px; text-align: center;
+  background: #f4f4f5; border: 1px solid #e4e4e7;
+  border-radius: 16px; padding: 20px 16px; text-align: center;
 }
-.tv-podium-1st { background: rgba(255,255,255,.11); box-shadow: 0 0 40px rgba(148,11,16,.4); padding: 28px 20px; }
+.tv-podium-1st { background: #fff; box-shadow: 0 0 40px rgba(148,11,16,.15); padding: 28px 20px; }
 .tv-medal      { font-size: 44px; line-height: 1; }
-.tv-seller-name { font-family: var(--font-h); font-size: 17px; font-weight: 800; color: #fff; margin: 8px 0 0; line-height: 1.2; }
+.tv-seller-name { font-family: var(--font-h); font-size: 17px; font-weight: 800; color: #111; margin: 8px 0 0; line-height: 1.2; }
 .tv-podium-1st .tv-seller-name { font-size: 22px; }
-.tv-nota       { font-family: var(--font-h); font-size: 38px; font-weight: 900; color: #fff; margin: 12px 0 4px; line-height: 1; }
+.tv-nota       { font-family: var(--font-h); font-size: 38px; font-weight: 900; color: #111; margin: 12px 0 4px; line-height: 1; }
 .tv-podium-1st .tv-nota { font-size: 52px; }
 .tv-badge      { font-size: 12px !important; padding: 4px 12px !important; }
 .tv-metrics {
-  border-top: 1px solid rgba(255,255,255,.15); padding-top: 10px; margin-top: 8px;
+  border-top: 1px solid #e4e4e7; padding-top: 10px; margin-top: 8px;
   display: flex; flex-direction: column; gap: 4px;
 }
 .tv-metrics > div { display: flex; justify-content: space-between; font-size: 12px; }
-.tv-metrics span  { color: rgba(255,255,255,.55); }
-.tv-metrics strong { color: #fff; font-family: var(--font-h); }
+.tv-metrics span  { color: #888; }
+.tv-metrics strong { color: #111; font-family: var(--font-h); }
 
 /* ── TV Strip (4–10) ─────────────────────────────────── */
 .tv-strip-title {
-  font-family: var(--font-h); font-size: 12px; font-weight: 700; color: rgba(255,255,255,.45);
+  font-family: var(--font-h); font-size: 12px; font-weight: 700; color: #999;
   text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; text-align: center;
 }
 .tv-strip {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; flex-shrink: 0;
 }
 .tv-list-card {
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  background: #f4f4f5; border: 1px solid #e4e4e7;
   border-radius: 10px; padding: 10px 8px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 .tv-list-rank  { font-family: var(--font-h); font-size: 18px; font-weight: 900; line-height: 1; }
-.tv-list-name  { font-family: var(--font-h); font-size: 11px; font-weight: 700; color: #fff; line-height: 1.2; }
+.tv-list-name  { font-family: var(--font-h); font-size: 11px; font-weight: 700; color: #111; line-height: 1.2; }
 .tv-list-nota  { font-family: var(--font-h); font-size: 16px; font-weight: 800; }
 
 /* ── TV Exit button ──────────────────────────────────── */
 .tv-exit-btn {
   position: fixed; top: 16px; right: 16px;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.6); border-radius: 6px;
+  background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);
+  color: #555; border-radius: 6px;
   padding: 6px 12px; font-size: 12px; cursor: pointer;
   font-family: var(--font-h); transition: all 0.15s;
 }
-.tv-exit-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+.tv-exit-btn:hover { background: rgba(0,0,0,.12); color: #111; }
