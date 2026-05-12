@@ -317,14 +317,16 @@ function renderTV() {
       <div class="tv-title">🏆 RANKING BSC — ${(monthYear || '').toUpperCase()}</div>
       <div id="tv-clock" class="tv-clock"></div>
     </div>
-    <div class="tv-podium">
-      ${podium.map(s => tvPodiumCard(s)).join('')}
+    <div class="tv-content">
+      <div class="tv-podium">
+        ${podium.map(s => tvPodiumCard(s)).join('')}
+      </div>
+      ${top10.length ? `
+      <div class="tv-strip-title">Top 4 – 10</div>
+      <div class="tv-strip">
+        ${top10.map(s => tvListCard(s)).join('')}
+      </div>` : ''}
     </div>
-    ${top10.length ? `
-    <div class="tv-strip-title">Top 4 – 10</div>
-    <div class="tv-strip">
-      ${top10.map(s => tvListCard(s)).join('')}
-    </div>` : ''}
     <button class="tv-exit-btn" onclick="exitTVMode()" title="Sair (Esc)">✕</button>
   `;
 }
