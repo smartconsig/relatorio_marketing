@@ -7,7 +7,7 @@ import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderProcv } from './procv.js';
 import { normCPF } from '../utils/cpf.js';
-import { saveSnapshotToSupabase } from '../services/snapshot.js';
+import { saveSnapshotToSupabase, checkSnapshotTimestamp } from '../services/snapshot.js';
 import { saveSnapshotTimestamp } from '../core/storage.js';
 
 function statusBadge(cat) {
@@ -148,25 +148,36 @@ export async function undoFromClientes(idx) {
   const entry = state.result.entries[idx];
   if (!entry) return;
 
+  // Marca essa proposta específica como reclassificada — NÃO apaga outras propostas
+  // do mesmo CPF. 'reclassified' impede que o sync do banco reaplique a classificação
+  // nessa entrada sem afetar outras propostas do mesmo cliente.
   entry.isMarketing  = null;
-  entry.reviewReason = null;
+  entry.reviewReason = 'reclassified';
 
-  if (entry.cpf) {
-    delete state.overrides[normCPF(entry.cpf)];
+  // Só remove do banco de classificações se NENHUMA outra proposta desse CPF
+  // ainda estiver confirmada como 'manual'
+  const normCpf = entry.cpf ? normCPF(entry.cpf) : null;
+  const otherStillConfirmed = normCpf && state.result.entries.some(
+    (e, i) => i !== idx && normCPF(e.cpf) === normCpf && e.reviewReason === 'manual'
+  );
+
+  if (!otherStillConfirmed && normCpf) {
+    delete state.overrides[normCpf];
     localStorage.setItem('sc_overrides_v1', JSON.stringify(state.overrides));
   }
 
   saveState();
-  toast('↩ Classificação desfeita — cliente voltou para o PROCV');
+  toast('↩ Classificação desfeita — proposta voltou para o PROCV');
 
-  if (state.currentUser && entry.cpf) {
-    // Remove da tabela de classificações
-    await sb.from('classifications').delete().eq('cpf', normCPF(entry.cpf));
-    // Salva snapshot imediatamente (sem debounce) e atualiza timestamp local.
-    // Isso garante que qualquer F5 imediato encontre servidor e local em sincronia,
-    // evitando que o snapshot antigo sobrescreva a reclassificação.
-    const newTs = await saveSnapshotToSupabase();
-    if (newTs) saveSnapshotTimestamp(newTs);
+  if (state.currentUser) {
+    if (!otherStillConfirmed && normCpf) {
+      await sb.from('classifications').delete().eq('cpf', normCpf);
+    }
+    // Salva snapshot imediatamente e busca o timestamp real do Supabase
+    // para evitar mismatch de formato e re-download do snapshot antigo no F5
+    await saveSnapshotToSupabase();
+    const serverTs = await checkSnapshotTimestamp();
+    if (serverTs) saveSnapshotTimestamp(serverTs);
   }
 
   const fd = filteredData();

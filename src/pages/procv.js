@@ -35,7 +35,8 @@ function statusBadge(cat) {
 
 /** Aplica filtro de aba + busca por texto e retorna os dados paginados. */
 function applyProcvFilters(entries) {
-  const mktEntries = entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
+  // 'reclassified' = proposta enviada de volta ao PROCV pelo usuário — deve reaparecer para revisão
+  const mktEntries = entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
   const f    = state.procvFilter;
   const here = (e) => e._justConfirmed && e._confirmedInFilter === f;
 
@@ -211,7 +212,7 @@ export function classifyFromProcv(idx, isMkt) {
 export function exportProcvCSV() {
   const fd = filteredData();
   if (!fd) return;
-  let filtered = fd.entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual');
+  let filtered = fd.entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
   if (state.procvFilter === 'pending')       filtered = filtered.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
   if (state.procvFilter === 'doubt')         filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
   if (state.procvFilter === 'contradiction') filtered = filtered.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
