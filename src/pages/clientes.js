@@ -7,7 +7,7 @@ import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderProcv } from './procv.js';
 import { normCPF } from '../utils/cpf.js';
-import { scheduleSaveSnapshot } from '../services/snapshot.js';
+import { saveSnapshotToSupabase } from '../services/snapshot.js';
 import { saveSnapshotTimestamp } from '../core/storage.js';
 
 function statusBadge(cat) {
@@ -162,8 +162,11 @@ export async function undoFromClientes(idx) {
   if (state.currentUser && entry.cpf) {
     // Remove da tabela de classificações
     await sb.from('classifications').delete().eq('cpf', normCPF(entry.cpf));
-    // Atualiza o snapshot no Supabase para o F5 não reverter a ação
-    scheduleSaveSnapshot();
+    // Salva snapshot imediatamente (sem debounce) e atualiza timestamp local.
+    // Isso garante que qualquer F5 imediato encontre servidor e local em sincronia,
+    // evitando que o snapshot antigo sobrescreva a reclassificação.
+    const newTs = await saveSnapshotToSupabase();
+    if (newTs) saveSnapshotTimestamp(newTs);
   }
 
   const fd = filteredData();
