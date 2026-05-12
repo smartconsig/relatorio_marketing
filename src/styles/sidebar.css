@@ -128,24 +128,24 @@
   top: 50%;
   transform: translateY(-50%);
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   z-index: 19;
 }
 
 /* Each icon circle */
 .nav-float-item {
   position: relative;
-  width: 40px; height: 40px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   /* inactive: white bg, red border, red icon */
   background: #ffffff;
-  border: 2px solid var(--red);
+  border: 1.5px solid var(--red);
   color: var(--red);
 }
-.nav-float-item svg { width: 17px; height: 17px; stroke: var(--red); flex-shrink: 0; transition: stroke 0.15s; }
+.nav-float-item svg { width: 13px; height: 13px; stroke: var(--red); flex-shrink: 0; transition: stroke 0.15s; }
 
 /* active: red bg, white icon */
 .nav-float-item.active {
@@ -157,17 +157,17 @@
 
 /* hover: scale up */
 .nav-float-item:hover {
-  transform: scale(1.18);
-  box-shadow: 0 4px 18px rgba(148,11,16,0.45);
+  transform: scale(1.25);
+  box-shadow: 0 4px 14px rgba(148,11,16,0.45);
 }
 
 /* badge dot */
 .nav-float-item .nf-badge {
   position: absolute;
-  top: 0px; right: 0px;
-  width: 9px; height: 9px;
+  top: -1px; right: -1px;
+  width: 7px; height: 7px;
   background: var(--red);
-  border: 2px solid var(--bg);
+  border: 1.5px solid var(--bg);
   border-radius: 50%;
 }
 .nav-float-item.active .nf-badge {
@@ -179,7 +179,7 @@
 .nav-float-item::after {
   content: attr(data-title);
   position: absolute;
-  left: 48px; top: 50%;
+  left: 36px; top: 50%;
   transform: translateY(-50%);
   background: var(--surface2);
   border: 1px solid var(--border);
