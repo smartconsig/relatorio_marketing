@@ -232,22 +232,49 @@ export function renderBSC() {
 
 // ── TV mode ────────────────────────────────────────────────────────────────
 
-let _tvClock = null;
+let _tvClock    = null;
+let _tvRotation = null;
+let _tvScreen   = 0;
+const TV_DURATIONS = [15000, 15000, 20000];
 
 export function enterTVMode() {
   if (!state.bsc?.sellers?.length) { toast('Importe o BSC antes de entrar no Modo TV', 'err'); return; }
-  renderTV();
+  _tvScreen = 0;
   document.getElementById('bsc-tv-overlay').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  _renderTVScreen(0);
   updateTVClock();
   _tvClock = setInterval(updateTVClock, 1000);
+  _scheduleNext();
   document.addEventListener('keydown', _escHandler);
+}
+
+function _scheduleNext() {
+  clearTimeout(_tvRotation);
+  _tvRotation = setTimeout(() => {
+    _tvScreen = (_tvScreen + 1) % 3;
+    _renderTVScreen(_tvScreen);
+    _scheduleNext();
+  }, TV_DURATIONS[_tvScreen]);
+}
+
+function _renderTVScreen(n) {
+  const body = document.getElementById('bsc-tv-body');
+  body.style.opacity = '0';
+  setTimeout(() => {
+    if (n === 0) renderTV();
+    else if (n === 1) renderTVSpotlight();
+    else renderTVCarousel();
+    body.style.transition = 'opacity 0.6s ease';
+    body.style.opacity = '1';
+  }, 300);
 }
 
 export function exitTVMode() {
   document.getElementById('bsc-tv-overlay').style.display = 'none';
   document.body.style.overflow = '';
   clearInterval(_tvClock);
+  clearTimeout(_tvRotation);
   document.removeEventListener('keydown', _escHandler);
 }
 
@@ -256,6 +283,23 @@ function _escHandler(e) { if (e.key === 'Escape') exitTVMode(); }
 function updateTVClock() {
   const el = document.getElementById('tv-clock');
   if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function _tvHeader(title, monthYear) {
+  return `
+    <div class="tv-header">
+      <img src="${LOGO_URL}" class="tv-logo" onerror="this.style.display='none'" alt="Smart Consig">
+      <div class="tv-title">${title} — ${(monthYear || '').toUpperCase()}</div>
+      <div id="tv-clock" class="tv-clock"></div>
+    </div>`;
+}
+
+function _tvDots(active) {
+  return `<div class="tv-dots">
+    <span class="tv-dot ${active===0?'tv-dot-on':''}"></span>
+    <span class="tv-dot ${active===1?'tv-dot-on':''}"></span>
+    <span class="tv-dot ${active===2?'tv-dot-on':''}"></span>
+  </div>`;
 }
 
 function tvPodiumCard(seller) {
@@ -347,27 +391,96 @@ function teamScoreboard(sellers) {
 
 function renderTV() {
   const { sellers, monthYear } = state.bsc;
-  const top3  = sellers.filter(s => s.rank <= 3).sort((a, b) => a.rank - b.rank);
-  const top10 = sellers.filter(s => s.rank >= 4 && s.rank <= 10).sort((a, b) => a.rank - b.rank);
+  const top3   = sellers.filter(s => s.rank <= 3).sort((a, b) => a.rank - b.rank);
+  const top10  = sellers.filter(s => s.rank >= 4 && s.rank <= 10).sort((a, b) => a.rank - b.rank);
   const podium = [top3[1], top3[0], top3[2]];
 
   document.getElementById('bsc-tv-body').innerHTML = `
-    <div class="tv-header">
-      <img src="${LOGO_URL}" class="tv-logo" onerror="this.style.display='none'" alt="Smart Consig">
-      <div class="tv-title">🏆 RANKING BSC — ${(monthYear || '').toUpperCase()}</div>
-      <div id="tv-clock" class="tv-clock"></div>
-    </div>
+    ${_tvHeader('🏆 RANKING BSC', monthYear)}
     <div class="tv-content">
       <div class="tv-podium">
         ${podium.map(s => tvPodiumCard(s)).join('')}
       </div>
       ${top10.length ? `
       <div class="tv-strip-title">Top 4 – 10</div>
-      <div class="tv-strip">
-        ${top10.map(s => tvListCard(s)).join('')}
-      </div>` : ''}
+      <div class="tv-strip">${top10.map(s => tvListCard(s)).join('')}</div>` : ''}
       ${teamScoreboard(sellers)}
     </div>
+    ${_tvDots(0)}
+    <button class="tv-exit-btn" onclick="exitTVMode()" title="Sair (Esc)">✕</button>
+  `;
+}
+
+function renderTVSpotlight() {
+  const { sellers, monthYear } = state.bsc;
+  const first = sellers.find(s => s.rank === 1);
+  if (!first) return renderTV();
+  const tc = teamColor(first.equipe);
+  const ti = tempoInfo(first.tempoAdmissao);
+  const qi = quartilInfo(first.quartil);
+
+  document.getElementById('bsc-tv-body').innerHTML = `
+    ${_tvHeader('🥇 DESTAQUE DO MÊS', monthYear)}
+    <div class="tv-spotlight">
+      <div class="tv-spotlight-left">
+        <div style="font-size:72px;line-height:1">🥇</div>
+        ${avatarHtml(first, 200)}
+      </div>
+      <div class="tv-spotlight-right">
+        <div class="tv-spotlight-name">${first.nome}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0">
+          <span class="bsc-badge" style="font-size:15px;padding:6px 18px;background:${tc}20;color:${tc};border-color:${tc}50">${teamLabel(first.equipe)}</span>
+          <span class="bsc-badge" style="font-size:15px;padding:6px 18px;background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)">${ti.label}</span>
+        </div>
+        <div class="tv-spotlight-nota" style="color:${tc}">${first.nota.toFixed(1)}</div>
+        <div class="tv-spotlight-quartil" style="color:${qi.color}">${qi.label}</div>
+        <div class="tv-spotlight-metrics">
+          <div><span>Pagamentos</span><strong>${fmtBRL(first.pgtos)}</strong></div>
+          <div><span>Propostas</span><strong>${fmtBRL(first.propostas)}</strong></div>
+        </div>
+      </div>
+    </div>
+    ${_tvDots(1)}
+    <button class="tv-exit-btn" onclick="exitTVMode()" title="Sair (Esc)">✕</button>
+  `;
+}
+
+function renderTVCarousel() {
+  const { sellers, monthYear } = state.bsc;
+  const rest = sellers.filter(s => s.rank >= 11).sort((a, b) => a.rank - b.rank);
+  if (!rest.length) { _tvScreen = 0; renderTV(); return; }
+
+  // Duplicate for seamless infinite loop
+  const cardHtml = s => {
+    const tc = teamColor(s.equipe);
+    const ti = tempoInfo(s.tempoAdmissao);
+    return `
+      <div class="tv-carousel-card" style="border-top:4px solid ${tc}">
+        <div class="tv-carousel-rank" style="color:${tc}">${s.rank}</div>
+        ${avatarHtml(s, 80)}
+        <div class="tv-carousel-name">${s.nome}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0">
+          <span class="bsc-badge" style="font-size:11px;background:${tc}20;color:${tc};border-color:${tc}40">${teamLabel(s.equipe)}</span>
+          <span class="bsc-badge" style="font-size:11px;background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)">${ti.label}</span>
+        </div>
+        <div class="tv-carousel-nota" style="color:${tc}">${s.nota.toFixed(1)}</div>
+      </div>`;
+  };
+  const cards = [...rest, ...rest].map(cardHtml).join('');
+  // Animation duration: ~12s per card width so it scrolls slowly
+  const dur = rest.length * 6;
+
+  document.getElementById('bsc-tv-body').innerHTML = `
+    ${_tvHeader('👥 TODOS OS VENDEDORES', monthYear)}
+    <div class="tv-content" style="justify-content:center">
+      <div class="tv-strip-title">Desempenho completo da equipe</div>
+      <div class="tv-carousel-wrap">
+        <div class="tv-carousel-track" style="animation-duration:${dur}s">
+          ${cards}
+        </div>
+      </div>
+    </div>
+    ${_tvDots(2)}
     <button class="tv-exit-btn" onclick="exitTVMode()" title="Sair (Esc)">✕</button>
   `;
 }

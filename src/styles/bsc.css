@@ -168,6 +168,52 @@
 .tv-team-bar   { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 .tv-team-count { font-size: 11px; color: #888; }
 
+/* ── TV Spotlight (Tela 2) ───────────────────────────── */
+.tv-spotlight {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: 64px; padding: 20px 40px; min-height: 0;
+}
+.tv-spotlight-left  { display: flex; flex-direction: column; align-items: center; gap: 20px; flex-shrink: 0; }
+.tv-spotlight-right { display: flex; flex-direction: column; }
+.tv-spotlight-name  { font-family: var(--font-h); font-size: 52px; font-weight: 900; color: #111; line-height: 1.1; }
+.tv-spotlight-nota  { font-family: var(--font-h); font-size: 110px; font-weight: 900; line-height: 1; margin: 8px 0 4px; }
+.tv-spotlight-quartil { font-family: var(--font-h); font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.tv-spotlight-metrics { display: flex; flex-direction: column; gap: 8px; }
+.tv-spotlight-metrics > div { display: flex; gap: 24px; justify-content: space-between; font-size: 18px; }
+.tv-spotlight-metrics span  { color: #888; }
+.tv-spotlight-metrics strong { color: #111; font-family: var(--font-h); font-size: 20px; }
+
+/* ── TV Carousel (Tela 3) ────────────────────────────── */
+.tv-carousel-wrap  { overflow: hidden; width: 100%; }
+.tv-carousel-track {
+  display: flex; gap: 16px; width: max-content;
+  animation: tv-scroll linear infinite;
+}
+@keyframes tv-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.tv-carousel-card {
+  background: #f4f4f5; border: 1px solid #e4e4e7;
+  border-radius: 14px; padding: 20px 16px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 180px; flex-shrink: 0;
+}
+.tv-carousel-rank { font-family: var(--font-h); font-size: 28px; font-weight: 900; line-height: 1; }
+.tv-carousel-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; line-height: 1.3; }
+.tv-carousel-nota { font-family: var(--font-h); font-size: 26px; font-weight: 900; }
+
+/* ── TV Navigation dots ──────────────────────────────── */
+.tv-dots {
+  display: flex; justify-content: center; gap: 8px;
+  flex-shrink: 0; padding: 10px 0 4px;
+}
+.tv-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #d4d4d8; transition: background 0.3s;
+}
+.tv-dot-on { background: #940b10; }
+
 /* ── TV Exit button ──────────────────────────────────── */
 .tv-exit-btn {
   position: fixed; top: 16px; right: 16px;
