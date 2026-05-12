@@ -110,7 +110,7 @@
 /* ── TV Podium ───────────────────────────────────────── */
 .tv-podium {
   display: grid; grid-template-columns: 1fr 1.2fr 1fr;
-  align-items: stretch; gap: 16px; flex: 1; min-height: 0;
+  align-items: end; gap: 16px;
 }
 .tv-podium-card {
   background: #f4f4f5; border: 1px solid #e4e4e7;
