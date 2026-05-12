@@ -141,8 +141,22 @@ export function switchGestaoTab(tab) {
   });
 }
 
+export function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+  document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+  localStorage.setItem('sc_sidebar_collapsed', isCollapsed ? '1' : '0');
+}
+
 export function initNavigation() {
   document.querySelectorAll('.nav-item').forEach(el =>
     el.addEventListener('click', () => navigate(el.dataset.sec))
   );
+
+  // Restore sidebar state
+  const collapsed = localStorage.getItem('sc_sidebar_collapsed') === '1';
+  if (collapsed) {
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.body.classList.add('sidebar-collapsed');
+  }
 }
