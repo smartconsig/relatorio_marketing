@@ -122,9 +122,9 @@
   border-top: 1px solid #e4e4e7; padding-top: 8px; margin-top: 4px;
   display: flex; flex-direction: column; gap: 3px;
 }
-.tv-metrics > div { display: flex; justify-content: space-between; font-size: 12px; }
+.tv-metrics > div { display: flex; justify-content: space-between; font-size: 13px; gap: 12px; }
 .tv-metrics span  { color: #888; }
-.tv-metrics strong { color: #111; font-family: var(--font-h); }
+.tv-metrics strong { color: #111; font-family: var(--font-h); font-size: 14px; }
 
 /* ── TV Strip (4–10) ─────────────────────────────────── */
 .tv-strip-title {
