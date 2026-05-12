@@ -274,7 +274,7 @@ function tvPodiumCard(seller) {
         <span class="bsc-badge tv-badge" style="background:${tc}25;color:${tc};border-color:${tc}50">${teamLabel(seller.equipe)}</span>
         <span class="bsc-badge tv-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)">${ti.label}</span>
       </div>
-      <div class="tv-nota" style="color:#fff">${seller.nota.toFixed(1)}</div>
+      <div class="tv-nota">${seller.nota.toFixed(1)}</div>
       <div class="tv-metrics">
         <div><span>Pagamentos</span><strong>${fmtBRL(seller.pgtos)}</strong></div>
         <div><span>Propostas</span><strong>${fmtBRL(seller.propostas)}</strong></div>
