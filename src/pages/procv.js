@@ -48,9 +48,11 @@ function applyProcvFilters(entries) {
   if (f === 'manual')        filtered = mktEntries.filter(e => e.reviewReason === 'manual');
 
   const q = state.procvSearch.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
   if (q) filtered = filtered.filter(e =>
     (e.cliente || '').toLowerCase().includes(q) ||
-    (e.cpf     || '').includes(q)
+    (qDigits && (e.cpf || '').includes(qDigits)) ||
+    (qDigits && (e.smartPhone || '').replace(/\D/g, '').includes(qDigits))
   );
 
   const total   = filtered.length;
@@ -64,7 +66,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
   const rowsHtml = capped.length === 0
     ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
     : capped.map((e, i) => `
-      <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}">
+      <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
@@ -168,9 +170,13 @@ export function setProcvSearch(v) {
   }
   // Filtra as linhas existentes sem reconstruir o DOM (preserva o foco)
   const q = v.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
   let visible = 0;
   resultsEl.querySelectorAll('tr[data-procv-row]').forEach(row => {
-    const show = !q || row.dataset.name.includes(q) || row.dataset.cpf.includes(q);
+    const show = !q ||
+      row.dataset.name.includes(q) ||
+      (qDigits && row.dataset.cpf.includes(qDigits)) ||
+      (qDigits && row.dataset.phone.includes(qDigits));
     row.style.display = show ? '' : 'none';
     if (show) visible++;
   });

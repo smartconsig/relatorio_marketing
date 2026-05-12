@@ -59,7 +59,12 @@ function applyFilters(entries) {
   if (status  !== 'all') r = r.filter(e => e.statusCat === status);
   if (produto !== 'all') r = r.filter(e => (e.produto || '').trim() === produto);
   const q = (search || '').trim().toLowerCase();
-  if (q) r = r.filter(e => (e.cliente||'').toLowerCase().includes(q) || (e.cpf||'').includes(q));
+  const qDigits = q.replace(/\D/g, '');
+  if (q) r = r.filter(e =>
+    (e.cliente || '').toLowerCase().includes(q) ||
+    (qDigits && (e.cpf || '').includes(qDigits)) ||
+    (qDigits && (e.smartPhone || '').replace(/\D/g, '').includes(qDigits))
+  );
   return r;
 }
 
