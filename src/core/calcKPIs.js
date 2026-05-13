@@ -41,23 +41,33 @@ export function filteredData() {
 }
 
 export function calcKPIs(entries, facebook) {
-  let invest = 0, leads = 0, fbCplSum = 0, fbCplCount = 0;
-  const msgRows  = facebook.filter(r => {
-    const tipo = String(getCol(r, 'Tipo de resultado') || '').toLowerCase();
-    return !tipo || tipo.includes('mensagem') || tipo.includes('conversa') || tipo.includes('message');
-  });
-  const leadsRows = msgRows.length > 0 ? msgRows : facebook;
-  for (const r of facebook) {
-    invest += parseBRL(getCol(r, 'Montante gasto (BRL)', 'Montante Gasto (BRL)'));
+  let invest = 0, leads = 0, fbCpl = 0, cplCalc = 0;
+
+  if (state.metaAds) {
+    // Dados em tempo real da API do Meta — substitui a planilha do Facebook
+    invest   = state.metaAds.invest;
+    leads    = state.metaAds.leads;
+    cplCalc  = leads ? invest / leads : 0;
+  } else {
+    // Fallback: planilha do Facebook importada manualmente
+    let fbCplSum = 0, fbCplCount = 0;
+    const msgRows = facebook.filter(r => {
+      const tipo = String(getCol(r, 'Tipo de resultado') || '').toLowerCase();
+      return !tipo || tipo.includes('mensagem') || tipo.includes('conversa') || tipo.includes('message');
+    });
+    const leadsRows = msgRows.length > 0 ? msgRows : facebook;
+    for (const r of facebook) {
+      invest += parseBRL(getCol(r, 'Montante gasto (BRL)', 'Montante Gasto (BRL)'));
+    }
+    for (const r of leadsRows) {
+      const res = parseInt(String(getCol(r, 'Resultados', 'resultados') || '').replace(/\D/g, '')) || 0;
+      leads += res;
+      const cpr = parseBRL(getCol(r, 'Custo por resultado', 'Custo Por Resultado'));
+      if (cpr > 0) { fbCplSum += cpr; fbCplCount++; }
+    }
+    fbCpl   = fbCplCount ? fbCplSum / fbCplCount : 0;
+    cplCalc = leads ? invest / leads : 0;
   }
-  for (const r of leadsRows) {
-    const res = parseInt(String(getCol(r, 'Resultados', 'resultados') || '').replace(/\D/g, '')) || 0;
-    leads += res;
-    const cpr = parseBRL(getCol(r, 'Custo por resultado', 'Custo Por Resultado'));
-    if (cpr > 0) { fbCplSum += cpr; fbCplCount++; }
-  }
-  const fbCpl   = fbCplCount ? fbCplSum / fbCplCount : 0;
-  const cplCalc = leads ? invest / leads : 0;
 
   const inProgMkt     = entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'quase pago'));
   const almostPaidMkt = entries.filter(r => r.isMarketing && r.statusCat === 'quase pago');

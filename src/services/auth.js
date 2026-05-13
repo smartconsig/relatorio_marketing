@@ -12,6 +12,7 @@ import { navigate } from '../navigation.js';
 import { initBSC } from '../pages/bsc-page.js';
 import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
+import { syncMetaAds } from './meta-ads.js';
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -131,6 +132,9 @@ export async function onAuthenticated() {
   renderDiag(state.result.diag);
   if (!hasLocal) navigate(lastSection);
   toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
+
+  // Sincroniza Meta Ads em background — re-renderiza quando chegar
+  syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
 }
 
 function loadGoalsFromStorage() {

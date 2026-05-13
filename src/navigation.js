@@ -7,6 +7,7 @@ import { renderProcv, procvPendingCount } from './pages/procv.js';
 import { renderClientes } from './pages/clientes.js';
 import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
+import { syncMetaAds } from './services/meta-ads.js';
 
 const TITLES = {
   import:    'Importar Dados',
@@ -63,7 +64,12 @@ export function renderAll() {
 export function applyFilter() {
   state.filterDates.start = document.getElementById('date-start').value || null;
   state.filterDates.end   = document.getElementById('date-end').value   || null;
-  if (state.result) { renderAll(); saveState(); }
+  if (state.result) {
+    state.metaAds = null; // limpa dados antigos para evitar período errado
+    renderAll();
+    saveState();
+    syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+  }
 }
 
 export function clearFilter() {
@@ -72,7 +78,12 @@ export function clearFilter() {
   document.getElementById('date-end').value   = '';
   const btn = document.getElementById('qf-btn');
   if (btn) btn.textContent = 'Período ▾';
-  if (state.result) { renderAll(); saveState(); }
+  if (state.result) {
+    state.metaAds = null;
+    renderAll();
+    saveState();
+    syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+  }
 }
 
 const _pad = n => String(n).padStart(2, '0');

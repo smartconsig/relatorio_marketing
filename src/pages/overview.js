@@ -241,12 +241,21 @@ function renderTimes(entries) {
 function renderChart(fd) {
   if (state.chart) { state.chart.destroy(); state.chart = null; }
   const dayMap = {};
-  for (const r of fd.facebook) {
-    const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
-    if (!d) continue;
-    const key = d.toISOString().slice(0, 10);
-    if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
-    dayMap[key].invest += parseBRL(r['Montante gasto (BRL)']);
+
+  // Usa dados diários da API do Meta se disponível, senão usa planilha Excel
+  if (state.metaAds?.daily?.length) {
+    for (const row of state.metaAds.daily) {
+      if (!dayMap[row.date]) dayMap[row.date] = { invest: 0, valid: 0, rejected: 0 };
+      dayMap[row.date].invest += row.invest;
+    }
+  } else {
+    for (const r of fd.facebook) {
+      const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
+      if (!d) continue;
+      const key = d.toISOString().slice(0, 10);
+      if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
+      dayMap[key].invest += parseBRL(r['Montante gasto (BRL)']);
+    }
   }
   for (const r of fd.entries) {
     if (r.isMarketing && r.saleDate) {
