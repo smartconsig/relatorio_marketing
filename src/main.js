@@ -20,6 +20,7 @@ import { setPropostasSearch, setPropostasStatus, setPropostasProduto, openExport
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
+import { keepSession } from './services/session-timeout.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -68,6 +69,7 @@ window.exitTVMode        = exitTVMode;
 window.saveTVDurations   = saveTVDurations;
 window.openHistoryPanel  = openHistoryPanel;
 window.closeHistoryPanel = closeHistoryPanel;
+window.keepSession       = keepSession;
 
 initNavigation();
 initAuth();

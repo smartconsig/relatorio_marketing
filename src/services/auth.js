@@ -11,6 +11,7 @@ import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
 import { initBSC } from '../pages/bsc-page.js';
 import { renderLastSystemEvent } from './action-log.js';
+import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -27,11 +28,13 @@ export async function doSignIn() {
   }
   state.currentUser = data.user;
   document.getElementById('user-email').textContent = data.user.user_metadata?.full_name || data.user.email;
+  startSessionTimeout();
   document.getElementById('login-screen').style.display = 'none';
   await onAuthenticated();
 }
 
 export async function doSignOut() {
+  stopSessionTimeout();
   await sb.auth.signOut();
   state.currentUser = null;
   document.getElementById('user-email').textContent = '';
@@ -154,6 +157,7 @@ export async function initAuth() {
     state.currentUser = user;
     document.getElementById('user-email').textContent = user.user_metadata?.full_name || user.email;
     document.getElementById('login-screen').style.display = 'none';
+    startSessionTimeout();
     await onAuthenticated();
   }
 }
