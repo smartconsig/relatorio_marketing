@@ -285,6 +285,19 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Painel lateral de histórico -->
+<div class="history-overlay" id="history-overlay" onclick="closeHistoryPanel()"></div>
+<div class="history-panel" id="history-panel">
+  <div class="history-panel-header">
+    <div class="history-panel-header-info">
+      <div class="history-panel-name" id="history-panel-title">Cliente</div>
+      <div class="history-panel-cpf" id="history-panel-cpf"></div>
+    </div>
+    <button class="history-panel-close" onclick="closeHistoryPanel()">✕</button>
+  </div>
+  <div class="history-panel-body" id="history-panel-body"></div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

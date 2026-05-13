@@ -19,6 +19,7 @@ import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, openExportModal, closeExportModal, doExportCSV, goToPropostasPage } from './pages/propostas.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
+import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -65,6 +66,8 @@ window.onBSCFileChange   = onBSCFileChange;
 window.enterTVMode       = enterTVMode;
 window.exitTVMode        = exitTVMode;
 window.saveTVDurations   = saveTVDurations;
+window.openHistoryPanel  = openHistoryPanel;
+window.closeHistoryPanel = closeHistoryPanel;
 
 initNavigation();
 initAuth();

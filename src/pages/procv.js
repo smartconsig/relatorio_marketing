@@ -4,6 +4,7 @@ import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
 import { saveClassificationToSupabase } from '../services/classifications.js';
 import { scheduleSaveSnapshot } from '../services/snapshot.js';
+import { logAction } from '../services/action-log.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
@@ -87,6 +88,9 @@ function buildProcvResultsHTML(total, hasMore, capped) {
                </div>`
           }
         </td>
+        <td>
+          <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
+        </td>
       </tr>`).join('');
 
   return `
@@ -98,7 +102,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
         <thead><tr>
           <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
           <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th><th>Audiência Smart</th>
-          <th>Sinal Smart</th><th>Confirmar</th>
+          <th>Sinal Smart</th><th>Confirmar</th><th></th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
@@ -196,6 +200,7 @@ export function classifyFromProcv(idx, isMkt) {
   entry._confirmedInFilter = state.procvFilter;
   toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
   saveClassificationToSupabase(entry.cpf, isMkt);
+  logAction(entry.cpf, entry.cliente, isMkt ? 'classified_marketing' : 'classified_not_marketing');
   scheduleSaveSnapshot();
   const fd = filteredData();
   if (fd) {

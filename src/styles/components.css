@@ -1,3 +1,43 @@
+/* ── HISTORY PANEL ── */
+.history-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 900; cursor: pointer;
+}
+.history-overlay.open { display: block; }
+
+.history-panel {
+  position: fixed; top: 0; right: -420px; width: 420px; max-width: 95vw;
+  height: 100vh; background: var(--bg); border-left: 1px solid var(--border);
+  z-index: 901; display: flex; flex-direction: column;
+  transition: right 0.28s cubic-bezier(.4,0,.2,1);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.35);
+}
+.history-panel.open { right: 0; }
+
+.history-panel-header {
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.history-panel-header-info { flex: 1; min-width: 0; }
+.history-panel-name {
+  font-family: var(--font-h); font-size: 15px; font-weight: 700;
+  color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.history-panel-cpf { font-size: 11px; color: var(--gray); margin-top: 3px; font-family: monospace; }
+.history-panel-close {
+  background: none; border: none; color: var(--gray); cursor: pointer;
+  font-size: 20px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+}
+.history-panel-close:hover { color: var(--white); }
+.history-panel-body { flex: 1; overflow-y: auto; padding: 4px 20px 20px; }
+
+.btn-dots {
+  background: none; border: 1px solid var(--border); color: var(--gray);
+  border-radius: 5px; padding: 2px 7px; font-size: 15px; cursor: pointer;
+  line-height: 1; transition: all 0.15s;
+}
+.btn-dots:hover { background: var(--surface); color: var(--white); border-color: var(--gray); }
+
 /* ── LAYOUT ── */
 .main { margin-left: 220px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; transition: margin-left 0.25s ease; }
 body.sidebar-collapsed .main { margin-left: 58px; }
