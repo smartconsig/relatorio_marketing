@@ -4,6 +4,7 @@ import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
 import { getCol, normStr } from '../utils/string.js';
 import { toast } from '../utils/ui.js';
+import { filteredData } from '../core/calcKPIs.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -317,6 +318,29 @@ function renderChart(fd) {
   });
 }
 
+export function exportNoValueCSV() {
+  const fd = filteredData();
+  if (!fd) return;
+  const noValue = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
+  if (!noValue.length) { toast('Nenhuma entrada sem valor no período'); return; }
+  const header = ['Cliente','CPF','Status','Categoria','Data','Produto','Banco','Loja','Vendedor','Origem Ecorban','É Marketing'];
+  const rows   = noValue.map(e => [
+    e.cliente||'', e.cpf||'', e.rawStatus||'', e.statusCat||'',
+    e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : '',
+    e.produto||'', e.banco||'', e.loja||'', e.vendedor||'',
+    e.ecorbanOrigem||'', e.isMarketing ? 'Sim' : 'Não',
+  ]);
+  const csv  = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `sem_valor_multiplicador_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${fmtN(noValue.length)} entradas exportadas`);
+}
+
 export function exportNoDatesCSV() {
   if (!state.result) return;
   const noDate = state.result.entries.filter(e => !e.saleDate);
@@ -492,6 +516,11 @@ export function renderOverview(k, fd) {
         <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
           <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
           <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
+        </div>
+        <div style="margin-top:10px">
+          <button onclick="exportNoValueCSV()" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
+            ⬇ Exportar lista (CSV)
+          </button>
         </div>
       </div>
     </div>`;
