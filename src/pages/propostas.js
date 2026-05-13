@@ -65,6 +65,17 @@ function applyFilters(entries) {
     (qDigits && (e.cpf || '').includes(qDigits)) ||
     (qDigits && (e.smartPhone || '').replace(/\D/g, '').includes(qDigits))
   );
+  const { col, dir } = state.propostasSort;
+  if (col) r = [...r].sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    return dir === 'desc' ? -cmp : cmp;
+  });
   return r;
 }
 
@@ -234,6 +245,15 @@ export function renderPropostas(entries) {
       </div>
       <select onchange="setPropostasStatus(this.value)" style="${selectStyle}">${statusOpts}</select>
       <select onchange="setPropostasProduto(this.value)" style="${selectStyle}">${prodOpts}</select>
+      <select onchange="sortPropostas(this.value)" style="${selectStyle}">
+        <option value="cliente_asc"  ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='asc'  ? 'selected':''}>Nome A→Z</option>
+        <option value="cliente_desc" ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='desc' ? 'selected':''}>Nome Z→A</option>
+        <option value="valor_desc"   ${state.propostasSort.col==='valor'   && state.propostasSort.dir==='desc' ? 'selected':''}>Maior valor</option>
+        <option value="valor_asc"    ${state.propostasSort.col==='valor'   && state.propostasSort.dir==='asc'  ? 'selected':''}>Menor valor</option>
+        <option value="saleDate_desc"${state.propostasSort.col==='saleDate'&& state.propostasSort.dir==='desc' ? 'selected':''}>Mais recente</option>
+        <option value="saleDate_asc" ${state.propostasSort.col==='saleDate'&& state.propostasSort.dir==='asc'  ? 'selected':''}>Mais antigo</option>
+        <option value="rawStatus_asc"${state.propostasSort.col==='rawStatus'&&state.propostasSort.dir==='asc'  ? 'selected':''}>Status A→Z</option>
+      </select>
       <span style="color:var(--gray);font-size:13px;white-space:nowrap">
         ${filtered.length ? `${pageStart}–${pageEnd} de ${fmtN(filtered.length)}` : '0 resultados'}
       </span>
@@ -275,6 +295,14 @@ export function setPropostasProduto(v) {
   state.propostasFilter.produto = v; state.propostasFilter.page = 1;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);
 }
+export function sortPropostas(val) {
+  const [col, dir] = val.split('_');
+  state.propostasSort = { col, dir };
+  state.propostasFilter.page = 1;
+  const fd = filteredData();
+  if (fd) renderPropostas(fd.entries);
+}
+
 export function goToPropostasPage(p) {
   state.propostasFilter.page = p;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);

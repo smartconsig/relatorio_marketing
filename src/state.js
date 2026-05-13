@@ -14,5 +14,8 @@ export const state = {
   clientesFilter: 'all',
   clientesSearch: '',
   propostasFilter: { status: 'all', produto: 'all', search: '', page: 1 },
+  procvSort:      { col: null, dir: 'asc' },
+  clientesSort:   { col: null, dir: 'asc' },
+  propostasSort:  { col: 'cliente', dir: 'asc' },
   bsc: null,
 };

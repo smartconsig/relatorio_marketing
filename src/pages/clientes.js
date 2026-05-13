@@ -20,6 +20,29 @@ function statusBadge(cat) {
   return 'badge-gray';
 }
 
+function thSort(label, col) {
+  const { col: sc, dir } = state.clientesSort;
+  const active = sc === col;
+  const arrow  = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
+  const style  = `cursor:pointer;user-select:none;white-space:nowrap${active ? ';color:var(--red)' : ''}`;
+  return `<th style="${style}" onclick="sortClientes('${col}')">${label}${arrow}</th>`;
+}
+
+function applySortClientes(arr) {
+  const { col, dir } = state.clientesSort;
+  if (!col) return arr;
+  return [...arr].sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    return dir === 'desc' ? -cmp : cmp;
+  });
+}
+
 /** Aplica filtro de aba + busca por texto nos clientes confirmados. */
 function applyClientesFilters(confirmed) {
   let filtered = confirmed;
@@ -62,8 +85,14 @@ function buildClientesResultsHTML(filtered) {
       </div>
       <div class="table-wrap"><table>
         <thead><tr>
-          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Classificação</th><th>Ação</th>
+          <th>#</th>
+          ${thSort('Cliente','cliente')}
+          ${thSort('CPF','cpf')}
+          ${thSort('Status','statusCat')}
+          ${thSort('Origem Ecorban','ecorbanOrigem')}
+          ${thSort('Telefone Smart','smartPhone')}
+          ${thSort('Classificação','isMarketing')}
+          <th>Ação</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
@@ -88,7 +117,7 @@ export function renderClientes(entries) {
     return;
   }
 
-  const filtered = applyClientesFilters(confirmed);
+  const filtered = applySortClientes(applyClientesFilters(confirmed));
   const cMkt = confirmed.filter(e => e.isMarketing === true).length;
   const cNo  = confirmed.filter(e => e.isMarketing === false).length;
   const f    = state.clientesFilter;
@@ -121,6 +150,14 @@ export function renderClientes(entries) {
 
     <div id="clientes-results">${buildClientesResultsHTML(filtered)}</div>
   `;
+}
+
+export function sortClientes(col) {
+  const s = state.clientesSort;
+  if (s.col === col) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  else { s.col = col; s.dir = 'asc'; }
+  const fd = filteredData();
+  if (fd) renderClientes(fd.entries);
 }
 
 export function setClientesFilter(v) {

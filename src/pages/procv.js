@@ -35,6 +35,29 @@ function statusBadge(cat) {
   return 'badge-gray';
 }
 
+function thSort(label, col) {
+  const { col: sc, dir } = state.procvSort;
+  const active = sc === col;
+  const arrow  = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
+  const style  = `cursor:pointer;user-select:none;white-space:nowrap${active ? ';color:var(--red)' : ''}`;
+  return `<th style="${style}" onclick="sortProcv('${col}')">${label}${arrow}</th>`;
+}
+
+function applySortProcv(arr) {
+  const { col, dir } = state.procvSort;
+  if (!col) return arr;
+  return [...arr].sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    return dir === 'desc' ? -cmp : cmp;
+  });
+}
+
 /** Aplica filtro de aba + busca por texto e retorna os dados paginados. */
 function applyProcvFilters(entries) {
   // 'reclassified' = proposta enviada de volta ao PROCV pelo usuário — deve reaparecer para revisão
@@ -57,8 +80,9 @@ function applyProcvFilters(entries) {
     (qDigits && (e.smartPhone || '').replace(/\D/g, '').includes(qDigits))
   );
 
-  const total   = filtered.length;
-  const capped  = filtered.slice(0, 500);
+  const sorted  = applySortProcv(filtered);
+  const total   = sorted.length;
+  const capped  = sorted.slice(0, 500);
   const hasMore = total > 500;
   return { mktEntries, total, capped, hasMore };
 }
@@ -101,9 +125,16 @@ function buildProcvResultsHTML(total, hasMore, capped) {
       </div>
       <div class="table-wrap"><table>
         <thead><tr>
-          <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
-          <th>Origem Ecorban</th><th>Telefone Smart</th><th>Origem Smart</th><th>Audiência Smart</th>
-          <th>Sinal Smart</th><th>Confirmar</th><th></th>
+          <th>#</th>
+          ${thSort('Cliente','cliente')}
+          ${thSort('CPF','cpf')}
+          ${thSort('Status','statusCat')}
+          ${thSort('Origem Ecorban','ecorbanOrigem')}
+          ${thSort('Telefone Smart','smartPhone')}
+          ${thSort('Origem Smart','origem')}
+          ${thSort('Audiência Smart','audiencia')}
+          ${thSort('Sinal Smart','smartSignal')}
+          <th>Confirmar</th><th></th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
@@ -187,6 +218,14 @@ export function setProcvSearch(v) {
   });
   const titleEl = resultsEl.querySelector('.table-header-title');
   if (titleEl) titleEl.textContent = `${fmtN(visible)} clientes encontrados`;
+}
+
+export function sortProcv(col) {
+  const s = state.procvSort;
+  if (s.col === col) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  else { s.col = col; s.dir = 'asc'; }
+  const fd = filteredData();
+  if (fd) renderProcv(fd.entries);
 }
 
 export function classifyFromProcv(idx, isMkt) {
