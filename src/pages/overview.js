@@ -518,9 +518,39 @@ export function renderOverview(k, fd) {
           <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
         </div>
         <div style="margin-top:10px">
-          <button onclick="exportNoValueCSV()" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
-            ⬇ Exportar lista (CSV)
+          <button id="no-value-toggle" onclick="
+            const el=document.getElementById('no-value-table');
+            const open=el.style.display!=='none';
+            el.style.display=open?'none':'block';
+            this.textContent=open?'▼ Ver propostas':'▲ Ocultar propostas';
+          " style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
+            ▼ Ver propostas
           </button>
+        </div>
+        <div id="no-value-table" style="display:none;margin-top:14px">
+          <div class="table-card" style="margin:0">
+            <div class="table-wrap"><table>
+              <thead><tr>
+                <th>#</th><th>Cliente</th><th>CPF</th><th>Status</th>
+                <th>Data</th><th>Produto</th><th>Banco</th><th>Loja</th><th>Vendedor</th><th>Origem</th>
+              </tr></thead>
+              <tbody>
+                ${semValorTotal.map((e, i) => `
+                  <tr>
+                    <td class="muted" style="font-size:11px">${i + 1}</td>
+                    <td><strong>${e.cliente || '—'}</strong></td>
+                    <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+                    <td><span class="badge ${e.statusCat === 'reprovado' ? 'badge-red' : e.statusCat === 'pago' ? 'badge-green' : e.statusCat === 'quase pago' ? 'badge-teal' : 'badge-yellow'}">${e.rawStatus || '—'}</span></td>
+                    <td class="muted">${e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td class="muted">${e.produto || '—'}</td>
+                    <td class="muted">${e.banco || '—'}</td>
+                    <td class="muted">${e.loja || '—'}</td>
+                    <td class="muted">${e.vendedor || '—'}</td>
+                    <td class="muted">${e.ecorbanOrigem || '—'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table></div>
+          </div>
         </div>
       </div>
     </div>`;
