@@ -3,6 +3,7 @@ import { toast } from '../utils/ui.js';
 import { parseBRL } from '../utils/currency.js';
 import { saveGoalsToSupabase } from '../services/goals-svc.js';
 import { renderAll } from '../navigation.js';
+import { logAction, renderLastSystemEvent } from '../services/action-log.js';
 
 const fmtMoney = v => v
   ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
@@ -50,4 +51,7 @@ export function saveGoals() {
   saveGoalsToSupabase(state.goals);
   toast('Metas salvas');
   if (state.result) renderAll();
+  logAction('__goals__', 'Metas configuradas', 'saved_goals').then(() =>
+    renderLastSystemEvent('goals-last-log', '__goals__')
+  );
 }

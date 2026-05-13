@@ -6,6 +6,7 @@ import { saveSnapshotToSupabase } from '../services/snapshot.js';
 import { renderAll } from '../navigation.js';
 import { renderDiag } from './overview.js';
 import { navigate } from '../navigation.js';
+import { logAction, renderLastSystemEvent } from '../services/action-log.js';
 
 export function loadFile(e, key) {
   const file = e.target.files[0];
@@ -68,6 +69,9 @@ export function processAll() {
       toast(`Processado: ${state.result.entries.length} propostas · ${matchPct}% encontradas no Smart`);
       navigate('overview');
       saveSnapshotToSupabase();
+      logAction('__import__', 'Dados processados', 'imported_data').then(() =>
+        renderLastSystemEvent('import-last-log', '__import__')
+      );
     } catch (err) {
       toast('Erro ao processar: ' + err.message, 'err');
       console.error(err);

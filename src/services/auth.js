@@ -10,6 +10,7 @@ import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
 import { initBSC } from '../pages/bsc-page.js';
+import { renderLastSystemEvent } from './action-log.js';
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -50,6 +51,10 @@ export function toggleTheme() {
 export async function onAuthenticated() {
   // BSC — carrega em paralelo, não bloqueia o resto
   initBSC();
+
+  // Logs de sistema — carrega em paralelo, não bloqueia
+  renderLastSystemEvent('import-last-log', '__import__');
+  renderLastSystemEvent('goals-last-log', '__goals__');
 
   // Metas e classificações (queries leves)
   const sbGoals = await loadSupabaseGoals();
