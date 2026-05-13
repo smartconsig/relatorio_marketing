@@ -88,13 +88,17 @@ export async function onAuthenticated() {
   if (!serverTs) {
     // Supabase não tem dados — usa só o local
     if (!hasLocal) { /* sem dados em lugar nenhum, fica na tela de importar */ }
-    else toast('Dados carregados ⚡');
+    else {
+      toast('Dados carregados ⚡');
+      syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    }
     return;
   }
 
   if (serverTs === localTs) {
     // Cache local está em dia — não precisa baixar nada
     toast('Dados carregados ⚡');
+    syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
     return;
   }
 
