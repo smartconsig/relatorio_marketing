@@ -1,3 +1,18 @@
+/* ── CONFIRM MODAL ── */
+.confirm-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 24px; max-width: 360px; width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.confirm-title { font-family: var(--font-h); font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+.confirm-desc  { font-size: 13px; color: var(--gray-light); margin-bottom: 22px; line-height: 1.6; }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 /* ── SESSION WARNING ── */
 .session-warning {
   display: none; position: fixed; inset: 0; z-index: 1000;

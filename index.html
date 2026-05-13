@@ -287,6 +287,18 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Modal de confirmação genérico -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title"></div>
+    <div class="confirm-desc"  id="confirm-desc"></div>
+    <div class="confirm-actions">
+      <button class="btn-sm btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-sm btn-primary" id="confirm-ok-btn" onclick="doConfirm()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal de aviso de inatividade -->
 <div class="session-warning" id="session-warning">
   <div class="session-warning-box">

@@ -5,6 +5,7 @@ import { saveState } from '../core/storage.js';
 import { saveClassificationToSupabase } from '../services/classifications.js';
 import { scheduleSaveSnapshot } from '../services/snapshot.js';
 import { logAction } from '../services/action-log.js';
+import { showConfirm } from '../utils/confirm.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
@@ -83,8 +84,8 @@ function buildProcvResultsHTML(total, hasMore, capped) {
               ? `<span class="badge badge-green">✅ Confirmado: Marketing</span>`
               : `<span class="badge badge-red">❌ Confirmado: Não é Marketing</span>`
             : `<div style="display:flex;gap:5px;flex-wrap:wrap">
-                <button class="btn-mkt"   onclick="classifyFromProcv(${e._idx},true)"  style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
-                <button class="btn-nomkt" onclick="classifyFromProcv(${e._idx},false)" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
+                <button class="btn-mkt"   onclick="askClassify(${e._idx},true)"  style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
+                <button class="btn-nomkt" onclick="askClassify(${e._idx},false)" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
                </div>`
           }
         </td>
@@ -218,6 +219,21 @@ export function classifyFromProcv(idx, isMkt) {
     badge.textContent = pending;
     badge.classList.toggle('hidden', pending === 0);
   }
+}
+
+export function askClassify(idx, isMkt) {
+  if (!state.result) return;
+  const entry = state.result.entries[idx];
+  if (!entry) return;
+  const name  = entry.cliente || 'este cliente';
+  showConfirm(
+    isMkt ? 'Confirmar como Marketing?' : 'Confirmar como Não Marketing?',
+    isMkt
+      ? `Você confirma que "${name}" realmente é Marketing?`
+      : `Você confirma que "${name}" não é Marketing?`,
+    isMkt ? '✅ Sim, é Marketing' : '❌ Sim, não é Marketing',
+    () => classifyFromProcv(idx, isMkt)
+  );
 }
 
 export function exportProcvCSV() {

@@ -10,6 +10,7 @@ import { normCPF } from '../utils/cpf.js';
 import { saveSnapshotToSupabase, checkSnapshotTimestamp } from '../services/snapshot.js';
 import { saveSnapshotTimestamp } from '../core/storage.js';
 import { logAction } from '../services/action-log.js';
+import { showConfirm } from '../utils/confirm.js';
 
 function statusBadge(cat) {
   if (cat === 'pago')       return 'badge-green';
@@ -49,7 +50,7 @@ function buildClientesResultsHTML(filtered) {
         <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
         <td style="display:flex;gap:6px;align-items:center">
-          <button class="btn-nomkt" onclick="undoFromClientes(${e._idx})" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+          <button class="btn-nomkt" onclick="askUndo(${e._idx},'${(e.cliente || '').replace(/'/g, '')}')" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
           <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
         </td>
       </tr>`).join('');
@@ -150,6 +151,15 @@ export function setClientesSearch(v) {
   });
   const titleEl = resultsEl.querySelector('.table-header-title');
   if (titleEl) titleEl.textContent = `${fmtN(visible)} clientes`;
+}
+
+export function askUndo(idx, clientName) {
+  showConfirm(
+    'Reclassificar cliente?',
+    `"${clientName || 'Este cliente'}" voltará para o PROCV e precisará ser revisado novamente.`,
+    '↩ Sim, reclassificar',
+    () => undoFromClientes(idx)
+  );
 }
 
 export async function undoFromClientes(idx) {
