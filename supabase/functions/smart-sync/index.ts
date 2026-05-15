@@ -24,9 +24,9 @@ async function getToken(username: string, password: string): Promise<string> {
   return data.accessToken;
 }
 
-async function fetchProduct(token: string, product: string, dateIni: string | null, dateEnd: string | null, pageSize: number) {
+async function fetchProduct(token: string, product: string, dateIni: string | null, dateEnd: string | null, page: number, pageSize: number) {
   const url = new URL(SMART_URL);
-  url.searchParams.set('pageFilter.Page',     '1');
+  url.searchParams.set('pageFilter.Page',     String(page));
   url.searchParams.set('PageFilter.PageSize', String(pageSize));
   url.searchParams.set('Product',             product);
   if (dateIni) url.searchParams.set('DateIni', dateIni);
@@ -35,10 +35,14 @@ async function fetchProduct(token: string, product: string, dateIni: string | nu
   const res = await fetch(url.toString(), {
     headers: { 'Authorization': `Bearer ${token}`, 'Tenant': TENANT },
   });
-  if (!res.ok) return [];
+  if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
 
   const data = await res.json();
-  return data.results || [];
+  return {
+    results:      data.results      || [],
+    totalPages:   data.totalPages   ?? 0,
+    totalResults: data.totalResults ?? 0,
+  };
 }
 
 serve(async (req) => {
@@ -51,6 +55,7 @@ serve(async (req) => {
 
     let products: string[] = ALL_PRODUCTS;
     let pageSize: number   = DEFAULT_PAGE_SIZE;
+    let page: number       = 1;
 
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
@@ -62,6 +67,9 @@ serve(async (req) => {
       if (body.page_size && Number.isInteger(body.page_size)) {
         pageSize = Math.min(Math.max(body.page_size, 1), MAX_PAGE_SIZE);
       }
+      if (body.page && Number.isInteger(body.page)) {
+        page = Math.max(body.page, 1);
+      }
     } else {
       const params = new URL(req.url).searchParams;
       dateIni  = params.get('date_start');
@@ -70,6 +78,8 @@ serve(async (req) => {
       if (p) products = p.split(',').map(s => s.trim()).filter(s => ALL_PRODUCTS.includes(s));
       const ps = params.get('page_size');
       if (ps) pageSize = Math.min(Math.max(parseInt(ps, 10) || DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+      const pg = params.get('page');
+      if (pg) page = Math.max(parseInt(pg, 10) || 1, 1);
     }
 
     const username = Deno.env.get('SMART_USERNAME');
@@ -81,12 +91,15 @@ serve(async (req) => {
 
     // 2. Buscar os produtos selecionados em paralelo
     const results = await Promise.all(
-      products.map(p => fetchProduct(token, p, dateIni, dateEnd, pageSize))
+      products.map(p => fetchProduct(token, p, dateIni, dateEnd, page, pageSize))
     );
-    const all = results.flat() as Record<string, unknown>[];
+
+    const allRows     = results.flatMap(r => r.results) as Record<string, unknown>[];
+    const totalPages  = Math.max(...results.map(r => r.totalPages));
+    const totalResults = results.reduce((sum, r) => sum + r.totalResults, 0);
 
     // 3. Formatar para o frontend
-    const leads = all.map((r) => {
+    const leads = allRows.map((r) => {
       const customer = (r.customer || {}) as Record<string, unknown>;
       const mkt      = (customer.marketingDetails || {}) as Record<string, unknown>;
       const operator = (r.operator || {}) as Record<string, unknown>;
@@ -107,7 +120,13 @@ serve(async (req) => {
       };
     });
 
-    return new Response(JSON.stringify({ leads, total: leads.length }), {
+    return new Response(JSON.stringify({
+      leads,
+      page,
+      pageSize,
+      totalPages,
+      totalResults,
+    }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
 
