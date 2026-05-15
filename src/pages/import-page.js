@@ -7,6 +7,7 @@ import { renderAll } from '../navigation.js';
 import { renderDiag } from './overview.js';
 import { navigate } from '../navigation.js';
 import { logAction, renderLastSystemEvent } from '../services/action-log.js';
+import { syncSmartData } from '../services/smart-sync.js';
 
 export function loadFile(e, key) {
   const file = e.target.files[0];
@@ -50,33 +51,45 @@ export function setCardLoaded(key, label) {
 }
 
 export function checkProcessBtn() {
-  document.getElementById('btn-process').disabled = !(state.raw.smart && state.raw.ecorban);
+  // Smart vem da API — só exige o Ecorban
+  document.getElementById('btn-process').disabled = !state.raw.ecorban;
 }
 
-export function processAll() {
+export async function processAll() {
   const btn = document.getElementById('btn-process');
   btn.textContent = 'Processando…';
   btn.disabled = true;
-  setTimeout(() => {
-    try {
-      state.result = buildResult();
-      saveState();
-      setCacheIndicator(true);
-      renderAll();
-      renderDiag(state.result.diag);
-      const matchPct = state.result.diag.ecorban.total
-        ? Math.round(state.result.diag.ecorban.matched / state.result.diag.ecorban.total * 100) : 0;
-      toast(`Processado: ${state.result.entries.length} propostas · ${matchPct}% encontradas no Smart`);
-      navigate('overview');
-      saveSnapshotToSupabase();
-      logAction('__import__', 'Dados processados', 'imported_data').then(() =>
-        renderLastSystemEvent('import-last-log', '__import__')
-      );
-    } catch (err) {
-      toast('Erro ao processar: ' + err.message, 'err');
-      console.error(err);
+
+  try {
+    // Se ainda não tem dados do Smart, busca da API antes de processar
+    if (!state.smartLeads) {
+      btn.textContent = 'Sincronizando Smart…';
+      await syncSmartData();
     }
-    btn.textContent = 'Processar Dados';
-    btn.disabled = false;
-  }, 60);
+
+    await new Promise(resolve => setTimeout(resolve, 60));
+
+    state.result = buildResult();
+    saveState();
+    setCacheIndicator(true);
+    renderAll();
+    renderDiag(state.result.diag);
+
+    const matchPct = state.result.diag.ecorban.total
+      ? Math.round(state.result.diag.ecorban.matched / state.result.diag.ecorban.total * 100) : 0;
+    const src = state.result.diag.smart.source === 'api' ? 'API Smart' : 'Excel Smart';
+    toast(`Processado: ${state.result.entries.length} propostas · ${matchPct}% encontradas no ${src}`);
+
+    navigate('overview');
+    saveSnapshotToSupabase();
+    logAction('__import__', 'Dados processados', 'imported_data').then(() =>
+      renderLastSystemEvent('import-last-log', '__import__')
+    );
+  } catch (err) {
+    toast('Erro ao processar: ' + err.message, 'err');
+    console.error(err);
+  }
+
+  btn.textContent = 'Processar Dados';
+  btn.disabled = false;
 }

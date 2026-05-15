@@ -13,6 +13,7 @@ import { initBSC } from '../pages/bsc-page.js';
 import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
+import { syncSmartData } from './smart-sync.js';
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -91,6 +92,7 @@ export async function onAuthenticated() {
     else {
       toast('Dados carregados ⚡');
       syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+      syncSmartData(); // pré-carrega para próxima importação
     }
     return;
   }
@@ -99,6 +101,7 @@ export async function onAuthenticated() {
     // Cache local está em dia — não precisa baixar nada
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncSmartData(); // pré-carrega para próxima importação
     return;
   }
 
@@ -139,6 +142,8 @@ export async function onAuthenticated() {
 
   // Sincroniza Meta Ads em background — re-renderiza quando chegar
   syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+  // Pré-carrega Smart leads em background para próxima importação
+  syncSmartData();
 }
 
 function loadGoalsFromStorage() {
