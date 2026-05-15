@@ -35,12 +35,13 @@ function statusBadge(cat) {
   return 'badge-gray';
 }
 
-function thSort(label, col) {
+function thSort(label, col, cls = '') {
   const { col: sc, dir } = state.procvSort;
   const active = sc === col;
   const arrow  = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
   const style  = `cursor:pointer;user-select:none;white-space:nowrap${active ? ';color:var(--red)' : ''}`;
-  return `<th style="${style}" onclick="sortProcv('${col}')">${label}${arrow}</th>`;
+  const clsAttr = cls ? ` class="${cls}"` : '';
+  return `<th${clsAttr} style="${style}" onclick="sortProcv('${col}')">${label}${arrow}</th>`;
 }
 
 function applySortProcv(arr) {
@@ -91,32 +92,36 @@ function applyProcvFilters(entries) {
 function buildProcvResultsHTML(total, hasMore, capped) {
   const rowsHtml = capped.length === 0
     ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
-    : capped.map((e, i) => `
+    : capped.map((e, i) => {
+        const safeName = (e.cliente || '').replace(/'/g, "\\'");
+        return `
       <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
         <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
-        <td class="muted">${e.ecorbanOrigem || '—'}</td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
-        <td>${e.origem ? `<span class="badge badge-blue">${e.origem}</span>` : '<span class="muted">—</span>'}</td>
-        <td class="muted" style="font-size:12px">${e.audiencia || '—'}</td>
+        <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td class="mobile-hide">${e.origem ? `<span class="badge badge-blue">${e.origem}</span>` : '<span class="muted">—</span>'}</td>
+        <td class="muted mobile-hide" style="font-size:12px">${e.audiencia || '—'}</td>
         <td>${signalBadge(e)}</td>
         <td>
           ${e.reviewReason === 'manual'
             ? e.isMarketing
               ? `<span class="badge badge-green">✅ Confirmado: Marketing</span>`
               : `<span class="badge badge-red">❌ Confirmado: Não é Marketing</span>`
-            : `<div style="display:flex;gap:5px;flex-wrap:wrap">
+            : `<div class="procv-actions-desktop" style="display:flex;gap:5px;flex-wrap:wrap">
                 <button class="btn-mkt"   onclick="askClassify(${e._idx},true)"  style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
                 <button class="btn-nomkt" onclick="askClassify(${e._idx},false)" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
-               </div>`
+               </div>
+               <button class="procv-actions-mobile btn-dots" onclick="openBottomSheet({title:'${safeName}',sub:'Confirmar classificação',actions:[{id:'mkt',label:'✅ É Marketing',cls:'ms-btn-mkt',onClick:()=>askClassify(${e._idx},true)},{id:'nomkt',label:'❌ Não é Marketing',cls:'ms-btn-nomkt',onClick:()=>askClassify(${e._idx},false)},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>`
           }
         </td>
         <td>
           <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+      }).join('');
 
   return `
     <div class="table-card">
@@ -127,12 +132,12 @@ function buildProcvResultsHTML(total, hasMore, capped) {
         <thead><tr>
           <th>#</th>
           ${thSort('Cliente','cliente')}
-          ${thSort('CPF','cpf')}
+          ${thSort('CPF','cpf','mobile-hide')}
           ${thSort('Status','statusCat')}
-          ${thSort('Origem Ecorban','ecorbanOrigem')}
-          ${thSort('Telefone Smart','smartPhone')}
-          ${thSort('Origem Smart','origem')}
-          ${thSort('Audiência Smart','audiencia')}
+          ${thSort('Origem Ecorban','ecorbanOrigem','mobile-hide')}
+          ${thSort('Telefone Smart','smartPhone','mobile-hide')}
+          ${thSort('Origem Smart','origem','mobile-hide')}
+          ${thSort('Audiência Smart','audiencia','mobile-hide')}
           ${thSort('Sinal Smart','smartSignal')}
           <th>Confirmar</th><th></th>
         </tr></thead>

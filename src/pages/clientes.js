@@ -20,12 +20,13 @@ function statusBadge(cat) {
   return 'badge-gray';
 }
 
-function thSort(label, col) {
+function thSort(label, col, cls = '') {
   const { col: sc, dir } = state.clientesSort;
   const active = sc === col;
   const arrow  = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
   const style  = `cursor:pointer;user-select:none;white-space:nowrap${active ? ';color:var(--red)' : ''}`;
-  return `<th style="${style}" onclick="sortClientes('${col}')">${label}${arrow}</th>`;
+  const clsAttr = cls ? ` class="${cls}"` : '';
+  return `<th${clsAttr} style="${style}" onclick="sortClientes('${col}')">${label}${arrow}</th>`;
 }
 
 function applySortClientes(arr) {
@@ -63,20 +64,24 @@ function applyClientesFilters(confirmed) {
 function buildClientesResultsHTML(filtered) {
   const rowsHtml = filtered.length === 0
     ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado.</td></tr>`
-    : filtered.map((e, i) => `
+    : filtered.map((e, i) => {
+        const safeName = (e.cliente || '').replace(/'/g, "\\'");
+        return `
       <tr data-clientes-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
         <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
-        <td class="muted">${e.ecorbanOrigem || '—'}</td>
-        <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
         <td style="display:flex;gap:6px;align-items:center">
-          <button class="btn-nomkt" onclick="askUndo(${e._idx},'${(e.cliente || '').replace(/'/g, '')}')" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+          <button class="btn-nomkt procv-actions-desktop" onclick="askUndo(${e._idx},'${safeName}')" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
+          <button class="btn-dots procv-actions-mobile" onclick="openBottomSheet({title:'${safeName}',sub:'Reclassificar cliente',actions:[{id:'undo',label:'↩ Reclassificar',cls:'ms-btn-nomkt',onClick:()=>askUndo(${e._idx},'${safeName}')},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>
           <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+      }).join('');
 
   return `
     <div class="table-card">
@@ -87,10 +92,10 @@ function buildClientesResultsHTML(filtered) {
         <thead><tr>
           <th>#</th>
           ${thSort('Cliente','cliente')}
-          ${thSort('CPF','cpf')}
+          ${thSort('CPF','cpf','mobile-hide')}
           ${thSort('Status','statusCat')}
-          ${thSort('Origem Ecorban','ecorbanOrigem')}
-          ${thSort('Telefone Smart','smartPhone')}
+          ${thSort('Origem Ecorban','ecorbanOrigem','mobile-hide')}
+          ${thSort('Telefone Smart','smartPhone','mobile-hide')}
           ${thSort('Classificação','isMarketing')}
           <th>Ação</th>
         </tr></thead>

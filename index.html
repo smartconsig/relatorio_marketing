@@ -297,6 +297,40 @@
   <div class="history-panel-body" id="history-panel-body"></div>
 </div>
 
+<!-- ═══════════════════ MOBILE BOTTOM NAV ═══════════════════ -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <div class="mbn-item active" data-sec="overview" onclick="navigate('overview')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Visão Geral</span>
+  </div>
+  <div class="mbn-item" data-sec="ranking" onclick="navigate('ranking')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    <span>Ranking</span>
+  </div>
+  <div class="mbn-item" data-sec="gestao" onclick="navigate('gestao')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <span>Gestão</span>
+    <span class="mbn-badge hidden" id="mbn-gestao-badge">0</span>
+  </div>
+  <div class="mbn-item" data-sec="propostas" onclick="navigate('propostas')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span>Propostas</span>
+  </div>
+  <div class="mbn-item" data-sec="goals" onclick="navigate('goals')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    <span>Metas</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════ MOBILE BOTTOM SHEET ═══════════════════ -->
+<div class="mobile-sheet-overlay" id="mobile-sheet-overlay" onclick="closeBottomSheet()"></div>
+<div class="mobile-sheet" id="mobile-sheet">
+  <div class="mobile-sheet-handle"></div>
+  <div class="mobile-sheet-title" id="ms-title"></div>
+  <div class="mobile-sheet-sub" id="ms-sub"></div>
+  <div class="mobile-sheet-actions" id="ms-actions"></div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

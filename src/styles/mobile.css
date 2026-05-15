@@ -1,0 +1,194 @@
+/* ══════════════════════════════════════════════════════
+   MOBILE STYLES — breakpoint 768px
+   Todos os estilos desktop permanecem intactos acima deste breakpoint.
+   ══════════════════════════════════════════════════════ */
+
+/* ── Bottom Navigation (sempre presente, hidden no desktop) ── */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 62px;
+  background: #0d0d0d;
+  border-top: 1px solid var(--border);
+  z-index: 50;
+  align-items: stretch;
+}
+.mbn-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--gray);
+  font-family: var(--font-h);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: color 0.15s;
+  position: relative;
+  padding: 6px 2px 4px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.mbn-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+.mbn-item.active { color: var(--red); }
+.mbn-item.active svg { stroke: var(--red); }
+.mbn-badge {
+  position: absolute;
+  top: 4px; right: calc(50% - 18px);
+  background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 700;
+  min-width: 14px; height: 14px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid #0d0d0d;
+}
+.mbn-badge.hidden { display: none; }
+
+/* ── Bottom Sheet (ações do PROCV) ── */
+.mobile-sheet-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-sheet-overlay.open { display: block; }
+
+.mobile-sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 12px 20px 48px;
+  z-index: 201;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.4);
+}
+.mobile-sheet.open { transform: translateY(0); }
+.mobile-sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.mobile-sheet-title {
+  font-family: var(--font-h);
+  font-size: 14px; font-weight: 700;
+  color: var(--white);
+  margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mobile-sheet-sub { font-size: 11px; color: var(--gray); margin-bottom: 20px; }
+.mobile-sheet-actions { display: flex; flex-direction: column; gap: 10px; }
+.mobile-sheet-btn {
+  width: 100%; padding: 15px;
+  border-radius: 10px; border: none;
+  font-family: var(--font-h); font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-sheet-btn:active { opacity: 0.75; }
+.ms-btn-mkt    { background: rgba(34,197,94,0.15);  color: #22c55e; }
+.ms-btn-nomkt  { background: rgba(239,68,68,0.12);  color: #ef4444; }
+.ms-btn-cancel { background: var(--surface2); color: var(--gray-light); }
+
+/* ── Utilitários mobile ── */
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+
+@media (max-width: 768px) {
+
+  /* ── Sidebar e float rail sumem ── */
+  .sidebar    { display: none !important; }
+  .nav-float  { display: none !important; }
+
+  /* ── Main ocupa toda a largura ── */
+  .main { margin-left: 0 !important; }
+
+  /* ── Bottom nav aparece ── */
+  .mobile-bottom-nav { display: flex; }
+
+  /* ── Utilitários ── */
+  .mobile-only  { display: block; }
+  .desktop-only { display: none !important; }
+
+  /* ── Topbar ── */
+  .topbar { padding: 10px 14px; gap: 6px; flex-wrap: wrap; }
+  .topbar-title { font-size: 12px; }
+  .date-filter { gap: 5px; flex-wrap: wrap; }
+  .date-filter label { display: none; }
+  .date-filter input[type="date"] {
+    flex: 1; min-width: 110px;
+    font-size: 11px; padding: 5px 7px;
+  }
+  .btn-sm { padding: 5px 10px; font-size: 10px; }
+  .qf-menu { right: auto; left: 0; }
+
+  /* ── Conteúdo: padding + espaço para bottom nav ── */
+  .content { padding: 12px 12px 80px; }
+
+  /* ── Hero cards → 1 coluna ── */
+  .hero-grid { grid-template-columns: 1fr !important; gap: 10px; }
+  .hero-value { font-size: 32px !important; }
+  .hero-card { padding: 18px 16px !important; }
+
+  /* ── Pipeline → 2 colunas ── */
+  .pipeline-row { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+  .pipeline-3   { grid-template-columns: repeat(2, 1fr) !important; }
+  .pipeline-value { font-size: 20px !important; }
+
+  /* ── KPI → 2 colunas ── */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+  .kpi-value { font-size: 20px !important; }
+
+  /* ── Tabelas: scroll horizontal + colunas ocultas ── */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mobile-hide { display: none !important; }
+
+  /* ── Ações PROCV: desktop some, mobile aparece ── */
+  .procv-actions-desktop { display: none !important; }
+  .procv-actions-mobile  { display: flex !important; }
+
+  /* ── Seções e títulos ── */
+  .section-title { font-size: 11px; margin-bottom: 12px; }
+
+  /* ── Gráfico ── */
+  .chart-card { padding: 14px; }
+
+  /* ── Toast → acima do bottom nav ── */
+  .toast { bottom: 70px; right: 12px; left: 12px; max-width: none; }
+
+  /* ── Info box ── */
+  .info-box { font-size: 11px; padding: 10px 12px; }
+
+  /* ── Upload grid ── */
+  .upload-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* ── Metas ── */
+  .goals-grid { grid-template-columns: 1fr; }
+
+  /* ── History panel → tela cheia ── */
+  .history-panel { width: 100%; right: -100vw; }
+
+  /* ── Gestão tabs → scroll horizontal ── */
+  .gestao-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 0; }
+  .gestao-tab-btn { white-space: nowrap; font-size: 10px; padding: 8px 12px; }
+
+  /* ── Login ── */
+  .login-box { margin: 16px; padding: 28px 18px; }
+
+  /* ── Filtros de tabela ── */
+  .table-filters { gap: 4px; }
+  .filter-btn { font-size: 9px; padding: 4px 8px; }
+
+  /* ── Ranking grid ── */
+  [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+}

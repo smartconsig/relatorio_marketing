@@ -4,6 +4,7 @@ import './styles/components.css';
 import './styles/theme.css';
 import './styles/bsc.css';
 import './styles/propostas.css';
+import './styles/mobile.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
@@ -22,6 +23,7 @@ import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
+import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -78,7 +80,9 @@ window.exitTVMode        = exitTVMode;
 window.saveTVDurations   = saveTVDurations;
 window.openHistoryPanel  = openHistoryPanel;
 window.closeHistoryPanel = closeHistoryPanel;
-window.keepSession       = keepSession;
+window.keepSession        = keepSession;
+window.closeBottomSheet   = closeBottomSheet;
+window.openBottomSheet    = openBottomSheet;
 
 initNavigation();
 initAuth();

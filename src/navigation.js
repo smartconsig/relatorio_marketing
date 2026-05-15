@@ -8,6 +8,7 @@ import { renderClientes } from './pages/clientes.js';
 import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
 import { syncMetaAds } from './services/meta-ads.js';
+import { syncBottomNav, initSwipe } from './utils/mobile.js';
 
 const TITLES = {
   import:    'Importar Dados',
@@ -24,8 +25,10 @@ export function navigate(sec) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
-  // keep float rail in sync
   document.querySelectorAll('.nav-float-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
+  syncBottomNav(sec);
+  // Scroll para o topo ao trocar de seção no mobile
+  document.querySelector('.content')?.scrollTo({ top: 0 });
 }
 
 export function renderAll() {
@@ -58,6 +61,14 @@ export function renderAll() {
   if (procvBadge) {
     procvBadge.textContent = procvCnt;
     procvBadge.classList.toggle('hidden', procvCnt === 0);
+  }
+
+  // Badge mobile bottom nav gestão → soma revisão + procv pendentes
+  const mbnGestaoBadge = document.getElementById('mbn-gestao-badge');
+  if (mbnGestaoBadge) {
+    const mbnCnt = reviewCnt + procvCnt;
+    mbnGestaoBadge.textContent = mbnCnt;
+    mbnGestaoBadge.classList.toggle('hidden', mbnCnt === 0);
   }
 }
 
@@ -223,4 +234,7 @@ export function initNavigation() {
     document.body.classList.add('sidebar-collapsed');
     _buildFloatRail();
   }
+
+  // Swipe entre seções no mobile
+  initSwipe(navigate);
 }
