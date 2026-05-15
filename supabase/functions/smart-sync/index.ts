@@ -1,10 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const FEIJUCA_URL = 'https://feijuca-auth-api.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/users/login';
-const SMART_URL   = 'https://smartconsig-fgts-live.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/simulations';
-const TENANT      = 'smartconsig';
-const PRODUCTS    = ['Clt', 'Inss', 'PublicServant'];
-const PAGE_SIZE   = 500;
+const FEIJUCA_URL    = 'https://feijuca-auth-api.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/users/login';
+const SMART_URL      = 'https://smartconsig-fgts-live.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/simulations';
+const TENANT         = 'smartconsig';
+const ALL_PRODUCTS   = ['Clt', 'Inss', 'PublicServant'];
+const PAGE_SIZE      = 500;
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -60,14 +60,21 @@ serve(async (req) => {
     let dateIni: string | null = null;
     let dateEnd: string | null = null;
 
+    let products: string[] = ALL_PRODUCTS;
+
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
-      dateIni = body.date_start ?? null;
-      dateEnd = body.date_end   ?? null;
+      dateIni  = body.date_start ?? null;
+      dateEnd  = body.date_end   ?? null;
+      if (Array.isArray(body.products) && body.products.length > 0) {
+        products = body.products.filter((p: string) => ALL_PRODUCTS.includes(p));
+      }
     } else {
       const params = new URL(req.url).searchParams;
-      dateIni = params.get('date_start');
-      dateEnd = params.get('date_end');
+      dateIni  = params.get('date_start');
+      dateEnd  = params.get('date_end');
+      const p  = params.get('products');
+      if (p) products = p.split(',').map(s => s.trim()).filter(s => ALL_PRODUCTS.includes(s));
     }
 
     const username = Deno.env.get('SMART_USERNAME');
@@ -77,11 +84,11 @@ serve(async (req) => {
     // 1. Autenticar na Feijuca
     const token = await getToken(username, password);
 
-    // 2. Buscar os 3 produtos em paralelo
-    const [clt, inss, pub] = await Promise.all(
-      PRODUCTS.map(p => fetchProduct(token, p, dateIni, dateEnd))
+    // 2. Buscar os produtos selecionados em paralelo
+    const results = await Promise.all(
+      products.map(p => fetchProduct(token, p, dateIni, dateEnd))
     );
-    const all = [...clt, ...inss, ...pub] as Record<string, unknown>[];
+    const all = results.flat() as Record<string, unknown>[];
 
     // 3. Formatar para o frontend
     const leads = all.map((r) => {
