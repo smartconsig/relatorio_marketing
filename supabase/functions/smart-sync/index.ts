@@ -4,7 +4,8 @@ const FEIJUCA_URL    = 'https://feijuca-auth-api.victoriousocean-22a8a528.brazil
 const SMART_URL      = 'https://smartconsig-fgts-live.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/simulations';
 const TENANT         = 'smartconsig';
 const ALL_PRODUCTS   = ['Clt', 'Inss', 'PublicServant'];
-const PAGE_SIZE      = 500;
+const DEFAULT_PAGE_SIZE = 500;
+const MAX_PAGE_SIZE     = 1000; // limite de segurança
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -23,14 +24,14 @@ async function getToken(username: string, password: string): Promise<string> {
   return data.accessToken;
 }
 
-async function fetchProduct(token: string, product: string, dateIni: string | null, dateEnd: string | null) {
+async function fetchProduct(token: string, product: string, dateIni: string | null, dateEnd: string | null, pageSize: number) {
   const results: unknown[] = [];
   let page = 1;
 
   while (true) {
     const url = new URL(SMART_URL);
     url.searchParams.set('pageFilter.Page',     String(page));
-    url.searchParams.set('PageFilter.PageSize', String(PAGE_SIZE));
+    url.searchParams.set('PageFilter.PageSize', String(pageSize));
     url.searchParams.set('Product',             product);
     if (dateIni) url.searchParams.set('DateIni', dateIni);
     if (dateEnd) url.searchParams.set('DateEnd', dateEnd);
@@ -44,7 +45,7 @@ async function fetchProduct(token: string, product: string, dateIni: string | nu
     const rows = data.results || [];
     results.push(...rows);
 
-    const totalPages = data.totalPages ?? Math.ceil((data.totalResults || 0) / PAGE_SIZE);
+    const totalPages = data.totalPages ?? Math.ceil((data.totalResults || 0) / pageSize);
     if (page >= totalPages || rows.length === 0) break;
     page++;
   }
@@ -61,6 +62,7 @@ serve(async (req) => {
     let dateEnd: string | null = null;
 
     let products: string[] = ALL_PRODUCTS;
+    let pageSize: number   = DEFAULT_PAGE_SIZE;
 
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
@@ -69,12 +71,17 @@ serve(async (req) => {
       if (Array.isArray(body.products) && body.products.length > 0) {
         products = body.products.filter((p: string) => ALL_PRODUCTS.includes(p));
       }
+      if (body.page_size && Number.isInteger(body.page_size)) {
+        pageSize = Math.min(Math.max(body.page_size, 1), MAX_PAGE_SIZE);
+      }
     } else {
       const params = new URL(req.url).searchParams;
       dateIni  = params.get('date_start');
       dateEnd  = params.get('date_end');
       const p  = params.get('products');
       if (p) products = p.split(',').map(s => s.trim()).filter(s => ALL_PRODUCTS.includes(s));
+      const ps = params.get('page_size');
+      if (ps) pageSize = Math.min(Math.max(parseInt(ps, 10) || DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
     }
 
     const username = Deno.env.get('SMART_USERNAME');
@@ -86,7 +93,7 @@ serve(async (req) => {
 
     // 2. Buscar os produtos selecionados em paralelo
     const results = await Promise.all(
-      products.map(p => fetchProduct(token, p, dateIni, dateEnd))
+      products.map(p => fetchProduct(token, p, dateIni, dateEnd, pageSize))
     );
     const all = results.flat() as Record<string, unknown>[];
 
