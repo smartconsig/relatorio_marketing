@@ -4,8 +4,8 @@ const FEIJUCA_URL    = 'https://feijuca-auth-api.victoriousocean-22a8a528.brazil
 const SMART_URL      = 'https://smartconsig-fgts-live.victoriousocean-22a8a528.brazilsouth.azurecontainerapps.io/api/v1/simulations';
 const TENANT         = 'smartconsig';
 const ALL_PRODUCTS   = ['Clt', 'Inss', 'PublicServant'];
-const DEFAULT_PAGE_SIZE = 500;
-const MAX_PAGE_SIZE     = 1000; // limite de segurança
+const DEFAULT_PAGE_SIZE = 60;
+const MAX_PAGE_SIZE     = 60; // limite de segurança
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -25,32 +25,20 @@ async function getToken(username: string, password: string): Promise<string> {
 }
 
 async function fetchProduct(token: string, product: string, dateIni: string | null, dateEnd: string | null, pageSize: number) {
-  const results: unknown[] = [];
-  let page = 1;
+  const url = new URL(SMART_URL);
+  url.searchParams.set('pageFilter.Page',     '1');
+  url.searchParams.set('PageFilter.PageSize', String(pageSize));
+  url.searchParams.set('Product',             product);
+  if (dateIni) url.searchParams.set('DateIni', dateIni);
+  if (dateEnd) url.searchParams.set('DateEnd', dateEnd);
 
-  while (true) {
-    const url = new URL(SMART_URL);
-    url.searchParams.set('pageFilter.Page',     String(page));
-    url.searchParams.set('PageFilter.PageSize', String(pageSize));
-    url.searchParams.set('Product',             product);
-    if (dateIni) url.searchParams.set('DateIni', dateIni);
-    if (dateEnd) url.searchParams.set('DateEnd', dateEnd);
+  const res = await fetch(url.toString(), {
+    headers: { 'Authorization': `Bearer ${token}`, 'Tenant': TENANT },
+  });
+  if (!res.ok) return [];
 
-    const res = await fetch(url.toString(), {
-      headers: { 'Authorization': `Bearer ${token}`, 'Tenant': TENANT },
-    });
-    if (!res.ok) break;
-
-    const data = await res.json();
-    const rows = data.results || [];
-    results.push(...rows);
-
-    const totalPages = data.totalPages ?? Math.ceil((data.totalResults || 0) / pageSize);
-    if (page >= totalPages || rows.length === 0) break;
-    page++;
-  }
-
-  return results;
+  const data = await res.json();
+  return data.results || [];
 }
 
 serve(async (req) => {
