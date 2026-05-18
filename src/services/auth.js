@@ -5,7 +5,7 @@ import { loadSupabaseGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
-import { renderAll } from '../navigation.js';
+import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
@@ -14,6 +14,40 @@ import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
 import { syncSmartData } from './smart-sync.js';
+import { DEFAULT_PERMISSIONS } from './permissions.js';
+
+/**
+ * Carrega o perfil e permissões do usuário logado a partir do Supabase.
+ * Armazena em state.currentUser.permissoes e state.currentUser.profile.
+ */
+async function loadUserProfile() {
+  try {
+    const { data: profile, error } = await sb
+      .from('profiles')
+      .select('*, grupos_acesso(id, nome, permissoes)')
+      .eq('id', state.currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (profile) {
+      state.currentUser.profile    = profile;
+      state.currentUser.grupoId    = profile.grupo_id;
+      state.currentUser.grupoNome  = profile.grupos_acesso?.nome  || '';
+      state.currentUser.permissoes = profile.grupos_acesso?.permissoes || DEFAULT_PERMISSIONS;
+      state.currentUser.nomeDisplay = profile.nome || state.currentUser.email;
+      state.currentUser.ativo      = profile.ativo !== false;
+    } else {
+      // Usuário sem perfil — acesso mínimo
+      state.currentUser.permissoes = DEFAULT_PERMISSIONS;
+      state.currentUser.grupoNome  = '';
+      state.currentUser.nomeDisplay = state.currentUser.email;
+    }
+  } catch (e) {
+    console.warn('[auth] loadUserProfile:', e);
+    state.currentUser.permissoes = DEFAULT_PERMISSIONS;
+  }
+}
 
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
@@ -29,7 +63,9 @@ export async function doSignIn() {
     return;
   }
   state.currentUser = data.user;
-  document.getElementById('user-email').textContent = data.user.user_metadata?.full_name || data.user.email;
+  await loadUserProfile();
+  applyPermissionsToUI();
+  document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || data.user.email;
   startSessionTimeout();
   document.getElementById('login-screen').style.display = 'none';
   await onAuthenticated();
@@ -168,7 +204,9 @@ export async function initAuth() {
     const { data: refreshed } = await sb.auth.refreshSession();
     const user = refreshed?.session?.user || session.user;
     state.currentUser = user;
-    document.getElementById('user-email').textContent = user.user_metadata?.full_name || user.email;
+    await loadUserProfile();
+    applyPermissionsToUI();
+    document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || user.email;
     document.getElementById('login-screen').style.display = 'none';
     startSessionTimeout();
     await onAuthenticated();
