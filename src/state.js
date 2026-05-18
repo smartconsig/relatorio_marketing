@@ -7,7 +7,7 @@ export const state = {
   chart: null,
   filterDates: { start: null, end: null },
   goals: { leads: 0, invest: 0, cpl: 0, approved: 0, paid: 0, value: 0, cac: 0, roas: 0 },
-  currentUser: null,
+  currentUser: null,        // { id, email, nomeDisplay, grupoNome, permissoes:{}, profile:{} }
   gestaoTab: 'procv',
   procvFilter: 'pending',
   procvSearch: '',
@@ -18,5 +18,6 @@ export const state = {
   clientesSort:   { col: null, dir: 'asc' },
   propostasSort:  { col: 'cliente', dir: 'asc' },
   bsc: null,
-  metaAds: null, // { invest, leads, daily:[{date,invest,leads}], lastSync }
+  metaAds:   null,      // { invest, leads, daily:[{date,invest,leads}], lastSync }
+  smartLeads: null,     // array de leads da API Smart — null = não sincronizado ainda
 };

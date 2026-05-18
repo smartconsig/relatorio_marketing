@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/admin.css">
   <!-- CDN libs exposed as globals (XLSX, Chart, supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -67,9 +68,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
       <span class="nav-label">Metas</span>
     </div>
-    <div class="nav-item" data-sec="bsc" data-title="Ranking BSC">
+    <div class="nav-item" data-sec="bsc" data-title="Ranking BSC" data-perm="bsc">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/></svg>
       <span class="nav-label">Ranking BSC</span>
+    </div>
+    <div class="nav-item nav-admin" data-sec="admin" data-title="Administração" data-perm="admin" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><circle cx="19" cy="19" r="3"/><line x1="19" y1="16" x2="19" y2="19"/><line x1="19" y1="19" x2="22" y2="19"/></svg>
+      <span class="nav-label">Administração</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -252,6 +257,14 @@
       </div>
     </div>
 
+    <!-- ── ADMINISTRAÇÃO ── -->
+    <div class="section" id="sec-admin">
+      <div class="section-title"><span class="bar"></span>Administração</div>
+      <div id="admin-body">
+        <div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">Carregando…</div></div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </main>
 
@@ -329,6 +342,11 @@
   <div class="mobile-sheet-title" id="ms-title"></div>
   <div class="mobile-sheet-sub" id="ms-sub"></div>
   <div class="mobile-sheet-actions" id="ms-actions"></div>
+</div>
+
+<!-- ═══════════════════ ADMIN MODAL ═══════════════════ -->
+<div id="admin-modal">
+  <div id="admin-modal-content"></div>
 </div>
 
 <script type="module" src="/src/main.js"></script>

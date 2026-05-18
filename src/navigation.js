@@ -8,7 +8,10 @@ import { renderClientes } from './pages/clientes.js';
 import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
 import { syncMetaAds } from './services/meta-ads.js';
+import { syncSmartData } from './services/smart-sync.js';
 import { syncBottomNav, initSwipe } from './utils/mobile.js';
+import { can, canSeeGestao, perm } from './services/permissions.js';
+import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 
 const TITLES = {
   import:    'Importar Dados',
@@ -18,6 +21,7 @@ const TITLES = {
   propostas: 'Propostas de Marketing',
   goals:     'Configurar Metas',
   bsc:       'Ranking BSC',
+  admin:     'Administração',
 };
 
 export function navigate(sec) {
@@ -29,6 +33,45 @@ export function navigate(sec) {
   syncBottomNav(sec);
   // Scroll para o topo ao trocar de seção no mobile
   document.querySelector('.content')?.scrollTo({ top: 0 });
+  // Renderiza admin page quando navega para lá
+  if (sec === 'admin') renderAdminPage();
+}
+
+/**
+ * Aplica permissões à interface: mostra/oculta itens de nav e seções
+ * conforme o grupo do usuário logado.
+ */
+export function applyPermissionsToUI() {
+  const permMap = {
+    import:    () => can('importacao_fb03') || can('importacao_ecorban') || can('importacao_processar'),
+    overview:  () => can('visao_geral'),
+    ranking:   () => can('ranking'),
+    gestao:    () => canSeeGestao(),
+    propostas: () => can('propostas'),
+    goals:     () => can('metas_visualizar'),
+    bsc:       () => can('bsc'),
+    admin:     () => perm.isAdmin(),
+  };
+
+  // Sidebar nav items
+  document.querySelectorAll('.nav-item[data-sec]').forEach(el => {
+    const sec = el.dataset.sec;
+    const checker = permMap[sec];
+    if (checker) {
+      el.style.display = checker() ? '' : 'none';
+    }
+  });
+
+  // Sub-abas de Gestão
+  const procvTab    = document.querySelector('.gestao-tab-btn[data-tab="procv"]');
+  const revisaoTab  = document.querySelector('.gestao-tab-btn[data-tab="review"]');
+  const clientesTab = document.querySelector('.gestao-tab-btn[data-tab="clientes"]');
+  if (procvTab)    procvTab.style.display    = can('gestao_procv_visualizar')   ? '' : 'none';
+  if (revisaoTab)  revisaoTab.style.display  = can('gestao_revisao_visualizar') ? '' : 'none';
+  if (clientesTab) clientesTab.style.display = can('gestao_clientes')           ? '' : 'none';
+
+  // Inicializa o admin modal uma vez
+  initAdminPage();
 }
 
 export function renderAll() {
@@ -76,10 +119,12 @@ export function applyFilter() {
   state.filterDates.start = document.getElementById('date-start').value || null;
   state.filterDates.end   = document.getElementById('date-end').value   || null;
   if (state.result) {
-    state.metaAds = null; // limpa dados antigos para evitar período errado
+    state.metaAds  = null; // limpa dados antigos para evitar período errado
+    state.smartLeads = null; // idem para o Smart
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncSmartData(); // recarrega Smart com novo período
   }
 }
 
@@ -90,10 +135,12 @@ export function clearFilter() {
   const btn = document.getElementById('qf-btn');
   if (btn) btn.textContent = 'Período ▾';
   if (state.result) {
-    state.metaAds = null;
+    state.metaAds    = null;
+    state.smartLeads = null;
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncSmartData(); // recarrega Smart com novo período
   }
 }
 

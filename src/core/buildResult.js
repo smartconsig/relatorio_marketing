@@ -31,14 +31,42 @@ function getSmartSignal(origem, audiencia) {
   return 'doubt';
 }
 
+/**
+ * Normaliza um lead da API Smart para o mesmo formato interno
+ * usado pelos registros do Excel, permitindo reaproveitamento
+ * da lógica de cruzamento em buildResult().
+ */
+function apiLeadToRow(lead) {
+  return {
+    Origem:            lead.source    || '',
+    Audiencia:         lead.audience  || '',
+    Telefone:          lead.phone     || '',
+    Operador:          lead.operator  || '',
+    Time:              lead.team      || '',
+    'Data de Criação': lead.date      || '',
+    CPF:               lead.cpf       || '',
+    _id:               lead.id        || '',
+  };
+}
+
 export function buildResult() {
   const byCPF   = {};
   const byPhone = {};
 
-  const smartCols = state.raw.smart.length ? Object.keys(state.raw.smart[0]) : [];
-  const diagSmart = { total: state.raw.smart.length, cpfIndexed: 0, phoneIndexed: 0, cols: smartCols.slice(0, 8) };
+  // Usa a API Smart se disponível, senão cai para o Excel importado
+  const useApi     = Array.isArray(state.smartLeads) && state.smartLeads.length > 0;
+  const smartRows  = useApi
+    ? state.smartLeads.map(apiLeadToRow)
+    : (state.raw.smart || []);
 
-  for (const row of state.raw.smart) {
+  const diagSmart = {
+    total:        smartRows.length,
+    cpfIndexed:   0,
+    phoneIndexed: 0,
+    source:       useApi ? 'api' : 'excel',
+  };
+
+  for (const row of smartRows) {
     const cpf   = normCPF(getCol(row, 'CPF', 'cpf', 'Cpf'));
     const phone = normPhone(String(getCol(row, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
     if (cpf && cpf !== '00000000000') {
@@ -163,7 +191,7 @@ export function buildResult() {
   // ── Leads de marketing por Operador e Time (todo o Smart, sem filtro de data) ──
   const smartLeadsByOperador = {};
   const smartLeadsByTime     = {};
-  for (const row of state.raw.smart) {
+  for (const row of smartRows) {
     const o = String(getCol(row, 'Origem', 'origem') || '').trim();
     const a = String(getCol(row, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
     if (getSmartSignal(o, a) !== 'contradiction') {
