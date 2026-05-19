@@ -90,7 +90,14 @@
 }
 
 .btn-icon:hover            { background: var(--surface3); border-color: var(--gray); color: var(--white); }
-.btn-icon.btn-danger:hover { background: rgba(239,68,68,0.12); border-color: #ef4444; }
+.btn-icon.btn-danger:hover { background: rgba(239,68,68,0.12); border-color: #ef4444; color: #ef4444; }
+
+.btn-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  pointer-events: none;
+}
 
 /* ── Badges status ────────────────────────────────────────────────────────── */
 
