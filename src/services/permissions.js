@@ -35,6 +35,9 @@ export const perm = {
   revisaoClassificar:  () => can('gestao_revisao_classificar'),
   clientesVisualizar:  () => can('gestao_clientes'),
 
+  // Dashboard avançado
+  perfilCliente:       () => can('perfil_visualizar'),
+
   // Administração
   adminUsuarios:       () => can('admin_usuarios'),
   adminGrupos:         () => can('admin_grupos'),
@@ -71,6 +74,7 @@ export const DEFAULT_PERMISSIONS = {
   metas_visualizar: true,
   metas_editar: false,
   bsc: true,
+  perfil_visualizar: false,
   admin_usuarios: false,
   admin_grupos: false,
 };

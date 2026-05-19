@@ -5,6 +5,34 @@ import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
 import { classifyStatus } from './calcKPIs.js';
 
+// ── Helpers de perfil ─────────────────────────────────────────────────────────
+const REGIAO_MAP = {
+  AC:'Norte', AM:'Norte', AP:'Norte', PA:'Norte', RO:'Norte', RR:'Norte', TO:'Norte',
+  AL:'Nordeste', BA:'Nordeste', CE:'Nordeste', MA:'Nordeste', PB:'Nordeste',
+  PE:'Nordeste', PI:'Nordeste', RN:'Nordeste', SE:'Nordeste',
+  DF:'Centro-Oeste', GO:'Centro-Oeste', MS:'Centro-Oeste', MT:'Centro-Oeste',
+  ES:'Sudeste', MG:'Sudeste', RJ:'Sudeste', SP:'Sudeste',
+  PR:'Sul', RS:'Sul', SC:'Sul',
+};
+
+function _calcIdade(nascimento) {
+  if (!nascimento) return null;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const m = hoje.getMonth() - nascimento.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) idade--;
+  return (idade > 0 && idade < 120) ? idade : null;
+}
+
+function _faixaEtaria(idade) {
+  if (!idade) return null;
+  if (idade < 31) return '18–30';
+  if (idade < 41) return '31–40';
+  if (idade < 51) return '41–50';
+  if (idade < 61) return '51–60';
+  return '61+';
+}
+
 /**
  * Returns 'confirmed' | 'doubt' | 'contradiction' based on Smart origem/audiencia.
  *
@@ -106,6 +134,21 @@ export function buildResult() {
     );
     const ecorbanOrigem = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();
 
+    // ── Campos de perfil ──────────────────────────────────────────────────
+    const nascimento    = parseExcelDate(getCol(row, 'Cliente - Data de Nascimento', 'Data de Nascimento', 'Nascimento'));
+    const idade         = _calcIdade(nascimento);
+    const faixaEt       = _faixaEtaria(idade);
+    const estado        = String(getCol(row, 'Cliente - Estado', 'Estado', 'UF') || '').trim().toUpperCase();
+    const bairro        = String(getCol(row, 'Cliente - Bairro', 'Bairro') || '').trim();
+    const cep           = String(getCol(row, 'Cliente - CEP', 'CEP', 'Cep') || '').trim();
+    const regiaoRaw     = String(getCol(row, 'Região', 'Regiao', 'Região') || '').trim();
+    const regiao        = regiaoRaw || REGIAO_MAP[estado] || '';
+    const cadastradoEm  = parseExcelDate(getCol(row, 'Cadastrado em', 'Cadastrado Em', 'Data de Cadastro'));
+    const pagamentoData = parseExcelDate(getCol(row, 'Pagamento ao Cliente', 'Pagamento'));
+    const diasConversao = (cadastradoEm && pagamentoData && pagamentoData >= cadastradoEm)
+      ? Math.round((pagamentoData - cadastradoEm) / 864e5)
+      : null;
+
     // ── Critério primário: Origem do Ecorban ──────────────────────────────
     const isMarketingByEcorban = ecorbanOrigem.toUpperCase() === 'MARKETING';
 
@@ -125,6 +168,10 @@ export function buildResult() {
       smartPhone:    null,
       reviewReason:  null,
       smartSignal:   null,   // 'confirmed' | 'doubt' | 'contradiction' | 'not_found'
+      // perfil
+      nascimento, idade, faixaEtaria: faixaEt,
+      estado, bairro, cep, regiao,
+      cadastradoEm, pagamentoData, diasConversao,
     };
 
     // ── Override manual tem prioridade absoluta ───────────────────────────

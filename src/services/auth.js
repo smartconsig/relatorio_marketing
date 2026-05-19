@@ -110,7 +110,7 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['import','overview','ranking','gestao','propostas','goals','bsc','admin']);
+  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin']);
   const hashSec = window.location.hash.replace('#', '');
   const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
     || localStorage.getItem('sc_last_section')

@@ -31,7 +31,8 @@ const PERM_TREE = [
     { key: 'metas_visualizar', label: 'Visualizar' },
     { key: 'metas_editar',     label: 'Editar' },
   ]},
-  { key: 'bsc', label: 'Ranking BSC' },
+  { key: 'bsc',              label: 'Ranking BSC' },
+  { key: 'perfil_visualizar', label: 'Perfil de Cliente' },
   { label: 'Administração', children: [
     { key: 'admin_usuarios', label: 'Gerenciar Usuários' },
     { key: 'admin_grupos',   label: 'Gerenciar Grupos de Acesso' },

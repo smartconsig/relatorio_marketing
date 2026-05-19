@@ -12,12 +12,14 @@ import { syncSmartData } from './services/smart-sync.js';
 import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
+import { renderPerfil } from './pages/perfil.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
   overview:  'dashboard',
   ranking:   'dashboard',
   bsc:       'dashboard',
+  perfil:    'dashboard',
   propostas: 'comercial',
   goals:     'comercial',
 };
@@ -26,6 +28,7 @@ const TITLES = {
   import:    'Importar Dados',
   overview:  'Visão Geral',
   ranking:   'Ranking de Vendas',
+  perfil:    'Perfil de Cliente',
   gestao:    'Gestão de Classificações',
   propostas: 'Propostas de Marketing',
   goals:     'Configurar Metas',
@@ -80,6 +83,7 @@ export function applyPermissionsToUI() {
     overview:  () => can('visao_geral'),
     ranking:   () => can('ranking'),
     gestao:    () => canSeeGestao(),
+    perfil:    () => can('perfil_visualizar'),
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
     bsc:       () => can('bsc'),
@@ -141,6 +145,7 @@ export function renderAll() {
   renderProcv(fd.entries);
   renderClientes(fd.entries);
   renderPropostas(fd.entries);
+  renderPerfil(fd.entries);
   switchGestaoTab(state.gestaoTab || 'procv');
 
   // Badge "Revisão Manual" → só statuses desconhecidos
@@ -282,9 +287,10 @@ const FLOAT_NAV_ITEMS = [
     group: 'dashboard', title: 'Dashboard',
     svg: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
     children: [
-      { sec: 'overview', title: 'Visão Geral', svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
-      { sec: 'ranking',  title: 'Ranking',     svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
-      { sec: 'bsc',      title: 'Ranking BSC', svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
+      { sec: 'overview', title: 'Visão Geral',      svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+      { sec: 'ranking',  title: 'Ranking',          svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+      { sec: 'bsc',      title: 'Ranking BSC',      svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
+      { sec: 'perfil',   title: 'Perfil de Cliente', svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="21" x2="23" y2="15"/><line x1="16" y1="15" x2="16" y2="21"/><polyline points="20 18 23 21 26 18"/>' },
     ],
   },
   {
