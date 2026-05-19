@@ -64,6 +64,7 @@ export function buildResult() {
     cpfIndexed:   0,
     phoneIndexed: 0,
     source:       useApi ? 'api' : 'excel',
+    cols:         smartRows.length ? Object.keys(smartRows[0]) : [],
   };
 
   for (const row of smartRows) {
