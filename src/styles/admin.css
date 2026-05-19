@@ -168,6 +168,7 @@
   max-height: 400px;
   overflow-y: auto;
   background: var(--bg-secondary);
+  color: var(--text, #e2e8f0);
 }
 
 .perm-node { margin: 2px 0; }
@@ -180,6 +181,7 @@
   border-radius: 5px;
   cursor: pointer;
   font-size: 13px;
+  color: var(--text, #e2e8f0);
   transition: background 0.1s;
 }
 
@@ -201,6 +203,7 @@
   border-radius: 5px;
   cursor: default;
   user-select: none;
+  color: var(--text, #e2e8f0);
 }
 
 .perm-group-header:hover { background: var(--hover-bg, rgba(255,255,255,0.05)); }
@@ -285,7 +288,7 @@
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-muted, #94a3b8);
   margin-bottom: 6px;
 }
 
@@ -295,10 +298,10 @@
   width: 100%;
   box-sizing: border-box;
   padding: 9px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border, #334155);
   border-radius: 7px;
-  color: var(--text);
+  color: var(--text, #e2e8f0);
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s;

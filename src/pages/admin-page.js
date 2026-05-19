@@ -255,9 +255,15 @@ async function toggleUser(id, currentAtivo) {
 }
 
 // ── Modal: editar usuário ────────────────────────────────────────────────────
-function openEditUserModal(userId) {
+async function openEditUserModal(userId) {
   const user = _users.find(u => u.id === userId);
   if (!user) return;
+
+  // Garante que os grupos estão carregados
+  if (!_grupos.length) {
+    const { data } = await sb.from('grupos_acesso').select('*').order('nome');
+    _grupos = data || [];
+  }
 
   const modal = document.getElementById('admin-modal');
   const content = document.getElementById('admin-modal-content');
