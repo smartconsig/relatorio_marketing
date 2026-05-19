@@ -110,7 +110,13 @@ export async function onAuthenticated() {
 
   // 1. Carrega cache local imediatamente — tela aparece na hora
   const hasLocal = loadState();
-  const lastSection = localStorage.getItem('sc_last_section') || 'overview';
+  // Hash da URL é a fonte mais confiável (sobrevive F5 e recargas)
+  // Ex: #ranking → 'ranking'. Ignora hashes do Supabase Auth (#access_token=...)
+  const VALID_SECS = new Set(['import','overview','ranking','gestao','propostas','goals','bsc','admin']);
+  const hashSec = window.location.hash.replace('#', '');
+  const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
+    || localStorage.getItem('sc_last_section')
+    || 'overview';
   if (hasLocal) {
     setCacheIndicator(true);
     renderAll();

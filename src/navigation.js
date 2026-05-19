@@ -26,6 +26,10 @@ const TITLES = {
 
 export function navigate(sec) {
   localStorage.setItem('sc_last_section', sec);
+  // Atualiza o hash da URL sem recarregar — sobrevive ao F5
+  if (!window.location.hash.includes('access_token')) {
+    history.replaceState(null, '', '#' + sec);
+  }
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
