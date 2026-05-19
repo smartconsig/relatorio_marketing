@@ -108,20 +108,21 @@ export async function onAuthenticated() {
   }
   await syncClassificationsFromSupabase();
 
-  // 1. Carrega cache local imediatamente — tela aparece na hora
-  const hasLocal = loadState();
-  // Hash da URL é a fonte mais confiável (sobrevive F5 e recargas)
-  // Ex: #ranking → 'ranking'. Ignora hashes do Supabase Auth (#access_token=...)
+  // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
+  //    Garante que o F5 mantém a seção correta independente do estado do cache
   const VALID_SECS = new Set(['import','overview','ranking','gestao','propostas','goals','bsc','admin']);
   const hashSec = window.location.hash.replace('#', '');
   const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
     || localStorage.getItem('sc_last_section')
     || 'overview';
+  navigate(lastSection);
+
+  // 2. Carrega cache local e preenche os dados
+  const hasLocal = loadState();
   if (hasLocal) {
     setCacheIndicator(true);
     renderAll();
     renderDiag(state.result.diag);
-    navigate(lastSection);
   }
 
   // 2. Consulta leve ao Supabase: só o updated_at
