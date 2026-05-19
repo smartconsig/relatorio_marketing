@@ -10,7 +10,6 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    // Verifica autenticação do usuário que está fazendo o convite
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Não autorizado' }), {
@@ -18,28 +17,24 @@ serve(async (req) => {
       });
     }
 
-    // Cliente com service role — pode criar usuários
+    // Single admin client — service role can do everything
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Cliente do usuário logado — para verificar se é admin
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Verify caller JWT via admin client (no need for a separate anon client)
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const { data: { user: caller }, error: callerErr } = await supabaseAdmin.auth.getUser(token);
 
-    // Verifica se quem está convidando é admin
-    const { data: { user: caller }, error: callerErr } = await supabaseUser.auth.getUser();
     if (callerErr || !caller) {
       return new Response(JSON.stringify({ error: 'Sessão inválida' }), {
         status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
+    // Check permission
     const { data: callerProfile } = await supabaseAdmin
       .from('profiles')
       .select('grupos_acesso(permissoes)')
@@ -53,7 +48,7 @@ serve(async (req) => {
       });
     }
 
-    // Lê os dados do convite
+    // Read invite payload
     const body = await req.json().catch(() => ({}));
     const { email, nome, grupo_id } = body as { email: string; nome?: string; grupo_id?: string };
 
@@ -63,28 +58,54 @@ serve(async (req) => {
       });
     }
 
-    // Verifica se o email já está cadastrado
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const alreadyExists = existingUsers?.users?.some(u => u.email === email);
-    if (alreadyExists) {
-      return new Response(JSON.stringify({ error: 'Este e-mail já está cadastrado no sistema' }), {
-        status: 409, headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Envia o convite — Supabase manda o email automaticamente
+    // Send invite — Supabase emails the user automatically
     const { data: invited, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: nome || '' },
     });
 
     if (inviteErr || !invited?.user) {
       console.error('inviteUserByEmail error:', inviteErr);
+      const msg = (inviteErr?.message || '').toLowerCase();
+
+      // Usuário já cadastrado — envia link de redefinição de senha no lugar
+      if (msg.includes('already') || (inviteErr as any)?.status === 422) {
+        // Busca o user_id pelo email para atualizar o perfil
+        const { data: existingList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const existingUser = existingList?.users?.find(u => u.email === email);
+
+        if (existingUser) {
+          // Atualiza grupo e nome no perfil existente
+          await supabaseAdmin.from('profiles').upsert({
+            id:       existingUser.id,
+            nome:     nome     || null,
+            email:    email,
+            grupo_id: grupo_id || null,
+            ativo:    true,
+          });
+
+          // Envia link de redefinição de senha
+          await supabaseAdmin.auth.admin.generateLink({
+            type:  'recovery',
+            email,
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success:  true,
+          resent:   true,
+          user_id:  existingUser?.id,
+          email,
+        }), {
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify({ error: inviteErr?.message || 'Falha ao enviar convite' }), {
         status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
-    // Atualiza o profile com nome e grupo
+    // Upsert profile with group and display name
     await supabaseAdmin
       .from('profiles')
       .upsert({

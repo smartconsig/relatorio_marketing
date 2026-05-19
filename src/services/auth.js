@@ -198,6 +198,55 @@ export async function initAuth() {
     const btn = document.getElementById('theme-toggle');
     if (btn) btn.textContent = '🌙 Tema Escuro';
   }
+
+  // Detecta link de convite ou redefinição de senha (hash na URL)
+  const hash = window.location.hash;
+  const isInvite   = hash.includes('type=invite');
+  const isRecovery = hash.includes('type=recovery');
+
+  if (isInvite || isRecovery) {
+    // Supabase processa o hash automaticamente — aguarda a sessão
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      // Mostra tela de definir senha
+      document.getElementById('set-password-screen').style.display = 'flex';
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('set-pass-1').focus();
+
+      window._confirmSetPassword = async () => {
+        const p1  = document.getElementById('set-pass-1').value;
+        const p2  = document.getElementById('set-pass-2').value;
+        const err = document.getElementById('set-pass-err');
+        const btn = document.getElementById('set-pass-btn');
+
+        if (!p1 || p1.length < 8) { err.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
+        if (p1 !== p2)             { err.textContent = 'As senhas não conferem.'; return; }
+
+        btn.textContent = 'Salvando…'; btn.disabled = true; err.textContent = '';
+
+        const { error } = await sb.auth.updateUser({ password: p1 });
+        if (error) {
+          err.textContent = 'Erro ao definir senha: ' + error.message;
+          btn.textContent = 'Criar Senha e Entrar'; btn.disabled = false;
+          return;
+        }
+
+        // Senha definida — continua para o app normalmente
+        document.getElementById('set-password-screen').style.display = 'none';
+        // Limpa o hash da URL sem recarregar
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        state.currentUser = session.user;
+        await loadUserProfile();
+        applyPermissionsToUI();
+        document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || session.user.email;
+        startSessionTimeout();
+        await onAuthenticated();
+      };
+    }
+    return;
+  }
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     // Refresh para garantir que o user_metadata (nome) está atualizado

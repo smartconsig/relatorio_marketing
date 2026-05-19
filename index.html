@@ -15,6 +15,26 @@
 </head>
 <body>
 
+<!-- ══════════════════════════ DEFINIR SENHA (convite) ══════════════════════════ -->
+<div id="set-password-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">Smart<em>RYC</em></div>
+    <div class="login-title">Bem-vindo(a)!</div>
+    <div class="login-sub">Crie sua senha para acessar o sistema</div>
+    <div class="login-field">
+      <label>Nova senha</label>
+      <input type="password" id="set-pass-1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+    </div>
+    <div class="login-field">
+      <label>Confirmar senha</label>
+      <input type="password" id="set-pass-2" placeholder="Repita a senha" autocomplete="new-password"
+             onkeydown="if(event.key==='Enter') window._confirmSetPassword()">
+    </div>
+    <button class="login-btn" id="set-pass-btn" onclick="window._confirmSetPassword()">Criar Senha e Entrar</button>
+    <div id="set-pass-err" class="login-err"></div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
 <div id="login-screen">
   <div class="login-box">

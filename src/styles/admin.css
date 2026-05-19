@@ -1,5 +1,13 @@
 /* ── Admin Page — usa as variáveis do Smart RYC ─────────────────────────── */
 
+/* ── Tela de definir senha (convite / recuperação) ───────────────────────── */
+
+#set-password-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  align-items: center; justify-content: center;
+}
+
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
 
 .admin-tabs {

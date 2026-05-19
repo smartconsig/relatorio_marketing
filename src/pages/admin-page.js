@@ -228,6 +228,7 @@ async function loadUsers() {
               <button class="btn-icon" title="${u.ativo !== false ? 'Desativar' : 'Ativar'}" onclick="window._adminToggleUser('${u.id}', ${u.ativo !== false})">
                 ${u.ativo !== false ? '🚫' : '✅'}
               </button>
+              <button class="btn-icon btn-danger" title="Excluir usuário" onclick="window._adminDeleteUser('${u.id}', '${(u.nome || u.email || '').replace(/'/g, "\\'")}')">🗑️</button>
             </td>
           </tr>
         `).join('')}
@@ -238,6 +239,7 @@ async function loadUsers() {
   // Registra callbacks globais
   window._adminEditUser   = (id) => openEditUserModal(id);
   window._adminToggleUser = (id, ativo) => toggleUser(id, ativo);
+  window._adminDeleteUser = (id, nome) => deleteUser(id, nome);
 }
 
 function _getUserEmail(userId) {
@@ -378,15 +380,29 @@ async function openInviteModal() {
       body: { email, nome, grupo_id, operador_nome },
     });
 
+    btn.textContent = 'Enviar Convite'; btn.disabled = false;
+
     if (error || data?.error) {
-      const msg = data?.error || error?.message || 'Erro desconhecido';
+      // supabase-js v2 CDN: quando a função retorna não-2xx, error.message
+      // pode ser o próprio body JSON serializado como string
+      let msg = data?.error || 'Erro ao enviar convite';
+      if (!data?.error) {
+        try {
+          const parsed = JSON.parse(error?.message || '');
+          msg = parsed.error || error?.message || msg;
+        } catch {
+          msg = error?.message || msg;
+        }
+      }
       _showFeedback(feedback, msg, 'err');
-      btn.textContent = 'Enviar Convite'; btn.disabled = false;
       return;
     }
 
     // Sucesso — mostra feedback antes de fechar
-    _showFeedback(feedback, `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`, 'ok');
+    const msg = data.resent
+      ? `✅ ${email} já está cadastrado. Um link de redefinição de senha foi enviado.`
+      : `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`;
+    _showFeedback(feedback, msg, 'ok');
     btn.textContent = 'Enviado!'; btn.disabled = true;
 
     setTimeout(async () => {
@@ -402,6 +418,37 @@ function _showFeedback(el, msg, type) {
   el.style.background = type === 'err' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)';
   el.style.color       = type === 'err' ? '#ef4444' : '#22c55e';
   el.style.border      = `1px solid ${type === 'err' ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`;
+}
+
+async function deleteUser(id, nome) {
+  const confirmEl = document.getElementById('confirm-overlay');
+  if (confirmEl) {
+    const titleEl = document.getElementById('confirm-title');
+    const descEl  = document.getElementById('confirm-desc');
+    const okBtn   = document.getElementById('confirm-ok-btn');
+    if (titleEl) titleEl.textContent = 'Excluir Usuário';
+    if (descEl)  descEl.textContent  = `Excluir "${nome}" permanentemente? O usuário perderá o acesso imediatamente e não poderá recuperar a conta.`;
+    confirmEl.style.display = 'flex';
+    const original = okBtn.onclick;
+    okBtn.onclick = async () => {
+      confirmEl.style.display = 'none';
+      okBtn.onclick = original;
+
+      const { data, error } = await sb.functions.invoke('delete-user', {
+        body: { user_id: id },
+      });
+
+      let errMsg = null;
+      if (error || data?.error) {
+        try { errMsg = JSON.parse(error?.message || '').error; } catch {}
+        errMsg = errMsg || data?.error || error?.message || 'Erro ao excluir';
+      }
+
+      if (errMsg) { toast(errMsg, 'err'); return; }
+      toast('Usuário excluído');
+      await loadUsers();
+    };
+  }
 }
 
 // ── Grupos de acesso ─────────────────────────────────────────────────────────
