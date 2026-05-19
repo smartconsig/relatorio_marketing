@@ -66,6 +66,15 @@ export function applyPermissionsToUI() {
     }
   });
 
+  // Float nav items (sidebar recolhida)
+  document.querySelectorAll('.nav-float-item[data-sec]').forEach(el => {
+    const sec = el.dataset.sec;
+    const checker = permMap[sec];
+    if (checker) {
+      el.style.display = checker() ? '' : 'none';
+    }
+  });
+
   // Sub-abas de Gestão
   const procvTab    = document.querySelector('.gestao-tab-btn[data-tab="procv"]');
   const revisaoTab  = document.querySelector('.gestao-tab-btn[data-tab="review"]');
@@ -226,6 +235,7 @@ const NAV_ITEMS = [
   { sec: 'propostas', title: 'Propostas',   badgeId: null,         svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
   { sec: 'goals',     title: 'Metas',       badgeId: null,         svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
   { sec: 'bsc',       title: 'Ranking BSC', badgeId: null,         svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
+  { sec: 'admin',     title: 'Administração', badgeId: null,       svg: '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><circle cx="19" cy="19" r="3"/><line x1="19" y1="16" x2="19" y2="19"/><line x1="19" y1="19" x2="22" y2="19"/>' },
 ];
 
 let _floatRail = null;
