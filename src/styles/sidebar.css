@@ -197,3 +197,115 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 .nav-float-item:hover::after { opacity: 1; }
+
+/* ══════════════════════════════════════
+   NAV GROUPS — accordion (expanded sidebar)
+   ══════════════════════════════════════ */
+
+.nav-group { position: relative; }
+
+.nav-group-trigger {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 20px; cursor: pointer;
+  font-family: var(--font-h); font-size: 12px; font-weight: 600;
+  color: var(--gray-light);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap; overflow: hidden;
+  user-select: none;
+}
+.nav-group-trigger:hover { background: rgba(148,11,16,0.07); color: var(--white); }
+.nav-group.open > .nav-group-trigger {
+  color: var(--white);
+  border-left-color: rgba(148,11,16,0.35);
+}
+.nav-group-trigger svg:first-child { width: 16px; height: 16px; flex-shrink: 0; }
+
+.nav-group-arrow {
+  width: 12px; height: 12px;
+  margin-left: auto; flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.nav-group.open > .nav-group-trigger .nav-group-arrow { transform: rotate(180deg); }
+
+.nav-group-children {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.nav-group.open > .nav-group-children { max-height: 300px; }
+
+/* Child items: indented, slightly smaller */
+.nav-group-children .nav-item {
+  padding-left: 36px;
+  font-size: 11px;
+}
+
+/* ══════════════════════════════════════
+   NAV GROUPS — flyout (collapsed sidebar)
+   ══════════════════════════════════════ */
+
+/* Group circle: don't scale on hover (flyout would jump) */
+.nav-float-item.nav-float-group:hover {
+  transform: none;
+  background: var(--red);
+  border-color: var(--red);
+}
+.nav-float-item.nav-float-group:hover > svg { stroke: #fff; }
+
+/* Active group circle */
+.nav-float-item.nav-float-group.active        { background: var(--red); border-color: var(--red); }
+.nav-float-item.nav-float-group.active > svg  { stroke: #fff; }
+
+/* Suppress tooltip for group items — flyout takes its place */
+.nav-float-item.nav-float-group::after { display: none !important; }
+
+/* Flyout panel */
+.nav-float-flyout {
+  display: none;
+  position: absolute;
+  left: 36px; top: -8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  min-width: 164px;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+  flex-direction: column;
+  gap: 2px;
+  /* invisible bridge prevents gap between circle and panel */
+}
+.nav-float-flyout::before {
+  content: '';
+  position: absolute;
+  left: -10px; top: 0;
+  width: 10px; height: 100%;
+  background: transparent;
+}
+.nav-float-item.nav-float-group:hover .nav-float-flyout { display: flex; }
+
+/* Flyout group label */
+.nav-float-flyout-label {
+  padding: 4px 10px 6px;
+  font-family: var(--font-h); font-size: 10px; font-weight: 700;
+  color: var(--gray); text-transform: uppercase; letter-spacing: 0.6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+/* Flyout items */
+.nav-float-flyout-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-h); font-size: 11px; font-weight: 600;
+  color: var(--gray-light);
+  text-transform: uppercase; letter-spacing: 0.3px;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.nav-float-flyout-item:hover  { background: rgba(148,11,16,0.12); color: var(--white); }
+.nav-float-flyout-item.active { background: rgba(148,11,16,0.18); color: var(--white); }
+.nav-float-flyout-item svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; }

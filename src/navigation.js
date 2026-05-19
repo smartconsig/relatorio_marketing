@@ -13,6 +13,15 @@ import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 
+// Maps each child section to its parent group identifier
+const GROUP_MAP = {
+  overview:  'dashboard',
+  ranking:   'dashboard',
+  bsc:       'dashboard',
+  propostas: 'comercial',
+  goals:     'comercial',
+};
+
 const TITLES = {
   import:    'Importar Dados',
   overview:  'Visão Geral',
@@ -30,10 +39,30 @@ export function navigate(sec) {
   if (!window.location.hash.includes('access_token')) {
     history.replaceState(null, '', '#' + sec);
   }
+
+  // Auto-abre o grupo pai se a seção for um item filho
+  const parentGroup = GROUP_MAP[sec];
+  if (parentGroup) {
+    const groupEl = document.querySelector(`.nav-group[data-group="${parentGroup}"]`);
+    if (groupEl) groupEl.classList.add('open');
+  }
+
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
-  document.querySelectorAll('.nav-float-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
+
+  // Float rail — itens standalone
+  document.querySelectorAll('.nav-float-item:not(.nav-float-group)').forEach(el =>
+    el.classList.toggle('active', el.dataset.sec === sec)
+  );
+  // Float rail — grupos: ativo se algum filho for a seção atual
+  document.querySelectorAll('.nav-float-item.nav-float-group').forEach(groupEl => {
+    const children = groupEl.querySelectorAll('.nav-float-flyout-item[data-sec]');
+    const hasActive = [...children].some(c => c.dataset.sec === sec);
+    groupEl.classList.toggle('active', hasActive);
+    children.forEach(c => c.classList.toggle('active', c.dataset.sec === sec));
+  });
+
   syncBottomNav(sec);
   // Scroll para o topo ao trocar de seção no mobile
   document.querySelector('.content')?.scrollTo({ top: 0 });
@@ -57,22 +86,37 @@ export function applyPermissionsToUI() {
     admin:     () => perm.isAdmin(),
   };
 
-  // Sidebar nav items
+  // Sidebar nav items (standalone + filhos de grupos)
   document.querySelectorAll('.nav-item[data-sec]').forEach(el => {
-    const sec = el.dataset.sec;
-    const checker = permMap[sec];
-    if (checker) {
-      el.style.display = checker() ? '' : 'none';
-    }
+    const checker = permMap[el.dataset.sec];
+    if (checker) el.style.display = checker() ? '' : 'none';
   });
 
-  // Float nav items (sidebar recolhida)
+  // Oculta grupo se todos os filhos estiverem ocultos
+  document.querySelectorAll('.nav-group').forEach(group => {
+    const children = [...group.querySelectorAll('.nav-item[data-sec]')];
+    const allHidden = children.length > 0 && children.every(el => el.style.display === 'none');
+    const trigger = group.querySelector('.nav-group-trigger');
+    if (trigger) trigger.style.display = allHidden ? 'none' : '';
+  });
+
+  // Float rail — itens standalone
   document.querySelectorAll('.nav-float-item[data-sec]').forEach(el => {
-    const sec = el.dataset.sec;
-    const checker = permMap[sec];
-    if (checker) {
-      el.style.display = checker() ? '' : 'none';
-    }
+    const checker = permMap[el.dataset.sec];
+    if (checker) el.style.display = checker() ? '' : 'none';
+  });
+
+  // Float rail — itens dentro do flyout de grupos
+  document.querySelectorAll('.nav-float-flyout-item[data-sec]').forEach(el => {
+    const checker = permMap[el.dataset.sec];
+    if (checker) el.style.display = checker() ? '' : 'none';
+  });
+
+  // Oculta grupo do float rail se todos os filhos estiverem ocultos
+  document.querySelectorAll('.nav-float-item.nav-float-group').forEach(groupEl => {
+    const children = [...groupEl.querySelectorAll('.nav-float-flyout-item[data-sec]')];
+    const allHidden = children.length > 0 && children.every(el => el.style.display === 'none');
+    groupEl.style.display = allHidden ? 'none' : '';
   });
 
   // Sub-abas de Gestão
@@ -227,15 +271,38 @@ export function switchGestaoTab(tab) {
 }
 
 // ── Float rail (shown when sidebar is collapsed) ──────────────────────
-const NAV_ITEMS = [
-  { sec: 'import',    title: 'Importar',    badgeId: null,         svg: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>' },
-  { sec: 'overview',  title: 'Visão Geral', badgeId: null,         svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
-  { sec: 'ranking',   title: 'Ranking',     badgeId: null,         svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
-  { sec: 'gestao',    title: 'Gestão',      badgeId: 'review-badge', svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>' },
-  { sec: 'propostas', title: 'Propostas',   badgeId: null,         svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
-  { sec: 'goals',     title: 'Metas',       badgeId: null,         svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
-  { sec: 'bsc',       title: 'Ranking BSC', badgeId: null,         svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
-  { sec: 'admin',     title: 'Administração', badgeId: null,       svg: '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><circle cx="19" cy="19" r="3"/><line x1="19" y1="16" x2="19" y2="19"/><line x1="19" y1="19" x2="22" y2="19"/>' },
+// Itens standalone têm { sec, title, badgeId, svg }.
+// Grupos têm { group, title, svg, children: [{ sec, title, svg }] }.
+const FLOAT_NAV_ITEMS = [
+  {
+    sec: 'import', title: 'Importar', badgeId: null,
+    svg: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  },
+  {
+    group: 'dashboard', title: 'Dashboard',
+    svg: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    children: [
+      { sec: 'overview', title: 'Visão Geral', svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+      { sec: 'ranking',  title: 'Ranking',     svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+      { sec: 'bsc',      title: 'Ranking BSC', svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
+    ],
+  },
+  {
+    sec: 'gestao', title: 'Gestão', badgeId: 'review-badge',
+    svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  },
+  {
+    group: 'comercial', title: 'Comercial',
+    svg: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>',
+    children: [
+      { sec: 'propostas', title: 'Propostas', svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
+      { sec: 'goals',     title: 'Metas',     svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
+    ],
+  },
+  {
+    sec: 'admin', title: 'Administração', badgeId: null,
+    svg: '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><circle cx="19" cy="19" r="3"/><line x1="19" y1="16" x2="19" y2="19"/><line x1="19" y1="19" x2="22" y2="19"/>',
+  },
 ];
 
 let _floatRail = null;
@@ -246,16 +313,50 @@ function _buildFloatRail() {
   _floatRail.className = 'nav-float';
   _floatRail.id = 'nav-float-rail';
   const activeSec = localStorage.getItem('sc_last_section') || 'import';
-  NAV_ITEMS.forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'nav-float-item' + (item.sec === activeSec ? ' active' : '');
-    el.dataset.sec = item.sec;
-    el.dataset.title = item.title;
-    el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${item.svg}</svg>`
-      + (item.badgeId ? `<span class="nf-badge" id="nf-badge-${item.sec}" style="display:none"></span>` : '');
-    el.addEventListener('click', () => navigate(item.sec));
-    _floatRail.appendChild(el);
+
+  FLOAT_NAV_ITEMS.forEach(item => {
+    if (item.group) {
+      // ── Grupo com flyout ──────────────────────────────────────────
+      const isChildActive = item.children.some(c => c.sec === activeSec);
+      const el = document.createElement('div');
+      el.className = 'nav-float-item nav-float-group' + (isChildActive ? ' active' : '');
+      el.dataset.group = item.group;
+      // Sem data-title para não mostrar tooltip (flyout ocupa esse papel)
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${item.svg}</svg>`;
+
+      const flyout = document.createElement('div');
+      flyout.className = 'nav-float-flyout';
+
+      // Label do grupo no topo do flyout
+      const label = document.createElement('div');
+      label.className = 'nav-float-flyout-label';
+      label.textContent = item.title;
+      flyout.appendChild(label);
+
+      item.children.forEach(child => {
+        const childEl = document.createElement('div');
+        childEl.className = 'nav-float-flyout-item' + (child.sec === activeSec ? ' active' : '');
+        childEl.dataset.sec = child.sec;
+        childEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${child.svg}</svg><span>${child.title}</span>`;
+        childEl.addEventListener('click', e => { e.stopPropagation(); navigate(child.sec); });
+        flyout.appendChild(childEl);
+      });
+
+      el.appendChild(flyout);
+      _floatRail.appendChild(el);
+    } else {
+      // ── Item standalone ───────────────────────────────────────────
+      const el = document.createElement('div');
+      el.className = 'nav-float-item' + (item.sec === activeSec ? ' active' : '');
+      el.dataset.sec = item.sec;
+      el.dataset.title = item.title;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${item.svg}</svg>`
+        + (item.badgeId ? `<span class="nf-badge" id="nf-badge-${item.sec}" style="display:none"></span>` : '');
+      el.addEventListener('click', () => navigate(item.sec));
+      _floatRail.appendChild(el);
+    }
   });
+
   document.body.appendChild(_floatRail);
   _syncFloatBadges();
 }
@@ -287,6 +388,13 @@ export function initNavigation() {
   document.querySelectorAll('.nav-item').forEach(el =>
     el.addEventListener('click', () => navigate(el.dataset.sec))
   );
+
+  // Acordeão dos grupos
+  document.querySelectorAll('.nav-group-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      trigger.closest('.nav-group').classList.toggle('open');
+    });
+  });
 
   // Restore sidebar state
   const collapsed = localStorage.getItem('sc_sidebar_collapsed') === '1';
