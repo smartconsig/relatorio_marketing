@@ -310,28 +310,39 @@ async function openEditUserModal(userId) {
 }
 
 // ── Modal: convidar usuário ──────────────────────────────────────────────────
-function openInviteModal() {
-  const modal = document.getElementById('admin-modal');
+async function openInviteModal() {
+  // Garante que os grupos estão carregados
+  if (!_grupos.length) {
+    const { data } = await sb.from('grupos_acesso').select('*').order('nome');
+    _grupos = data || [];
+  }
+
+  const modal   = document.getElementById('admin-modal');
   const content = document.getElementById('admin-modal-content');
 
   content.innerHTML = `
     <h2 class="modal-title">Convidar Usuário</h2>
     <p class="modal-desc">O usuário receberá um e-mail com link para criar a senha e acessar o sistema.</p>
     <div class="form-group">
-      <label>E-mail</label>
-      <input type="email" id="invite-email" placeholder="email@exemplo.com">
+      <label>E-mail *</label>
+      <input type="email" id="invite-email" placeholder="email@exemplo.com" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Nome</label>
-      <input type="text" id="invite-nome" placeholder="Nome completo">
+      <label>Nome completo *</label>
+      <input type="text" id="invite-nome" placeholder="Ex: João Silva" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Grupo de Acesso</label>
+      <label>Grupo de Acesso *</label>
       <select id="invite-grupo">
-        <option value="">— Sem grupo —</option>
+        <option value="">— Selecione um grupo —</option>
         ${_grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('')}
       </select>
     </div>
+    <div class="form-group">
+      <label>Nome do Operador <span style="font-weight:400;text-transform:none">(opcional — para vincular ao ranking)</span></label>
+      <input type="text" id="invite-operador" placeholder="Nome exato como aparece no ranking" autocomplete="off">
+    </div>
+    <div id="invite-feedback" style="display:none;padding:10px 12px;border-radius:7px;font-size:13px;margin-bottom:4px"></div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="document.getElementById('admin-modal').style.display='none'">Cancelar</button>
       <button class="btn-primary" id="btn-send-invite">Enviar Convite</button>
@@ -339,32 +350,58 @@ function openInviteModal() {
   `;
 
   modal.style.display = 'flex';
+  document.getElementById('invite-email').focus();
 
   document.getElementById('btn-send-invite').addEventListener('click', async () => {
-    const email    = document.getElementById('invite-email').value.trim();
-    const nome     = document.getElementById('invite-nome').value.trim();
-    const grupo_id = document.getElementById('invite-grupo').value || null;
+    const email         = document.getElementById('invite-email').value.trim().toLowerCase();
+    const nome          = document.getElementById('invite-nome').value.trim();
+    const grupo_id      = document.getElementById('invite-grupo').value || null;
+    const operador_nome = document.getElementById('invite-operador').value.trim() || null;
+    const feedback      = document.getElementById('invite-feedback');
+    const btn           = document.getElementById('btn-send-invite');
 
-    if (!email) { toast('Informe o e-mail', 'err'); return; }
+    // Validação
+    if (!email || !email.includes('@')) {
+      _showFeedback(feedback, 'Informe um e-mail válido.', 'err'); return;
+    }
+    if (!nome) {
+      _showFeedback(feedback, 'Informe o nome do usuário.', 'err'); return;
+    }
+    if (!grupo_id) {
+      _showFeedback(feedback, 'Selecione um grupo de acesso.', 'err'); return;
+    }
 
-    const btn = document.getElementById('btn-send-invite');
     btn.textContent = 'Enviando…'; btn.disabled = true;
+    feedback.style.display = 'none';
 
-    // Usa a API de admin do Supabase para convidar (precisa de service role — via edge function)
     const { data, error } = await sb.functions.invoke('invite-user', {
-      body: { email, nome, grupo_id },
+      body: { email, nome, grupo_id, operador_nome },
     });
 
     if (error || data?.error) {
-      toast('Erro ao enviar convite: ' + (data?.error || error?.message), 'err');
+      const msg = data?.error || error?.message || 'Erro desconhecido';
+      _showFeedback(feedback, msg, 'err');
       btn.textContent = 'Enviar Convite'; btn.disabled = false;
       return;
     }
 
-    toast(`Convite enviado para ${email}`);
-    modal.style.display = 'none';
-    await loadUsers();
+    // Sucesso — mostra feedback antes de fechar
+    _showFeedback(feedback, `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`, 'ok');
+    btn.textContent = 'Enviado!'; btn.disabled = true;
+
+    setTimeout(async () => {
+      modal.style.display = 'none';
+      await loadUsers();
+    }, 2000);
   });
+}
+
+function _showFeedback(el, msg, type) {
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'err' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)';
+  el.style.color       = type === 'err' ? '#ef4444' : '#22c55e';
+  el.style.border      = `1px solid ${type === 'err' ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`;
 }
 
 // ── Grupos de acesso ─────────────────────────────────────────────────────────
