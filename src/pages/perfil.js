@@ -6,6 +6,10 @@ const _fmtDias  = d => (d === null || d === undefined) ? '—' : `${d} dia${d ==
 const _fmtCPF   = cpf => cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—';
 const _medal    = i => i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
 
+// Filtro ativo: 'marketing' | 'geral'
+let _filtroAtivo = 'marketing';
+let _lastEntries = null;
+
 function _bar(val, total) {
   const pct = total > 0 ? Math.round(val / total * 100) : 0;
   return `<div style="display:flex;align-items:center;gap:8px">
@@ -23,23 +27,34 @@ function _cardHeader(title, extra = '') {
   </div>`;
 }
 
-export function renderPerfil(filteredEntries) {
-  const el = document.getElementById('sec-perfil');
-  if (!el) return;
+function _setFiltro(filtro) {
+  _filtroAtivo = filtro;
+  document.querySelectorAll('.perfil-filtro-btn').forEach(btn => {
+    const on = btn.dataset.filtro === filtro;
+    btn.classList.toggle('active', on);
+    btn.style.background   = on ? 'var(--red)' : 'none';
+    btn.style.borderColor  = on ? 'var(--red)' : 'var(--border)';
+    btn.style.color        = on ? '#fff'        : 'var(--gray-light)';
+  });
+  if (_lastEntries) _renderConteudo(_lastEntries);
+}
 
-  if (!filteredEntries || filteredEntries.length === 0) {
-    el.innerHTML = `<div style="padding:60px;text-align:center;color:var(--gray);font-family:var(--font-h)">
-      Importe dados do Ecorban para visualizar o Perfil de Cliente.
-    </div>`;
-    return;
-  }
+function _renderConteudo(filteredEntries) {
+  const container = document.getElementById('perfil-conteudo');
+  if (!container) return;
 
-  // allEntries = histórico completo para cálculo de LTV (ignora filtro de datas)
-  const allEntries = state.result?.entries || filteredEntries;
-  const perf = calcPerfil(filteredEntries, allEntries);
+  const entries = _filtroAtivo === 'marketing'
+    ? filteredEntries.filter(e => e.isMarketing)
+    : filteredEntries;
+
+  const allBase = state.result?.entries || filteredEntries;
+  const allEntries = _filtroAtivo === 'marketing'
+    ? allBase.filter(e => e.isMarketing)
+    : allBase;
+
+  const perf = calcPerfil(entries, allEntries);
   const { faixas, estados, conversao, ltv, cobertura } = perf;
 
-  // ── KPI cards ──────────────────────────────────────────────────────────────
   const taxaGeral  = cobertura.totalMkt > 0 ? cobertura.totalPagos / cobertura.totalMkt : 0;
   const bestFaixa  = faixas[0];
   const bestEstado = estados[0];
@@ -47,7 +62,7 @@ export function renderPerfil(filteredEntries) {
   const kpis = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px">
       <div class="kpi-card">
-        <div class="kpi-label">Leads Marketing</div>
+        <div class="kpi-label">${_filtroAtivo === 'marketing' ? 'Leads Marketing' : 'Total de Clientes'}</div>
         <div class="kpi-value">${cobertura.totalMkt}</div>
         <div class="kpi-sub">${cobertura.totalPagos} pagos · ${fmtPct(taxaGeral)} conv.</div>
       </div>
@@ -73,7 +88,6 @@ export function renderPerfil(filteredEntries) {
       </div>
     </div>`;
 
-  // ── Aviso de cobertura parcial ─────────────────────────────────────────────
   const pctIdade  = cobertura.totalMkt > 0 ? cobertura.comIdade  / cobertura.totalMkt : 0;
   const pctEstado = cobertura.totalMkt > 0 ? cobertura.comEstado / cobertura.totalMkt : 0;
   const warn = (pctIdade < 0.5 || pctEstado < 0.5) ? `
@@ -85,7 +99,6 @@ export function renderPerfil(filteredEntries) {
       </div>
     </div>` : '';
 
-  // ── Tabela faixas etárias ──────────────────────────────────────────────────
   const faixasRows = faixas.length === 0
     ? `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--gray)">Sem dados de nascimento disponíveis</td></tr>`
     : faixas.map((f, i) => `<tr>
@@ -103,7 +116,6 @@ export function renderPerfil(filteredEntries) {
     </table></div>
   </div>`;
 
-  // ── Tabela estados ─────────────────────────────────────────────────────────
   const estadosRows = estados.length === 0
     ? `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--gray)">Sem dados de estado disponíveis</td></tr>`
     : estados.slice(0, 15).map((e, i) => `<tr>
@@ -122,7 +134,6 @@ export function renderPerfil(filteredEntries) {
     </table></div>
   </div>`;
 
-  // ── LTV top clientes ───────────────────────────────────────────────────────
   const ltvRows = ltv.topClientes.length === 0
     ? `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--gray)">Nenhum cliente pago encontrado</td></tr>`
     : ltv.topClientes.map((c, i) => `<tr>
@@ -140,14 +151,67 @@ export function renderPerfil(filteredEntries) {
     </table></div>
   </div>`;
 
+  container.innerHTML = `
+    ${kpis}
+    ${warn}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      ${tblFaixas}
+      ${tblEstados}
+    </div>
+    ${tblLtv}`;
+}
+
+export function renderPerfil(filteredEntries) {
+  const el = document.getElementById('sec-perfil');
+  if (!el) return;
+
+  _lastEntries = filteredEntries;
+
+  if (!filteredEntries || filteredEntries.length === 0) {
+    el.innerHTML = `<div style="padding:60px;text-align:center;color:var(--gray);font-family:var(--font-h)">
+      Importe dados do Ecorban para visualizar o Perfil de Cliente.
+    </div>`;
+    return;
+  }
+
+  // allEntries = histórico completo para cálculo de LTV (ignora filtro de datas)
+  const allEntries = state.result?.entries || filteredEntries;
+  const perf = calcPerfil(filteredEntries, allEntries);
+  const { faixas, estados, conversao, ltv, cobertura } = perf;
+
+  // Shell da página com toggle no topo — conteúdo renderizado por _renderConteudo
   el.innerHTML = `
     <div style="padding:24px;max-width:1200px">
-      ${kpis}
-      ${warn}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-        ${tblFaixas}
-        ${tblEstados}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+        <span style="font-family:var(--font-h);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--gray);margin-right:4px">Público:</span>
+        <button class="perfil-filtro-btn active" data-filtro="marketing"
+          style="padding:7px 16px;border-radius:20px;border:1.5px solid var(--red);background:var(--red);color:#fff;font-family:var(--font-h);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;cursor:pointer;transition:all 0.15s">
+          Marketing
+        </button>
+        <button class="perfil-filtro-btn" data-filtro="geral"
+          style="padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--gray-light);font-family:var(--font-h);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;cursor:pointer;transition:all 0.15s">
+          Geral
+        </button>
       </div>
-      ${tblLtv}
+      <div id="perfil-conteudo"></div>
     </div>`;
+
+  // Estilo hover/active dos botões via JS (sem CSS extra)
+  el.querySelectorAll('.perfil-filtro-btn').forEach(btn => {
+    btn.addEventListener('click', () => _setFiltro(btn.dataset.filtro));
+    btn.addEventListener('mouseenter', () => {
+      if (!btn.classList.contains('active')) {
+        btn.style.borderColor = 'var(--red)';
+        btn.style.color = 'var(--white)';
+      }
+    });
+    btn.addEventListener('mouseleave', () => {
+      if (!btn.classList.contains('active')) {
+        btn.style.borderColor = 'var(--border)';
+        btn.style.color = 'var(--gray-light)';
+      }
+    });
+  });
+
+  _renderConteudo(filteredEntries);
 }
