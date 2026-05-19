@@ -14,21 +14,22 @@ const FAIXAS_ORDER = ['18–30', '31–40', '41–50', '51–60', '61+'];
  * @param {Array} allEntries      - todos os entries acumulados (para LTV histórico)
  */
 export function calcPerfil(filteredEntries, allEntries) {
-  const mkt   = filteredEntries.filter(e => e.isMarketing);
-  const pagos  = mkt.filter(e => e.statusCat === 'pago');
+  // filteredEntries já vem pré-filtrado pelo caller (marketing ou geral)
+  const entries = filteredEntries;
+  const pagos   = entries.filter(e => e.statusCat === 'pago');
 
   // ── Cobertura dos dados ────────────────────────────────────────────────────
   const cobertura = {
-    totalMkt:      mkt.length,
-    comIdade:      mkt.filter(e => e.faixaEtaria).length,
-    comEstado:     mkt.filter(e => e.estado).length,
+    totalMkt:      entries.length,
+    comIdade:      entries.filter(e => e.faixaEtaria).length,
+    comEstado:     entries.filter(e => e.estado).length,
     pagoComDias:   pagos.filter(e => e.diasConversao !== null).length,
     totalPagos:    pagos.length,
   };
 
   // ── Por faixa etária ───────────────────────────────────────────────────────
   const faixaMap = {};
-  mkt.forEach(e => {
+  entries.forEach(e => {
     if (!e.faixaEtaria) return;
     if (!faixaMap[e.faixaEtaria]) faixaMap[e.faixaEtaria] = { leads: 0, pagos: 0, valor: 0 };
     faixaMap[e.faixaEtaria].leads++;
@@ -51,7 +52,7 @@ export function calcPerfil(filteredEntries, allEntries) {
 
   // ── Por estado ─────────────────────────────────────────────────────────────
   const estadoMap = {};
-  mkt.forEach(e => {
+  entries.forEach(e => {
     if (!e.estado) return;
     if (!estadoMap[e.estado]) estadoMap[e.estado] = { leads: 0, pagos: 0, valor: 0, regiao: e.regiao || '' };
     estadoMap[e.estado].leads++;
@@ -74,7 +75,7 @@ export function calcPerfil(filteredEntries, allEntries) {
 
   // ── Por região ─────────────────────────────────────────────────────────────
   const regiaoMap = {};
-  mkt.forEach(e => {
+  entries.forEach(e => {
     const r = e.regiao || '';
     if (!r) return;
     if (!regiaoMap[r]) regiaoMap[r] = { leads: 0, pagos: 0, valor: 0 };
@@ -107,7 +108,7 @@ export function calcPerfil(filteredEntries, allEntries) {
   // ── LTV — histórico completo (ignora filtro de datas) ─────────────────────
   const cpfMap = {};
   allEntries
-    .filter(e => e.isMarketing && e.statusCat === 'pago' && e.cpf && e.cpf !== '00000000000')
+    .filter(e => e.statusCat === 'pago' && e.cpf && e.cpf !== '00000000000')
     .forEach(e => {
       if (!cpfMap[e.cpf]) {
         cpfMap[e.cpf] = { cpf: e.cpf, cliente: e.cliente || '', compras: 0, ltv: 0, datas: [] };
