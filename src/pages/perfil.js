@@ -84,7 +84,7 @@ function _renderConteudo(filteredEntries) {
       <div class="kpi-card">
         <div class="kpi-label">Clientes recorrentes</div>
         <div class="kpi-value" style="font-size:22px">${ltv.recorrentes}</div>
-        <div class="kpi-sub">${fmtPct(ltv.taxaRecorrencia)} dos clientes${ltv.tempMedioRecompra !== null ? ' · recompra em ' + _fmtDias(ltv.tempMedioRecompra) : ''}</div>
+        <div class="kpi-sub">${fmtPct(ltv.taxaRecorrencia)} dos clientes${Number.isFinite(ltv.tempMedioRecompra) ? ' · recompra em ' + _fmtDias(ltv.tempMedioRecompra) : ''}</div>
       </div>
     </div>`;
 
