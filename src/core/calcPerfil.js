@@ -44,7 +44,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       label:       f,
       leads:       faixaMap[f].leads,
       pagos:       faixaMap[f].pagos,
-      taxa:        faixaMap[f].leads > 0 ? faixaMap[f].pagos / faixaMap[f].leads : 0,
+      taxa:        faixaMap[f].leads > 0 ? faixaMap[f].pagos / faixaMap[f].leads * 100 : 0,
       valorTotal:  faixaMap[f].valor,
       ticketMedio: faixaMap[f].pagos > 0 ? faixaMap[f].valor / faixaMap[f].pagos : 0,
     }))
@@ -67,7 +67,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       regiao:      d.regiao,
       leads:       d.leads,
       pagos:       d.pagos,
-      taxa:        d.leads > 0 ? d.pagos / d.leads : 0,
+      taxa:        d.leads > 0 ? d.pagos / d.leads * 100 : 0,
       valorTotal:  d.valor,
       ticketMedio: d.pagos > 0 ? d.valor / d.pagos : 0,
     }))
@@ -90,7 +90,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       nome,
       leads:      d.leads,
       pagos:      d.pagos,
-      taxa:       d.leads > 0 ? d.pagos / d.leads : 0,
+      taxa:       d.leads > 0 ? d.pagos / d.leads * 100 : 0,
       valorTotal: d.valor,
     }))
     .sort((a, b) => b.pagos - a.pagos);
@@ -142,7 +142,7 @@ export function calcPerfil(filteredEntries, allEntries) {
     ltv: {
       totalClientes:    clientesLtv.length,
       recorrentes:      recorrentes.length,
-      taxaRecorrencia:  clientesLtv.length > 0 ? recorrentes.length / clientesLtv.length : 0,
+      taxaRecorrencia:  clientesLtv.length > 0 ? recorrentes.length / clientesLtv.length * 100 : 0,
       topClientes:      topLtv,
       tempMedioRecompra,
     },

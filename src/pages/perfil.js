@@ -55,7 +55,7 @@ function _renderConteudo(filteredEntries) {
   const perf = calcPerfil(entries, allEntries);
   const { faixas, estados, conversao, ltv, cobertura } = perf;
 
-  const taxaGeral  = cobertura.totalMkt > 0 ? cobertura.totalPagos / cobertura.totalMkt : 0;
+  const taxaGeral  = cobertura.totalMkt > 0 ? cobertura.totalPagos / cobertura.totalMkt * 100 : 0;
   const bestFaixa  = faixas[0];
   const bestEstado = estados[0];
 
@@ -104,7 +104,7 @@ function _renderConteudo(filteredEntries) {
     : faixas.map((f, i) => `<tr>
         <td><strong>${_medal(i)}${f.label} anos</strong></td>
         <td>${f.leads}</td><td>${f.pagos}</td>
-        <td><strong style="color:${f.taxa >= 0.15 ? '#22c55e' : 'inherit'}">${fmtPct(f.taxa)}</strong></td>
+        <td><strong style="color:${f.taxa >= 15 ? '#22c55e' : 'inherit'}">${fmtPct(f.taxa)}</strong></td>
         <td>${f.pagos > 0 ? fmtBRL(f.ticketMedio) : '—'}</td>
       </tr>`).join('');
 
@@ -122,7 +122,7 @@ function _renderConteudo(filteredEntries) {
         <td><strong>${_medal(i)}${e.uf}</strong></td>
         <td style="color:var(--gray);font-size:12px">${e.regiao || '—'}</td>
         <td>${e.leads}</td><td>${e.pagos}</td>
-        <td><strong style="color:${e.taxa >= 0.15 ? '#22c55e' : 'inherit'}">${fmtPct(e.taxa)}</strong></td>
+        <td><strong style="color:${e.taxa >= 15 ? '#22c55e' : 'inherit'}">${fmtPct(e.taxa)}</strong></td>
         <td>${e.pagos > 0 ? fmtBRL(e.ticketMedio) : '—'}</td>
       </tr>`).join('');
 
