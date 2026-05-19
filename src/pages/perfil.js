@@ -3,7 +3,7 @@ import { fmtBRL, fmtPct } from '../utils/currency.js';
 import { calcPerfil } from '../core/calcPerfil.js';
 
 const _fmtDias  = d => (d === null || d === undefined) ? '—' : `${d} dia${d === 1 ? '' : 's'}`;
-const _maskCPF  = cpf => cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.***.***-$4') : '—';
+const _fmtCPF   = cpf => cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—';
 const _medal    = i => i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
 
 function _bar(val, total) {
@@ -127,7 +127,7 @@ export function renderPerfil(filteredEntries) {
     ? `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--gray)">Nenhum cliente pago encontrado</td></tr>`
     : ltv.topClientes.map((c, i) => `<tr>
         <td><strong>${_medal(i)}${c.cliente || '—'}</strong></td>
-        <td style="color:var(--gray);font-size:12px">${_maskCPF(c.cpf)}</td>
+        <td style="color:var(--gray);font-size:12px">${_fmtCPF(c.cpf)}</td>
         <td style="text-align:center">${c.compras}</td>
         <td><strong style="color:var(--red)">${fmtBRL(c.ltv)}</strong></td>
       </tr>`).join('');
