@@ -169,7 +169,9 @@ function renderVendedores(entries) {
   const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
   if (!sorted.length) return '';
   const rows = sorted.map(([name, d], i) => {
-    const leads = smartLeads[normStr(name)] || 0;
+    const normName = normStr(name);
+    const smartKey = state.vendorMappings?.[normName] || normName;
+    const leads = smartLeads[smartKey] || 0;
     return `
       <tr>
         <td>${rankNum(i)}</td>
@@ -211,7 +213,9 @@ function renderTimes(entries) {
   const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
   if (!sorted.length) return '';
   const rows = sorted.map(([name, d], i) => {
-    const leads = smartLeads[normStr(name)] || 0;
+    const normName = normStr(name);
+    const smartKey = state.vendorMappings?.[normName] || normName;
+    const leads = smartLeads[smartKey] || 0;
     return `
       <tr>
         <td>${rankNum(i)}</td>

@@ -18,6 +18,7 @@ export function saveState() {
       smartLeadsByOperador: state.result.smartLeadsByOperador || {},
       smartLeadsByTime:     state.result.smartLeadsByTime     || {},
       confirmedDivergences: state.confirmedDivergences,
+      vendorMappings:       state.vendorMappings || {},
     }));
     localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates));
     localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides));
@@ -38,6 +39,7 @@ export function loadState() {
     }));
     state.result = parsed;
     state.confirmedDivergences = parsed.confirmedDivergences || {};
+    state.vendorMappings       = parsed.vendorMappings       || {};
     const ov = localStorage.getItem(STORE_OVR);
     if (ov) state.overrides = JSON.parse(ov);
     const flt = localStorage.getItem(STORE_FILTER);
@@ -66,6 +68,7 @@ export function clearState() {
   state.result = null;
   state.overrides = {};
   state.confirmedDivergences = {};
+  state.vendorMappings = {};
   state.filterDates = { start: null, end: null };
   document.getElementById('date-start').value = '';
   document.getElementById('date-end').value   = '';

@@ -158,6 +158,7 @@ export async function onAuthenticated() {
   const { snapshot, updatedAt } = result;
   state.result = snapshot;
   state.confirmedDivergences = snapshot.confirmedDivergences || {};
+  state.vendorMappings       = snapshot.vendorMappings       || {};
 
   try {
     const savedFilter = localStorage.getItem('sc_filter_v1');
