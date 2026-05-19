@@ -301,11 +301,11 @@
   padding: 8px 10px; border-radius: 5px;
   cursor: pointer;
   font-family: var(--font-h); font-size: 11px; font-weight: 600;
-  color: var(--gray-light);
+  color: rgba(255,255,255,0.8);
   text-transform: uppercase; letter-spacing: 0.3px;
   transition: background 0.1s, color 0.1s;
   white-space: nowrap;
 }
 .nav-float-flyout-item:hover  { background: rgba(148,11,16,0.12); color: var(--white); }
 .nav-float-flyout-item.active { background: rgba(148,11,16,0.18); color: var(--white); }
-.nav-float-flyout-item svg { width: 15px; height: 15px; flex-shrink: 0; stroke: var(--white); }
+.nav-float-flyout-item svg { width: 15px; height: 15px; flex-shrink: 0; }
