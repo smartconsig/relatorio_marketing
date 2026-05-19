@@ -173,7 +173,7 @@ export async function onAuthenticated() {
   setCacheIndicator(true);
   renderAll();
   renderDiag(state.result.diag);
-  if (!hasLocal) navigate(lastSection);
+  navigate(lastSection);
   toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
 
   // Sincroniza Meta Ads em background — re-renderiza quando chegar
