@@ -7,7 +7,6 @@ import { renderAll } from '../navigation.js';
 import { renderDiag } from './overview.js';
 import { navigate } from '../navigation.js';
 import { logAction, renderLastSystemEvent } from '../services/action-log.js';
-import { syncSmartData } from '../services/smart-sync.js';
 
 export function loadFile(e, key) {
   const file = e.target.files[0];
@@ -51,7 +50,6 @@ export function setCardLoaded(key, label) {
 }
 
 export function checkProcessBtn() {
-  // Smart vem da API — só exige o Ecorban
   document.getElementById('btn-process').disabled = !state.raw.ecorban;
 }
 
@@ -61,12 +59,6 @@ export async function processAll() {
   btn.disabled = true;
 
   try {
-    // Se ainda não tem dados do Smart, busca da API antes de processar
-    if (!state.smartLeads) {
-      btn.textContent = 'Sincronizando Smart…';
-      await syncSmartData();
-    }
-
     await new Promise(resolve => setTimeout(resolve, 60));
 
     state.result = buildResult();

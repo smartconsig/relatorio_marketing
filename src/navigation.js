@@ -8,7 +8,6 @@ import { renderClientes } from './pages/clientes.js';
 import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
 import { syncMetaAds } from './services/meta-ads.js';
-import { syncSmartData } from './services/smart-sync.js';
 import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
@@ -182,11 +181,9 @@ export function applyFilter() {
   state.filterDates.end   = document.getElementById('date-end').value   || null;
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
-    state.smartLeads = null; // idem para o Smart
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncSmartData(); // recarrega Smart com novo período
   }
 }
 
@@ -198,11 +195,9 @@ export function clearFilter() {
   if (btn) btn.textContent = 'Período ▾';
   if (state.result) {
     state.metaAds    = null;
-    state.smartLeads = null;
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncSmartData(); // recarrega Smart com novo período
   }
 }
 

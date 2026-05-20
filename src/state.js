@@ -20,5 +20,4 @@ export const state = {
   propostasSort:  { col: 'cliente', dir: 'asc' },
   bsc: null,
   metaAds:   null,      // { invest, leads, daily:[{date,invest,leads}], lastSync }
-  smartLeads: null,     // array de leads da API Smart — null = não sincronizado ainda
 };

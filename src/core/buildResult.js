@@ -59,39 +59,17 @@ function getSmartSignal(origem, audiencia) {
   return 'doubt';
 }
 
-/**
- * Normaliza um lead da API Smart para o mesmo formato interno
- * usado pelos registros do Excel, permitindo reaproveitamento
- * da lógica de cruzamento em buildResult().
- */
-function apiLeadToRow(lead) {
-  return {
-    Origem:            lead.source    || '',
-    Audiencia:         lead.audience  || '',
-    Telefone:          lead.phone     || '',
-    Operador:          lead.operator  || '',
-    Time:              lead.team      || '',
-    'Data de Criação': lead.date      || '',
-    CPF:               lead.cpf       || '',
-    _id:               lead.id        || '',
-  };
-}
-
 export function buildResult() {
   const byCPF   = {};
   const byPhone = {};
 
-  // Usa a API Smart se disponível, senão cai para o Excel importado
-  const useApi     = Array.isArray(state.smartLeads) && state.smartLeads.length > 0;
-  const smartRows  = useApi
-    ? state.smartLeads.map(apiLeadToRow)
-    : (state.raw.smart || []);
+  const smartRows = state.raw.smart || [];
 
   const diagSmart = {
     total:        smartRows.length,
     cpfIndexed:   0,
     phoneIndexed: 0,
-    source:       useApi ? 'api' : 'excel',
+    source:       'excel',
     cols:         smartRows.length ? Object.keys(smartRows[0]) : [],
   };
 
