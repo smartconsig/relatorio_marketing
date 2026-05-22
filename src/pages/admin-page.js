@@ -682,6 +682,7 @@ function _summarizePerms(permissoes) {
     { key: 'propostas',            label: 'Propostas' },
     { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
+    { key: 'quitacoes_visualizar', label: 'Quitações' },
     { key: 'admin_usuarios',       label: 'Admin' },
   ];
   return sections
