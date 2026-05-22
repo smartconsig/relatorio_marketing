@@ -5,6 +5,7 @@ import './styles/theme.css';
 import './styles/bsc.css';
 import './styles/propostas.css';
 import './styles/mobile.css';
+import './styles/quitacoes.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
@@ -24,6 +25,7 @@ import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
+import { q_search, q_openModal, q_closeModal, q_save, q_showDetail, q_backToList, q_showComprovante, q_closeComprovante, q_attachDoc, q_toggleDev, q_onDocSelect, q_maskCPF, q_maskCNPJ, q_maskMoney } from './pages/quitacoes-page.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -85,6 +87,20 @@ window.closeHistoryPanel = closeHistoryPanel;
 window.keepSession        = keepSession;
 window.closeBottomSheet   = closeBottomSheet;
 window.openBottomSheet    = openBottomSheet;
+window.q_search           = q_search;
+window.q_openModal        = q_openModal;
+window.q_closeModal       = q_closeModal;
+window.q_save             = q_save;
+window.q_showDetail       = q_showDetail;
+window.q_backToList       = q_backToList;
+window.q_showComprovante  = q_showComprovante;
+window.q_closeComprovante = q_closeComprovante;
+window.q_attachDoc        = q_attachDoc;
+window.q_toggleDev        = q_toggleDev;
+window.q_onDocSelect      = q_onDocSelect;
+window.q_maskCPF          = q_maskCPF;
+window.q_maskCNPJ         = q_maskCNPJ;
+window.q_maskMoney        = q_maskMoney;
 
 initNavigation();
 initAuth();

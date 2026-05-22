@@ -38,6 +38,9 @@ export const perm = {
   // Dashboard avançado
   perfilCliente:       () => can('perfil_visualizar'),
 
+  // Quitações
+  quitacoesVisualizar: () => can('quitacoes_visualizar'),
+
   // Administração
   adminUsuarios:       () => can('admin_usuarios'),
   adminGrupos:         () => can('admin_grupos'),
@@ -75,6 +78,7 @@ export const DEFAULT_PERMISSIONS = {
   metas_editar: false,
   bsc: true,
   perfil_visualizar: false,
+  quitacoes_visualizar: false,
   admin_usuarios: false,
   admin_grupos: false,
 };

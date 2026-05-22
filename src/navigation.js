@@ -12,6 +12,7 @@ import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
+import { renderQuitacoes } from './pages/quitacoes-page.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -28,8 +29,9 @@ const TITLES = {
   overview:  'Visão Geral',
   ranking:   'Ranking de Vendas',
   perfil:    'Perfil de Cliente',
-  gestao:    'Gestão de Classificações',
-  propostas: 'Propostas de Marketing',
+  gestao:     'Gestão de Classificações',
+  quitacoes:  'Quitações',
+  propostas:  'Propostas de Marketing',
   goals:     'Configurar Metas',
   bsc:       'Ranking BSC',
   admin:     'Administração',
@@ -70,6 +72,8 @@ export function navigate(sec) {
   document.querySelector('.content')?.scrollTo({ top: 0 });
   // Renderiza admin page quando navega para lá
   if (sec === 'admin') renderAdminPage();
+  // Renderiza quitações quando navega para lá
+  if (sec === 'quitacoes') renderQuitacoes();
 }
 
 /**
@@ -82,6 +86,7 @@ export function applyPermissionsToUI() {
     overview:  () => can('visao_geral'),
     ranking:   () => can('ranking'),
     gestao:    () => canSeeGestao(),
+    quitacoes: () => can('quitacoes_visualizar'),
     perfil:    () => can('perfil_visualizar'),
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
@@ -291,6 +296,10 @@ const FLOAT_NAV_ITEMS = [
   {
     sec: 'gestao', title: 'Gestão', badgeId: 'review-badge',
     svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  },
+  {
+    sec: 'quitacoes', title: 'Quitações', badgeId: null,
+    svg: '<path d="M9 14l2 2 4-4"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
   },
   {
     group: 'comercial', title: 'Comercial',
