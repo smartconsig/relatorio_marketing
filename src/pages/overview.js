@@ -2,16 +2,11 @@ import { state } from '../state.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
-import { getCol, normStr } from '../utils/string.js';
 import { toast } from '../utils/ui.js';
 import { filteredData } from '../core/calcKPIs.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
-
-function toTitle(s) {
-  return String(s || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
-}
 
 export function kpiCard(label, val, meta, p, inv, goalLabel) {
   let cls = 'accent';
@@ -60,185 +55,6 @@ function heroCard(label, count, value, sub, accentColor, p, inv, valueColor, goa
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
         <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
     </div>`;
-}
-
-// ── ranking helpers ────────────────────────────────────────────────────────
-function rankNum(i) {
-  return `<div class="rank-num ${i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : ''}">${i + 1}</div>`;
-}
-
-function renderTopPublicos(entries) {
-  const map = {};
-  for (const e of entries.filter(e => e.isMarketing)) {
-    const key = e.audiencia || '—';
-    if (!map[key]) map[key] = { validas: 0, pagas: 0, valor: 0 };
-    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
-      map[key].validas++;
-      map[key].valor += e.valor || 0;
-    }
-    if (e.statusCat === 'pago') map[key].pagas++;
-  }
-  const top = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas).slice(0, 5);
-  if (!top.length) return '';
-  const rows = top.map(([name, d], i) => `
-    <tr>
-      <td>${rankNum(i)}</td>
-      <td><strong>${name}</strong></td>
-      <td>${fmtN(d.validas)}</td>
-      <td>${fmtN(d.pagas)}</td>
-      <td class="muted">${fmtBRL(d.valor)}</td>
-    </tr>`).join('');
-  return `
-  <div class="section-title"><span class="bar"></span>Top Públicos</div>
-  <div class="table-card">
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Audiência</th><th>Válidas</th><th>Pagas</th><th>Valor</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
-  </div>`;
-}
-
-function renderTopProdutosBancos(entries) {
-  const mkt = entries.filter(e => e.isMarketing && (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago'));
-  const buildMap = key => {
-    const m = {};
-    for (const e of mkt) {
-      const k = e[key] || '—';
-      if (!m[k]) m[k] = { count: 0, valor: 0 };
-      m[k].count++;
-      m[k].valor += e.valor || 0;
-    }
-    return Object.entries(m).sort((a, b) => b[1].count - a[1].count).slice(0, 5);
-  };
-  const topProd   = buildMap('produto');
-  const topBancos = buildMap('banco');
-
-  const makeRows = (top, cols) => top.length
-    ? top.map(([name, d], i) => `
-        <tr>
-          <td>${rankNum(i)}</td>
-          <td><strong>${name}</strong></td>
-          <td>${fmtN(d.count)}</td>
-          <td class="muted">${fmtBRL(d.valor)}</td>
-        </tr>`).join('')
-    : `<tr><td colspan="${cols}" style="text-align:center;color:var(--gray);padding:20px">Sem dados</td></tr>`;
-
-  return `
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-    <div>
-      <div class="section-title"><span class="bar"></span>Top Produtos</div>
-      <div class="table-card" style="margin:0">
-        <div class="table-wrap"><table>
-          <thead><tr><th>#</th><th>Produto</th><th>Válidas</th><th>Valor</th></tr></thead>
-          <tbody>${makeRows(topProd, 4)}</tbody>
-        </table></div>
-      </div>
-    </div>
-    <div>
-      <div class="section-title"><span class="bar"></span>Top Bancos</div>
-      <div class="table-card" style="margin:0">
-        <div class="table-wrap"><table>
-          <thead><tr><th>#</th><th>Banco</th><th>Válidas</th><th>Valor</th></tr></thead>
-          <tbody>${makeRows(topBancos, 4)}</tbody>
-        </table></div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function convBadge(validas, leads) {
-  if (!leads) return `<span class="muted">—</span>`;
-  const p = (validas / leads) * 100;
-  const color = p >= 20 ? '#22c55e' : p >= 10 ? '#f59e0b' : '#ef4444';
-  return `<strong style="color:${color}">${fmtPct(p)}</strong>`;
-}
-
-function renderVendedores(entries) {
-  const smartLeads = state.result?.smartLeadsByOperador || {};
-  const map = {};
-  for (const e of entries.filter(e => e.isMarketing)) {
-    const key = e.vendedor || '—';
-    if (!map[key]) map[key] = { lancados: 0, validas: 0, pagas: 0, valor: 0 };
-    map[key].lancados++;
-    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
-      map[key].validas++;
-      map[key].valor += e.valor || 0;
-    }
-    if (e.statusCat === 'pago') map[key].pagas++;
-  }
-  const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
-  if (!sorted.length) return '';
-  const rows = sorted.map(([name, d], i) => {
-    const normName = normStr(name);
-    const smartKey = state.vendorMappings?.[normName] || normName;
-    const leads = smartLeads[smartKey] || 0;
-    return `
-      <tr>
-        <td>${rankNum(i)}</td>
-        <td><strong>${toTitle(name)}</strong></td>
-        <td class="muted">${leads ? fmtN(leads) : '—'}</td>
-        <td>${fmtN(d.lancados)}</td>
-        <td>${fmtN(d.validas)}</td>
-        <td>${fmtN(d.pagas)}</td>
-        <td>${convBadge(d.validas, leads)}</td>
-      </tr>`;
-  }).join('');
-  return `
-  <div class="section-title"><span class="bar"></span>Vendedores — Marketing</div>
-  <div class="table-card">
-    <div class="table-header">
-      <div class="table-header-title">Performance individual</div>
-      <div style="font-size:11px;color:var(--gray)">Conversão = Válidas ÷ Leads recebidos</div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Vendedor</th><th>Leads</th><th>Lançados</th><th>Válidos</th><th>Pagas</th><th>Conversão</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
-  </div>`;
-}
-
-function renderTimes(entries) {
-  const smartLeads = state.result?.smartLeadsByTime || {};
-  const map = {};
-  for (const e of entries.filter(e => e.isMarketing)) {
-    const key = e.loja || '—';
-    if (!map[key]) map[key] = { lancados: 0, validas: 0, pagas: 0, valor: 0 };
-    map[key].lancados++;
-    if (e.statusCat === 'aprovado' || e.statusCat === 'quase pago' || e.statusCat === 'pago') {
-      map[key].validas++;
-      map[key].valor += e.valor || 0;
-    }
-    if (e.statusCat === 'pago') map[key].pagas++;
-  }
-  const sorted = Object.entries(map).sort((a, b) => b[1].validas - a[1].validas);
-  if (!sorted.length) return '';
-  const rows = sorted.map(([name, d], i) => {
-    const normName = normStr(name);
-    const smartKey = state.vendorMappings?.[normName] || normName;
-    const leads = smartLeads[smartKey] || 0;
-    return `
-      <tr>
-        <td>${rankNum(i)}</td>
-        <td><strong>${name}</strong></td>
-        <td class="muted">${leads ? fmtN(leads) : '—'}</td>
-        <td>${fmtN(d.lancados)}</td>
-        <td>${fmtN(d.validas)}</td>
-        <td>${fmtN(d.pagas)}</td>
-        <td>${convBadge(d.validas, leads)}</td>
-      </tr>`;
-  }).join('');
-  return `
-  <div class="section-title"><span class="bar"></span>Times — Marketing</div>
-  <div class="table-card">
-    <div class="table-header">
-      <div class="table-header-title">Performance por time</div>
-      <div style="font-size:11px;color:var(--gray)">Conversão = Válidas ÷ Leads recebidos</div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Time</th><th>Leads</th><th>Lançados</th><th>Válidos</th><th>Pagas</th><th>Conversão</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
-  </div>`;
 }
 
 // ── chart helper ───────────────────────────────────────────────────────────
@@ -510,13 +326,7 @@ export function renderOverview(k, fd) {
     ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
   </div>`;
 
-  // ── 5. RANKINGS ──────────────────────────────────────────────────────────
-  h += renderTopPublicos(fd.entries);
-  h += renderTopProdutosBancos(fd.entries);
-  h += renderVendedores(fd.entries);
-  h += renderTimes(fd.entries);
-
-  // ── 6. AVISO SEM VALOR ───────────────────────────────────────────────────
+  // ── 5. AVISO SEM VALOR ───────────────────────────────────────────────────
   const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
   const semValorReprov  = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
   const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
