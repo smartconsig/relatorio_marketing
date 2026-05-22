@@ -1,11 +1,13 @@
-import { loadQuitacoes, upsertQuitacao } from '../services/quitacoes-service.js';
+import { loadQuitacoes, upsertQuitacao, uploadDoc, getDocSignedUrl, deleteDoc } from '../services/quitacoes-service.js';
+import { sb } from '../services/supabase.js';
 import { toast } from '../utils/ui.js';
 
 // ── Estado do módulo ───────────────────────────────────────────────────────────
 let _clientes  = [];
 let _search    = '';
-let _docBase64 = null;
+let _docBase64 = null;   // base64 apenas para preview no modal
 let _docNome   = null;
+let _docFile   = null;   // File object para upload no Storage
 let _built     = false;
 let _editingId = null;   // id do cliente sendo editado (null = novo)
 
@@ -35,6 +37,7 @@ export function q_openModal() {
   _editingId = null;
   _docBase64 = null;
   _docNome   = null;
+  _docFile   = null;
   _resetForm();
   const titleEl = document.getElementById('q-modal-title');
   if (titleEl) titleEl.textContent = 'Novo Cliente';
@@ -46,7 +49,8 @@ export function q_openEditModal(id) {
   const c = _clientes.find(x => x.id === id);
   if (!c) return;
   _editingId = id;
-  _docBase64 = c.doc_pdf  || null;
+  _docFile   = null;
+  _docBase64 = null;
   _docNome   = c.doc_nome || null;
   _resetForm();
 
@@ -99,8 +103,9 @@ export function q_openEditModal(id) {
   _setVal('q-f-agencia',   p.agencia   || '');
   _setVal('q-f-conta',     p.conta     || '');
 
-  // Documento já existente
-  if (_docBase64 && _docNome) {
+  // Documento já existente (Storage ou legado)
+  const hasExistingDoc = c.doc_path || c.doc_pdf;
+  if (hasExistingDoc && _docNome) {
     const nameEl   = document.getElementById('q-file-done-name');
     const doneEl   = document.getElementById('q-file-done');
     const uploadEl = document.getElementById('q-upload-area');
@@ -118,6 +123,7 @@ export function q_closeModal() {
   if (overlay) overlay.style.display = 'none';
   _docBase64 = null;
   _docNome   = null;
+  _docFile   = null;
 }
 
 export async function q_save() {
@@ -137,8 +143,7 @@ export async function q_save() {
     uf:       _v('q-f-uf').toUpperCase(),
     cep:      _v('q-f-cep'),
     rg:       _v('q-f-rg'),
-    doc_pdf:  _docBase64 || null,
-    doc_nome: _docNome   || null,
+    // doc_pdf e doc_path são tratados separadamente via Storage
     quitacao: {
       banco:           _v('q-f-banco'),
       contrato:        _v('q-f-contrato'),
@@ -172,7 +177,27 @@ export async function q_save() {
   if (_editingId) cliente.id = _editingId;
 
   try {
-    const saved = await upsertQuitacao(cliente);
+    let saved = await upsertQuitacao(cliente);
+
+    // Upload do documento para o Storage (se selecionado)
+    if (_docFile) {
+      try {
+        if (saved.doc_path) await deleteDoc(saved.doc_path);
+        const path = await uploadDoc(saved.id, _docFile);
+        const { data: withDoc } = await sb
+          .from('quitacoes_clientes')
+          .update({ doc_path: path, doc_nome: _docFile.name, doc_pdf: null })
+          .eq('id', saved.id)
+          .select()
+          .single();
+        if (withDoc) saved = withDoc;
+      } catch (docErr) {
+        toast('Cliente salvo, mas erro ao enviar documento', 'err');
+        console.error(docErr);
+      }
+      _docFile = null;
+    }
+
     if (_editingId) {
       const idx = _clientes.findIndex(x => x.id === _editingId);
       if (idx !== -1) _clientes[idx] = saved;
@@ -219,25 +244,23 @@ export function q_closeComprovante() {
   if (overlay) overlay.style.display = 'none';
 }
 
-export function q_attachDoc(id, input) {
+export async function q_attachDoc(id, input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const c = _clientes.find(x => x.id === id);
-    if (!c) return;
-    c.doc_pdf  = e.target.result;
-    c.doc_nome = file.name;
-    try {
-      await upsertQuitacao(c);
-      _renderDetail(c);
-      toast('Documento anexado');
-    } catch (err) {
-      toast('Erro ao salvar documento', 'err');
-      console.error(err);
-    }
-  };
-  reader.readAsDataURL(file);
+  const c = _clientes.find(x => x.id === id);
+  if (!c) return;
+  try {
+    if (c.doc_path) await deleteDoc(c.doc_path);
+    const path = await uploadDoc(id, file);
+    const updated = await upsertQuitacao({ ...c, doc_path: path, doc_nome: file.name, doc_pdf: null });
+    const idx = _clientes.findIndex(x => x.id === id);
+    if (idx !== -1) _clientes[idx] = updated;
+    _renderDetail(updated);
+    toast('Documento anexado');
+  } catch (err) {
+    toast('Erro ao salvar documento', 'err');
+    console.error(err);
+  }
 }
 
 export function q_toggleDev() {
@@ -251,18 +274,14 @@ export function q_toggleDev() {
 export function q_onDocSelect(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    _docBase64 = e.target.result;
-    _docNome   = file.name;
-    const nameEl   = document.getElementById('q-file-done-name');
-    const doneEl   = document.getElementById('q-file-done');
-    const uploadEl = document.getElementById('q-upload-area');
-    if (nameEl)   nameEl.textContent    = file.name;
-    if (doneEl)   doneEl.style.display  = '';
-    if (uploadEl) uploadEl.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+  _docFile = file;
+  _docNome = file.name;
+  const nameEl   = document.getElementById('q-file-done-name');
+  const doneEl   = document.getElementById('q-file-done');
+  const uploadEl = document.getElementById('q-upload-area');
+  if (nameEl)   nameEl.textContent     = file.name;
+  if (doneEl)   doneEl.style.display   = '';
+  if (uploadEl) uploadEl.style.display = 'none';
 }
 
 export function q_maskCPF(el) {
@@ -358,6 +377,10 @@ function _resetForm() {
   const dev = document.getElementById('q-f-devolvida');
   if (dev) dev.value = 'nao';
   q_toggleDev();
+
+  _docBase64 = null;
+  _docNome   = null;
+  _docFile   = null;
 
   const ua = document.getElementById('q-upload-area');
   const fd = document.getElementById('q-file-done');
@@ -465,7 +488,7 @@ function _renderDetail(c) {
 
   const p      = c.profissional || {};
   const q      = c.quitacao    || {};
-  const hasDoc = !!c.doc_pdf;
+  const hasDoc = !!(c.doc_path || c.doc_pdf);
   const hasQuit = q.val_boleto || q.val_ted;
 
   vd.innerHTML = `
@@ -634,30 +657,54 @@ function _renderDetail(c) {
 
     </div><!-- /q-split -->`;
 
-  if (hasDoc) _renderDoc(c.doc_pdf);
+  if (hasDoc) _renderDoc(c);
 }
 
-async function _renderDoc(dataUrl) {
+function _showDocUrl(url, nome) {
+  const panel = document.getElementById('q-doc-panel');
+  if (!panel) return;
+  const ext = (nome || '').split('.').pop().toLowerCase();
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
+    panel.innerHTML = `<img src="${url}" style="width:100%;height:auto;border-radius:6px;display:block;box-shadow:0 2px 12px rgba(0,0,0,0.4)">`;
+  } else {
+    panel.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" style="width:100%;height:100%;min-height:400px;border:none;border-radius:6px"></iframe>`;
+  }
+}
+
+async function _renderDoc(c) {
   const panel = document.getElementById('q-doc-panel');
   if (!panel) return;
 
-  if (dataUrl.startsWith('data:image/')) {
-    panel.innerHTML = `<img src="${dataUrl}" style="width:100%;height:auto;border-radius:6px;display:block;box-shadow:0 2px 12px rgba(0,0,0,0.4)">`;
+  // ── Storage (novo) ────────────────────────────────
+  if (c.doc_path) {
+    try {
+      const url = await getDocSignedUrl(c.doc_path);
+      _showDocUrl(url, c.doc_nome);
+    } catch (e) {
+      panel.innerHTML = `<div class="q-no-doc"><div>Erro ao carregar o documento.</div></div>`;
+      console.error(e);
+    }
     return;
   }
 
-  // PDF: converte base64 em blob e exibe em iframe
-  try {
-    const base64 = dataUrl.split(',')[1];
-    const binary  = atob(base64);
-    const bytes   = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: 'application/pdf' });
-    const url  = URL.createObjectURL(blob);
-    panel.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" style="width:100%;height:100%;min-height:400px;border:none;border-radius:6px"></iframe>`;
-  } catch (e) {
-    panel.innerHTML = `<div class="q-no-doc"><div>Erro ao carregar o documento.</div></div>`;
-    console.error(e);
+  // ── Legado base64 ────────────────────────────────
+  if (c.doc_pdf) {
+    if (c.doc_pdf.startsWith('data:image/')) {
+      panel.innerHTML = `<img src="${c.doc_pdf}" style="width:100%;height:auto;border-radius:6px;display:block;box-shadow:0 2px 12px rgba(0,0,0,0.4)">`;
+    } else {
+      try {
+        const base64 = c.doc_pdf.split(',')[1];
+        const binary  = atob(base64);
+        const bytes   = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url  = URL.createObjectURL(blob);
+        panel.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" style="width:100%;height:100%;min-height:400px;border:none;border-radius:6px"></iframe>`;
+      } catch (e) {
+        panel.innerHTML = `<div class="q-no-doc"><div>Erro ao carregar o documento.</div></div>`;
+        console.error(e);
+      }
+    }
   }
 }
 
