@@ -69,29 +69,31 @@ export function calcKPIs(entries, facebook) {
     cplCalc = leads ? invest / leads : 0;
   }
 
-  const inProgMkt     = entries.filter(r => r.isMarketing && (r.statusCat === 'aprovado' || r.statusCat === 'quase pago'));
-  const almostPaidMkt = entries.filter(r => r.isMarketing && r.statusCat === 'quase pago');
-  const paidMkt       = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
-  const rejMkt        = entries.filter(r => r.isMarketing && r.statusCat === 'reprovado');
-  const valueInProgMkt = inProgMkt.reduce((s, r) => s + r.valor, 0);
-  const valueMkt       = paidMkt.reduce((s, r)   => s + r.valor, 0);
-  const valueRejMkt    = rejMkt.reduce((s, r)    => s + r.valor, 0);
-  const valueValidMkt  = valueInProgMkt + valueMkt;
-  const countValidMkt  = inProgMkt.length + paidMkt.length;
+  const inProgMkt      = entries.filter(r => r.isMarketing && r.statusCat === 'aprovado');
+  const almostPaidMkt  = entries.filter(r => r.isMarketing && r.statusCat === 'quase pago');
+  const paidMkt        = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
+  const rejMkt         = entries.filter(r => r.isMarketing && r.statusCat === 'reprovado');
+  const valueInProgMkt      = inProgMkt.reduce((s, r)     => s + r.valor, 0);
+  const valueAlmostPaidMkt  = almostPaidMkt.reduce((s, r) => s + r.valor, 0);
+  const valueMkt            = paidMkt.reduce((s, r)       => s + r.valor, 0);
+  const valueRejMkt         = rejMkt.reduce((s, r)        => s + r.valor, 0);
+  const valueValidMkt  = valueInProgMkt + valueAlmostPaidMkt + valueMkt;
+  const countValidMkt  = inProgMkt.length + almostPaidMkt.length + paidMkt.length;
   const ticketMkt      = paidMkt.length ? valueMkt / paidMkt.length : 0;
   const cac            = paidMkt.length ? invest / paidMkt.length : 0;
   const roas           = invest ? (valueMkt * 0.21) / invest : 0;
   const convRate       = leads ? (paidMkt.length / leads) * 100 : 0;
 
-  const inProgAll     = entries.filter(r => r.statusCat === 'aprovado' || r.statusCat === 'quase pago');
-  const almostPaidAll = entries.filter(r => r.statusCat === 'quase pago');
-  const paidAll       = entries.filter(r => r.statusCat === 'pago');
-  const rejAll        = entries.filter(r => r.statusCat === 'reprovado');
-  const valueInProgAll = inProgAll.reduce((s, r) => s + r.valor, 0);
-  const valuePaidAll   = paidAll.reduce((s, r)   => s + r.valor, 0);
-  const valueRejAll    = rejAll.reduce((s, r)    => s + r.valor, 0);
-  const valueValidAll  = valueInProgAll + valuePaidAll;
-  const countValidAll  = inProgAll.length + paidAll.length;
+  const inProgAll      = entries.filter(r => r.statusCat === 'aprovado');
+  const almostPaidAll  = entries.filter(r => r.statusCat === 'quase pago');
+  const paidAll        = entries.filter(r => r.statusCat === 'pago');
+  const rejAll         = entries.filter(r => r.statusCat === 'reprovado');
+  const valueInProgAll     = inProgAll.reduce((s, r)     => s + r.valor, 0);
+  const valueAlmostPaidAll = almostPaidAll.reduce((s, r) => s + r.valor, 0);
+  const valuePaidAll       = paidAll.reduce((s, r)       => s + r.valor, 0);
+  const valueRejAll        = rejAll.reduce((s, r)        => s + r.valor, 0);
+  const valueValidAll  = valueInProgAll + valueAlmostPaidAll + valuePaidAll;
+  const countValidAll  = inProgAll.length + almostPaidAll.length + paidAll.length;
   const ticketAll      = paidAll.length ? valuePaidAll / paidAll.length : 0;
 
   // Revisões agora acontecem no PROCV; toReview só serve para compatibilidade
@@ -100,11 +102,11 @@ export function calcKPIs(entries, facebook) {
   return {
     invest, leads, fbCpl, cplCalc,
     inProgMkt: inProgMkt.length, almostPaidMkt: almostPaidMkt.length, paidMkt: paidMkt.length, rejMkt: rejMkt.length,
-    valueInProgMkt, valueAlmostPaidMkt: almostPaidMkt.reduce((s, r) => s + r.valor, 0),
+    valueInProgMkt, valueAlmostPaidMkt,
     valueMkt, valueRejMkt, valueValidMkt, countValidMkt,
     ticketMkt, cac, roas, convRate,
     inProgAll: inProgAll.length, almostPaidAll: almostPaidAll.length, paidAll: paidAll.length, rejAll: rejAll.length,
-    valueInProgAll, valueAlmostPaidAll: almostPaidAll.reduce((s, r) => s + r.valor, 0),
+    valueInProgAll, valueAlmostPaidAll,
     valuePaidAll, valueRejAll, valueValidAll, countValidAll,
     ticketAll,
     approvedMkt: inProgMkt.length + paidMkt.length,
