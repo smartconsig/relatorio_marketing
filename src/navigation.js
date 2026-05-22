@@ -13,6 +13,7 @@ import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
+import { initGoalsPage } from './pages/goals-page.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -70,10 +71,10 @@ export function navigate(sec) {
   syncBottomNav(sec);
   // Scroll para o topo ao trocar de seção no mobile
   document.querySelector('.content')?.scrollTo({ top: 0 });
-  // Renderiza admin page quando navega para lá
-  if (sec === 'admin') renderAdminPage();
-  // Renderiza quitações quando navega para lá
+  // Renderiza seções sob demanda
+  if (sec === 'admin')     renderAdminPage();
   if (sec === 'quitacoes') renderQuitacoes();
+  if (sec === 'goals')     initGoalsPage();
 }
 
 /**
@@ -139,7 +140,14 @@ export function applyPermissionsToUI() {
   initAdminPage();
 }
 
+function _syncGoalsToPeriodo() {
+  const ref = state.filterDates?.start || new Date().toISOString().slice(0, 10);
+  const periodo = ref.slice(0, 7);
+  state.goals = state.allGoals?.[periodo] || { invest: 0, cpl: 0, approved: 0, paid: 0, cac: 0, roas: 0 };
+}
+
 export function renderAll() {
+  _syncGoalsToPeriodo();
   const fd = filteredData();
   if (!fd) return;
   const kpis = calcKPIs(fd.entries, fd.facebook);

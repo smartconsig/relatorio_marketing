@@ -16,7 +16,7 @@ import { classifyFromProcv, setProcvFilter, setProcvSearch, exportProcvCSV, askC
 import { undoFromClientes, setClientesFilter, setClientesSearch, askUndo, sortClientes } from './pages/clientes.js';
 import { closeConfirm, doConfirm } from './utils/confirm.js';
 import { setRankView } from './pages/ranking.js';
-import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput } from './pages/goals-page.js';
+import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput, goalsNavMonth, goalsCopyPrev, goalsLoadPeriodo } from './pages/goals-page.js';
 import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, setPropostasOrigem, setPropostasAudiencia, openExportModal, closeExportModal, doExportCSV, goToPropostasPage, sortPropostas } from './pages/propostas.js';
@@ -60,6 +60,9 @@ window.saveGoals         = saveGoals;
 window.fmtGoalInput      = fmtGoalInput;
 window.rawGoalInput      = rawGoalInput;
 window.fmtRoasInput      = fmtRoasInput;
+window.goalsNavMonth     = goalsNavMonth;
+window.goalsCopyPrev     = goalsCopyPrev;
+window.goalsLoadPeriodo  = goalsLoadPeriodo;
 window.loadFile          = loadFile;
 window.processAll        = processAll;
 window.clearState          = clearState;

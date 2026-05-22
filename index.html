@@ -256,7 +256,8 @@
     <!-- ── METAS ── -->
     <div class="section" id="sec-goals">
       <div class="section-title"><span class="bar"></span>Configurar Metas do Período</div>
-      <div class="info-box">As metas são salvas no Supabase e sincronizadas entre todos os usuários.</div>
+      <div class="info-box">As metas são salvas por mês no Supabase e sincronizadas entre todos os usuários.</div>
+      <div id="goals-period-bar" style="margin-bottom:20px"></div>
       <div class="goals-grid">
         <div class="goal-card">
           <div class="goal-label">Investimento Facebook <span style="color:var(--gray);font-weight:400;font-size:10px">— não pode passar</span></div>
@@ -302,9 +303,10 @@
         </div>
       </div>
       <div style="margin-top:18px">
-        <button class="btn-sm btn-primary" style="padding:10px 24px;font-size:12px" onclick="saveGoals()">Salvar Metas</button>
+        <button class="btn-sm btn-primary" style="padding:10px 24px;font-size:12px" onclick="saveGoals()">Salvar Metas de <span id="goals-save-label">—</span></button>
         <div id="goals-last-log" style="margin-top:8px;font-size:11px;color:var(--gray)"></div>
       </div>
+      <div id="goals-history-wrap" style="margin-top:32px"></div>
     </div>
 
     <!-- ── RANKING BSC ── -->

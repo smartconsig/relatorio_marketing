@@ -1,7 +1,7 @@
 import { sb } from './supabase.js';
 import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
-import { loadSupabaseGoals } from './goals-svc.js';
+import { loadAllGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
@@ -96,20 +96,17 @@ export async function onAuthenticated() {
   renderLastSystemEvent('import-last-log', '__import__');
   renderLastSystemEvent('goals-last-log', '__goals__');
 
-  // Metas e classificações (queries leves)
-  const sbGoals = await loadSupabaseGoals();
-  if (sbGoals) {
-    state.goals = sbGoals;
-    populateGoalsForm(state.goals);
-    try { localStorage.setItem('sc_goals', JSON.stringify(state.goals)); } catch {}
-  } else {
-    loadGoalsFromStorage();
-  }
+  // Metas — carrega todos os períodos
+  const allGoals = await loadAllGoals();
+  state.allGoals = allGoals;
+  const currentPeriodo = new Date().toISOString().slice(0, 7);
+  state.goals = allGoals[currentPeriodo] || {};
+  populateGoalsForm(state.goals);
   await syncClassificationsFromSupabase();
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin']);
+  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes']);
   const hashSec = window.location.hash.replace('#', '');
   const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
     || localStorage.getItem('sc_last_section')
@@ -186,12 +183,8 @@ export async function onAuthenticated() {
 }
 
 function loadGoalsFromStorage() {
-  try {
-    const s = localStorage.getItem('sc_goals');
-    if (!s) return;
-    state.goals = JSON.parse(s);
-    populateGoalsForm(state.goals);
-  } catch {}
+  // Mantido para compatibilidade, mas agora não é mais necessário
+  // pois loadAllGoals() sempre é chamado no onAuthenticated
 }
 
 export async function initAuth() {

@@ -1,31 +1,36 @@
 import { sb } from './supabase.js';
 import { state } from '../state.js';
 
-export async function loadSupabaseGoals() {
+export async function loadAllGoals() {
   try {
-    const { data, error } = await sb.from('goals').select('*').limit(1).maybeSingle();
-    if (error || !data) return null;
-    return {
-      leads:    data.leads    || 0,
-      invest:   data.invest   || 0,
-      cpl:      data.cpl      || 0,
-      approved: data.approved || 0,
-      paid:     data.paid     || 0,
-      value:    data.value    || 0,
-      cac:      data.cac      || 0,
-      roas:     data.roas     || 0,
-    };
-  } catch (e) { return null; }
+    const { data, error } = await sb
+      .from('goals')
+      .select('*')
+      .order('periodo', { ascending: false });
+    if (error || !data) return {};
+    const map = {};
+    for (const row of data) {
+      const key = row.periodo;
+      if (!key) continue;
+      map[key] = {
+        invest:   row.invest   || 0,
+        cpl:      row.cpl      || 0,
+        approved: row.approved || 0,
+        paid:     row.paid     || 0,
+        cac:      row.cac      || 0,
+        roas:     row.roas     || 0,
+      };
+    }
+    return map;
+  } catch (e) { return {}; }
 }
 
-export async function saveGoalsToSupabase(g) {
+export async function saveGoalsToSupabase(g, periodo) {
   if (!state.currentUser) return;
   try {
-    const { data } = await sb.from('goals').select('id').limit(1).maybeSingle();
-    if (data?.id) {
-      await sb.from('goals').update({ ...g, updated_by: state.currentUser.id, updated_at: new Date().toISOString() }).eq('id', data.id);
-    } else {
-      await sb.from('goals').insert({ ...g, updated_by: state.currentUser.id });
-    }
+    await sb.from('goals').upsert(
+      { ...g, periodo, updated_by: state.currentUser.id, updated_at: new Date().toISOString() },
+      { onConflict: 'periodo' }
+    );
   } catch (e) { console.warn('saveGoals:', e); }
 }
