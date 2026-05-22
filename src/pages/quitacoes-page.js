@@ -7,6 +7,7 @@ let _search    = '';
 let _docBase64 = null;
 let _docNome   = null;
 let _built     = false;
+let _editingId = null;   // id do cliente sendo editado (null = novo)
 
 // ── Entry point (chamado pela navigation.js) ───────────────────────────────────
 export async function renderQuitacoes() {
@@ -31,9 +32,83 @@ export function q_search(val) {
 }
 
 export function q_openModal() {
+  _editingId = null;
   _docBase64 = null;
   _docNome   = null;
   _resetForm();
+  const titleEl = document.getElementById('q-modal-title');
+  if (titleEl) titleEl.textContent = 'Novo Cliente';
+  const overlay = document.getElementById('q-modal-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+export function q_openEditModal(id) {
+  const c = _clientes.find(x => x.id === id);
+  if (!c) return;
+  _editingId = id;
+  _docBase64 = c.doc_pdf  || null;
+  _docNome   = c.doc_nome || null;
+  _resetForm();
+
+  const titleEl = document.getElementById('q-modal-title');
+  if (titleEl) titleEl.textContent = 'Editar Cliente';
+
+  const q = c.quitacao     || {};
+  const p = c.profissional || {};
+
+  // Dados pessoais
+  _setVal('q-f-nome',   c.nome      || '');
+  _setVal('q-f-cpf',    c.cpf       || '');
+  _setVal('q-f-rg',     c.rg        || '');
+  _setVal('q-f-tel',    c.telefone  || '');
+  _setVal('q-f-cep',    c.cep       || '');
+  _setVal('q-f-end',    c.endereco  || '');
+  _setVal('q-f-bairro', c.bairro    || '');
+  _setVal('q-f-cidade', c.cidade    || '');
+  _setVal('q-f-uf',     c.uf        || '');
+
+  // Quitação
+  _setVal('q-f-banco',       q.banco           || '');
+  _setVal('q-f-contrato',    q.contrato        || '');
+  _setMoneyVal('q-f-boleto-val', q.val_boleto);
+  _setVal('q-f-boleto-data', q.data_boleto     || '');
+  _setMoneyVal('q-f-ted-val', q.val_ted);
+  _setVal('q-f-ted-data',    q.data_ted        || '');
+
+  const devEl = document.getElementById('q-f-devolvida');
+  if (devEl) devEl.value = q.devolvida ? 'sim' : 'nao';
+  q_toggleDev();
+  _setVal('q-f-dev-data',    q.data_devolucao  || '');
+  _setMoneyVal('q-f-dev-val', q.val_devolucao);
+
+  _setVal('q-f-pag-nome',     q.pag_nome        || '');
+  _setVal('q-f-pag-cnpj',     q.pag_cnpj        || '');
+  _setVal('q-f-dest-nome',    q.destino_nome    || '');
+  _setVal('q-f-dest-cnpj',    q.destino_cnpj    || '');
+  _setVal('q-f-dest-banco',   q.destino_banco   || '');
+  _setVal('q-f-dest-agencia', q.destino_agencia || '');
+  _setVal('q-f-dest-conta',   q.destino_conta   || '');
+  _setVal('q-f-txid',         q.txid            || '');
+  _setVal('q-f-data-hora-tx', q.data_hora_tx    || '');
+
+  // Profissional
+  _setVal('q-f-cargo',     p.cargo     || '');
+  _setVal('q-f-categoria', p.categoria || '');
+  _setVal('q-f-unidade',   p.unidade   || '');
+  _setVal('q-f-banco-sal', p.banco_sal || '');
+  _setVal('q-f-agencia',   p.agencia   || '');
+  _setVal('q-f-conta',     p.conta     || '');
+
+  // Documento já existente
+  if (_docBase64 && _docNome) {
+    const nameEl   = document.getElementById('q-file-done-name');
+    const doneEl   = document.getElementById('q-file-done');
+    const uploadEl = document.getElementById('q-upload-area');
+    if (nameEl)   nameEl.textContent     = _docNome;
+    if (doneEl)   doneEl.style.display   = '';
+    if (uploadEl) uploadEl.style.display = 'none';
+  }
+
   const overlay = document.getElementById('q-modal-overlay');
   if (overlay) overlay.style.display = 'flex';
 }
@@ -94,12 +169,23 @@ export async function q_save() {
     },
   };
 
+  if (_editingId) cliente.id = _editingId;
+
   try {
     const saved = await upsertQuitacao(cliente);
-    _clientes.push(saved);
-    _clientes.sort((a, b) => a.nome.localeCompare(b.nome));
-    q_closeModal();
-    _renderList();
+    if (_editingId) {
+      const idx = _clientes.findIndex(x => x.id === _editingId);
+      if (idx !== -1) _clientes[idx] = saved;
+      _editingId = null;
+      q_closeModal();
+      _showDetailView();
+      _renderDetail(saved);
+    } else {
+      _clientes.push(saved);
+      _clientes.sort((a, b) => a.nome.localeCompare(b.nome));
+      q_closeModal();
+      _renderList();
+    }
     toast('Cliente salvo com sucesso');
   } catch (e) {
     toast('Erro ao salvar: ' + e.message, 'err');
@@ -204,7 +290,14 @@ export function q_maskMoney(el) {
 
 // ── Privados ───────────────────────────────────────────────────────────────────
 
-function _v(id) { return (document.getElementById(id)?.value || '').trim(); }
+function _v(id)   { return (document.getElementById(id)?.value || '').trim(); }
+function _setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+function _setMoneyVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!val) { el.value = ''; return; }
+  el.value = 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function _pm(id) {
   const str = _v(id);
@@ -376,12 +469,23 @@ function _renderDetail(c) {
   const hasQuit = q.val_boleto || q.val_ted;
 
   vd.innerHTML = `
-    <button class="q-back-btn" onclick="q_backToList()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Voltar à lista
-    </button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <button class="q-back-btn" style="margin-bottom:0" onclick="q_backToList()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Voltar à lista
+      </button>
+      <button onclick="q_openEditModal('${c.id}')"
+        style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:var(--surface3);border:1px solid var(--border);color:var(--white);border-radius:8px;font-family:var(--font-h);font-size:12px;font-weight:700;cursor:pointer;transition:border-color .15s"
+        onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar
+      </button>
+    </div>
 
     <div class="q-split">
 
@@ -671,7 +775,7 @@ function _buildShell(el) {
       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:20px">
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow-y:auto">
         <div style="padding:22px 26px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface2);z-index:10">
-          <div style="font-family:var(--font-h);font-size:16px;font-weight:800;color:var(--white)">Novo Cliente</div>
+          <div id="q-modal-title" style="font-family:var(--font-h);font-size:16px;font-weight:800;color:var(--white)">Novo Cliente</div>
           <button onclick="q_closeModal()" style="width:30px;height:30px;border-radius:8px;border:none;background:var(--surface3);cursor:pointer;font-size:17px;color:var(--gray);display:flex;align-items:center;justify-content:center">×</button>
         </div>
         <div style="padding:22px 26px">
