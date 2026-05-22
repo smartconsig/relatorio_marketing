@@ -10,6 +10,91 @@ import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
 
+// ── Seleção em lote ───────────────────────────────────────────────────────────
+let _selected = new Set(); // conjunto de e._idx selecionados
+
+function _updateBatchBar() {
+  const bar = document.getElementById('procv-batch-bar');
+  if (!bar) return;
+  const n = _selected.size;
+  if (n === 0) {
+    bar.style.display = 'none';
+    const chkAll = document.getElementById('procv-select-all');
+    if (chkAll) chkAll.checked = false;
+    return;
+  }
+  bar.style.display = 'flex';
+  bar.querySelector('.batch-count').textContent =
+    `${n} registro${n !== 1 ? 's' : ''} selecionado${n !== 1 ? 's' : ''}`;
+}
+
+export function toggleBatchSelect(idx, checked) {
+  if (checked) _selected.add(idx);
+  else _selected.delete(idx);
+  _updateBatchBar();
+}
+
+export function selectAllBatch(checked) {
+  document.querySelectorAll('[data-batch-idx]').forEach(cb => {
+    const idx = parseInt(cb.dataset.batchIdx, 10);
+    cb.checked = checked;
+    if (checked) _selected.add(idx);
+    else _selected.delete(idx);
+  });
+  _updateBatchBar();
+}
+
+export function clearBatchSelection() {
+  _selected.clear();
+  document.querySelectorAll('[data-batch-idx]').forEach(cb => { cb.checked = false; });
+  const chkAll = document.getElementById('procv-select-all');
+  if (chkAll) chkAll.checked = false;
+  _updateBatchBar();
+}
+
+export async function batchClassify(isMkt) {
+  if (_selected.size === 0) return;
+  const indices = [..._selected];
+  const count   = indices.length;
+
+  await Promise.all(indices.map(idx => {
+    const entry = state.result?.entries[idx];
+    if (!entry) return Promise.resolve();
+    entry.isMarketing        = isMkt;
+    entry.reviewReason       = 'manual';
+    entry._justConfirmed     = true;
+    entry._confirmedInFilter = state.procvFilter;
+    if (entry.cpf) state.overrides[entry.cpf] = isMkt;
+    saveClassificationToSupabase(entry.cpf, isMkt);
+    logAction(entry.cpf, entry.cliente, isMkt ? 'classified_marketing' : 'classified_not_marketing');
+    return Promise.resolve();
+  }));
+
+  saveState();
+  scheduleSaveSnapshot();
+  _selected.clear();
+
+  toast(isMkt
+    ? `✅ ${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Marketing`
+    : `❌ ${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Não Marketing`
+  );
+
+  const fd = filteredData();
+  if (fd) {
+    renderProcv(fd.entries);
+    renderClientes(fd.entries);
+    const k = calcKPIs(fd.entries, fd.facebook);
+    renderOverview(k, fd);
+  }
+
+  const pending = state.result ? procvPendingCount(state.result.entries) : 0;
+  const badge   = document.getElementById('procv-badge');
+  if (badge) {
+    badge.textContent = pending;
+    badge.classList.toggle('hidden', pending === 0);
+  }
+}
+
 /** Conta quantos registros de marketing estão pendentes de revisão manual. */
 export function procvPendingCount(entries) {
   return entries.filter(e =>
@@ -91,11 +176,20 @@ function applyProcvFilters(entries) {
 /** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa). */
 function buildProcvResultsHTML(total, hasMore, capped) {
   const rowsHtml = capped.length === 0
-    ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
+    ? `<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
     : capped.map((e, i) => {
-        const safeName = (e.cliente || '').replace(/'/g, "\\'");
+        const safeName   = (e.cliente || '').replace(/'/g, "\\'");
+        const canSelect  = e.reviewReason !== 'manual';
+        const isChecked  = _selected.has(e._idx);
         return `
       <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
+        <td style="width:28px;padding:0 4px;text-align:center">
+          ${canSelect
+            ? `<input type="checkbox" data-batch-idx="${e._idx}" ${isChecked ? 'checked' : ''}
+                 onchange="toggleBatchSelect(${e._idx},this.checked)"
+                 style="cursor:pointer;accent-color:var(--red);width:14px;height:14px">`
+            : `<span style="color:var(--gray);font-size:10px">✔</span>`}
+        </td>
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
@@ -130,6 +224,10 @@ function buildProcvResultsHTML(total, hasMore, capped) {
       </div>
       <div class="table-wrap"><table>
         <thead><tr>
+          <th style="width:28px;padding:0 4px;text-align:center">
+            <input type="checkbox" id="procv-select-all" onchange="selectAllBatch(this.checked)"
+              title="Selecionar todos" style="cursor:pointer;accent-color:var(--red);width:14px;height:14px">
+          </th>
           <th>#</th>
           ${thSort('Cliente','cliente')}
           ${thSort('CPF','cpf','mobile-hide')}
@@ -149,6 +247,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
 }
 
 export function renderProcv(entries) {
+  _selected.clear();
   const { mktEntries, total, capped, hasMore } = applyProcvFilters(entries);
 
   const cPending        = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
@@ -191,6 +290,25 @@ export function renderProcv(entries) {
     </div>
 
     <div id="procv-results">${buildProcvResultsHTML(total, hasMore, capped)}</div>
+
+    <div id="procv-batch-bar" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+      background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+      padding:10px 18px;gap:12px;align-items:center;z-index:300;
+      box-shadow:0 8px 32px rgba(0,0,0,.55);white-space:nowrap">
+      <span class="batch-count" style="color:var(--white);font-size:13px;font-family:var(--font-h);font-weight:700"></span>
+      <button onclick="batchClassify(true)"
+        style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-family:var(--font-b)">
+        ✅ Confirmar como Marketing
+      </button>
+      <button onclick="batchClassify(false)"
+        style="background:#dc2626;color:#fff;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-family:var(--font-b)">
+        ❌ Rejeitar todos
+      </button>
+      <button onclick="clearBatchSelection()"
+        style="background:transparent;color:var(--gray);border:1px solid var(--border);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:11px">
+        ✕
+      </button>
+    </div>
   `;
 }
 
