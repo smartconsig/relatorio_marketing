@@ -4,6 +4,7 @@ import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
 import { toast } from '../utils/ui.js';
 import { filteredData } from '../core/calcKPIs.js';
+import { toTitle } from '../utils/string.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }

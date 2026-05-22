@@ -21,6 +21,10 @@ export function normPhone(v) {
   return d;
 }
 
+export function toTitle(s) {
+  return String(s || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+}
+
 export function getCol(row, ...names) {
   for (const name of names) {
     if (row[name] !== undefined && row[name] !== '') return row[name];

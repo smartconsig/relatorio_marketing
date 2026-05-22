@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
-import { normStr } from '../utils/string.js';
+import { normStr, toTitle } from '../utils/string.js';
 import { calcPerfil } from '../core/calcPerfil.js';
 
 const _fmtDias  = d => (d === null || d === undefined) ? '—' : `${d} dia${d === 1 ? '' : 's'}`;
@@ -8,10 +8,6 @@ const _fmtCPF   = cpf => cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$
 const _medal    = i => i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
 
 // ── ranking helpers (Marketing) ────────────────────────────────────────────
-function toTitle(s) {
-  return String(s || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
-}
-
 function rankNum(i) {
   return `<div class="rank-num ${i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : ''}">${i + 1}</div>`;
 }
