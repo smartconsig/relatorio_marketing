@@ -55,9 +55,11 @@ function fmtCPF(cpf) {
 // ── Filters ────────────────────────────────────────────────────────────────
 function applyFilters(entries) {
   let r = entries.filter(e => e.isMarketing === true);
-  const { status, produto, search } = state.propostasFilter;
-  if (status  !== 'all') r = r.filter(e => e.statusCat === status);
-  if (produto !== 'all') r = r.filter(e => (e.produto || '').trim() === produto);
+  const { status, produto, origem, audiencia, search } = state.propostasFilter;
+  if (status   !== 'all') r = r.filter(e => e.statusCat === status);
+  if (produto  !== 'all') r = r.filter(e => (e.produto  || '').trim() === produto);
+  if (origem   !== 'all') r = r.filter(e => (e.origem   || '').trim() === origem);
+  if (audiencia !== 'all') r = r.filter(e => (e.audiencia || '').trim() === audiencia);
   const q = (search || '').trim().toLowerCase();
   const qDigits = q.replace(/\D/g, '');
   if (q) r = r.filter(e =>
@@ -81,6 +83,14 @@ function applyFilters(entries) {
 
 function uniqueProducts(entries) {
   const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.produto||'').trim()).filter(Boolean));
+  return [...s].sort();
+}
+function uniqueOrigens(entries) {
+  const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.origem||'').trim()).filter(Boolean));
+  return [...s].sort();
+}
+function uniqueAudiencias(entries) {
+  const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.audiencia||'').trim()).filter(Boolean));
   return [...s].sort();
 }
 
@@ -171,7 +181,9 @@ export function renderPropostas(entries) {
   const allMkt   = entries.filter(e => e.isMarketing === true);
   const filtered = applyFilters(entries);
   const prods    = uniqueProducts(entries);
-  const { status, produto } = state.propostasFilter;
+  const origens  = uniqueOrigens(entries);
+  const auds     = uniqueAudiencias(entries);
+  const { status, produto, origem, audiencia } = state.propostasFilter;
 
   const statusOpts = [
     { v: 'all',          l: `Todos os status` },
@@ -185,6 +197,16 @@ export function renderPropostas(entries) {
   const prodOpts = [
     `<option value="all" ${produto === 'all' ? 'selected' : ''}>Todos os produtos</option>`,
     ...prods.map(p => `<option value="${p.replace(/"/g,'&quot;')}" ${produto === p ? 'selected':''}>${p}</option>`)
+  ].join('');
+
+  const origemOpts = [
+    `<option value="all" ${origem === 'all' ? 'selected' : ''}>Todas as origens</option>`,
+    ...origens.map(o => `<option value="${o.replace(/"/g,'&quot;')}" ${origem === o ? 'selected':''}>${o}</option>`)
+  ].join('');
+
+  const audOpts = [
+    `<option value="all" ${audiencia === 'all' ? 'selected' : ''}>Todas as audiências</option>`,
+    ...auds.map(a => `<option value="${a.replace(/"/g,'&quot;')}" ${audiencia === a ? 'selected':''}>${a}</option>`)
   ].join('');
 
   // ── Paginação ──────────────────────────────────────────────────────────
@@ -245,6 +267,8 @@ export function renderPropostas(entries) {
       </div>
       <select onchange="setPropostasStatus(this.value)" style="${selectStyle}">${statusOpts}</select>
       <select onchange="setPropostasProduto(this.value)" style="${selectStyle}">${prodOpts}</select>
+      <select onchange="setPropostasOrigem(this.value)" style="${selectStyle}">${origemOpts}</select>
+      <select onchange="setPropostasAudiencia(this.value)" style="${selectStyle}">${audOpts}</select>
       <select onchange="sortPropostas(this.value)" style="${selectStyle}">
         <option value="cliente_asc"  ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='asc'  ? 'selected':''}>Nome A→Z</option>
         <option value="cliente_desc" ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='desc' ? 'selected':''}>Nome Z→A</option>
@@ -293,6 +317,14 @@ export function setPropostasStatus(v) {
 }
 export function setPropostasProduto(v) {
   state.propostasFilter.produto = v; state.propostasFilter.page = 1;
+  const fd = filteredData(); if (fd) renderPropostas(fd.entries);
+}
+export function setPropostasOrigem(v) {
+  state.propostasFilter.origem = v; state.propostasFilter.page = 1;
+  const fd = filteredData(); if (fd) renderPropostas(fd.entries);
+}
+export function setPropostasAudiencia(v) {
+  state.propostasFilter.audiencia = v; state.propostasFilter.page = 1;
   const fd = filteredData(); if (fd) renderPropostas(fd.entries);
 }
 export function sortPropostas(val) {
