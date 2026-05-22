@@ -654,7 +654,7 @@ async function _renderDoc(dataUrl) {
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url  = URL.createObjectURL(blob);
-    panel.innerHTML = `<iframe src="${url}" style="width:100%;height:100%;min-height:400px;border:none;border-radius:6px"></iframe>`;
+    panel.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" style="width:100%;height:100%;min-height:400px;border:none;border-radius:6px"></iframe>`;
   } catch (e) {
     panel.innerHTML = `<div class="q-no-doc"><div>Erro ao carregar o documento.</div></div>`;
     console.error(e);
