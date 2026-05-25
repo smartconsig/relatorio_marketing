@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { fmtN } from '../utils/currency.js';
+import { fmtN, fmtBRL } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
 import { saveClassificationToSupabase } from '../services/classifications.js';
@@ -176,7 +176,7 @@ function applyProcvFilters(entries) {
 /** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa). */
 function buildProcvResultsHTML(total, hasMore, capped) {
   const rowsHtml = capped.length === 0
-    ? `<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
+    ? `<tr><td colspan="13" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
     : capped.map((e, i) => {
         const safeName   = (e.cliente || '').replace(/'/g, "\\'");
         const canSelect  = e.reviewReason !== 'manual';
@@ -194,6 +194,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
         <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+        <td class="muted mobile-hide" style="font-size:12px;white-space:nowrap">${e.valor ? fmtBRL(e.valor) : '—'}</td>
         <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td class="mobile-hide">${e.origem ? `<span class="badge badge-blue">${e.origem}</span>` : '<span class="muted">—</span>'}</td>
@@ -232,6 +233,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
           ${thSort('Cliente','cliente')}
           ${thSort('CPF','cpf','mobile-hide')}
           ${thSort('Status','statusCat')}
+          ${thSort('Valor','valor','mobile-hide')}
           ${thSort('Origem Ecorban','ecorbanOrigem','mobile-hide')}
           ${thSort('Telefone Smart','smartPhone','mobile-hide')}
           ${thSort('Origem Smart','origem','mobile-hide')}
