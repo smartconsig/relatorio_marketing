@@ -123,4 +123,6 @@
   color: var(--white);
   font-family: var(--font-b);
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
