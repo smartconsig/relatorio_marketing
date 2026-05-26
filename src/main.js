@@ -6,6 +6,7 @@ import './styles/bsc.css';
 import './styles/propostas.css';
 import './styles/mobile.css';
 import './styles/quitacoes.css';
+import './styles/universidade.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';

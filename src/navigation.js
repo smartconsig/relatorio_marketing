@@ -14,6 +14,7 @@ import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
+import { renderUniversidade } from './pages/universidade.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -26,16 +27,17 @@ const GROUP_MAP = {
 };
 
 const TITLES = {
-  import:    'Importar Dados',
-  overview:  'Visão Geral',
-  ranking:   'Ranking de Vendas',
-  perfil:    'Perfil de Cliente',
-  gestao:     'Gestão de Classificações',
-  quitacoes:  'Quitações',
-  propostas:  'Propostas de Marketing',
-  goals:     'Configurar Metas',
-  bsc:       'Ranking BSC',
-  admin:     'Administração',
+  import:       'Importar Dados',
+  overview:     'Visão Geral',
+  ranking:      'Ranking de Vendas',
+  perfil:       'Perfil de Cliente',
+  gestao:       'Gestão de Classificações',
+  quitacoes:    'Quitações',
+  propostas:    'Propostas de Marketing',
+  goals:        'Configurar Metas',
+  bsc:          'Ranking BSC',
+  universidade: 'Universidade Smart',
+  admin:        'Administração',
 };
 
 export function navigate(sec) {
@@ -72,9 +74,10 @@ export function navigate(sec) {
   // Scroll para o topo ao trocar de seção no mobile
   document.querySelector('.content')?.scrollTo({ top: 0 });
   // Renderiza seções sob demanda
-  if (sec === 'admin')     renderAdminPage();
-  if (sec === 'quitacoes') renderQuitacoes();
-  if (sec === 'goals')     initGoalsPage();
+  if (sec === 'admin')        renderAdminPage();
+  if (sec === 'quitacoes')   renderQuitacoes();
+  if (sec === 'goals')       initGoalsPage();
+  if (sec === 'universidade') renderUniversidade();
 }
 
 /**
@@ -91,8 +94,9 @@ export function applyPermissionsToUI() {
     perfil:    () => can('perfil_visualizar'),
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
-    bsc:       () => can('bsc'),
-    admin:     () => perm.isAdmin(),
+    bsc:          () => can('bsc'),
+    universidade: () => true,
+    admin:        () => perm.isAdmin(),
   };
 
   // Sidebar nav items (standalone + filhos de grupos)
@@ -316,6 +320,10 @@ const FLOAT_NAV_ITEMS = [
       { sec: 'propostas', title: 'Propostas', svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
       { sec: 'goals',     title: 'Metas',     svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
     ],
+  },
+  {
+    sec: 'universidade', title: 'Universidade', badgeId: null,
+    svg: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M12 15v7"/><path d="M6 11.8v5.5c3.3 2.8 8.7 2.8 12 0v-5.5"/>',
   },
   {
     sec: 'admin', title: 'Administração', badgeId: null,
