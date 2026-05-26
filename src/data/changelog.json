@@ -1,0 +1,122 @@
+[
+  {
+    "version": "1.8",
+    "date": "2026-05-26",
+    "label": "Segurança & Propostas",
+    "items": [
+      { "type": "feat",     "text": "Tooltip de status nas Propostas com observação e data da última atualização" },
+      { "type": "feat",     "text": "Valor da proposta visível na tabela do PROCV (coluna ordenável)" },
+      { "type": "security", "text": "RLS no banco de dados: quitacoes_clientes e snapshots protegidos por permissão de grupo" },
+      { "type": "fix",      "text": "EM ANDAMENTO exibe apenas propostas aprovadas, sem duplicar o Quase Pago" },
+      { "type": "fix",      "text": "Erro toTitle ao processar dados corrigido" }
+    ]
+  },
+  {
+    "version": "1.7",
+    "date": "2026-05-22",
+    "label": "Quitações & Metas por Mês",
+    "items": [
+      { "type": "feat",     "text": "Módulo Quitações: cadastro de clientes com dados profissionais e de quitação" },
+      { "type": "feat",     "text": "Edição de cliente no módulo Quitações" },
+      { "type": "feat",     "text": "Documentos de quitação migrados para Supabase Storage (sem mais base64)" },
+      { "type": "feat",     "text": "Metas por mês com histórico, navegação entre períodos e copiar mês anterior" },
+      { "type": "feat",     "text": "Aprovação em lote no PROCV: checkboxes + barra flutuante de ação" },
+      { "type": "feat",     "text": "Filtros de Origem e Audiência Smart na página de Propostas" },
+      { "type": "fix",      "text": "Visualizador de PDF sem barra lateral do navegador" }
+    ]
+  },
+  {
+    "version": "1.6",
+    "date": "2026-05-19",
+    "label": "Perfil de Cliente & Navegação",
+    "items": [
+      { "type": "feat",     "text": "Página Perfil de Cliente: faixa etária, estados, LTV e análise de recompra" },
+      { "type": "feat",     "text": "Toggle Marketing/Geral no Perfil de Cliente" },
+      { "type": "feat",     "text": "Mapeamento permanente de vendedores Smart ↔ Ecorban" },
+      { "type": "feat",     "text": "Menu de navegação agrupado com accordion e flyout ao colapsar" },
+      { "type": "feat",     "text": "Gestão de usuários: excluir usuário e tela de definir senha no convite" },
+      { "type": "feat",     "text": "Rankings (Públicos, Produtos, Bancos, Vendedores, Times) movidos para aba Perfil" },
+      { "type": "fix",      "text": "Seção ativa restaurada corretamente no F5" }
+    ]
+  },
+  {
+    "version": "1.5",
+    "date": "2026-05-18",
+    "label": "Gestão de Usuários & Mobile",
+    "items": [
+      { "type": "feat",     "text": "Gestão de usuários e grupos de acesso com permissões granulares" },
+      { "type": "feat",     "text": "Convite de usuário por e-mail via Edge Function" },
+      { "type": "feat",     "text": "Versão mobile completa: bottom nav, bottom sheet e tabelas responsivas" },
+      { "type": "fix",      "text": "Zoom automático do iOS desativado nos campos de input" }
+    ]
+  },
+  {
+    "version": "1.4",
+    "date": "2026-05-13",
+    "label": "Meta Ads, Logs & BSC Mobile",
+    "items": [
+      { "type": "feat",     "text": "Integração automática com Meta Ads API (investimento e leads em tempo real)" },
+      { "type": "feat",     "text": "Painel de histórico de ações por cliente (log de classificações)" },
+      { "type": "feat",     "text": "Informações de última importação e última atualização de metas nas telas" },
+      { "type": "feat",     "text": "Timeout de sessão: logout automático após 2h de inatividade com aviso" },
+      { "type": "feat",     "text": "Modal de confirmação antes de classificar ou reclassificar no PROCV" },
+      { "type": "feat",     "text": "Colunas ordenáveis no PROCV, Confirmados e Propostas" },
+      { "type": "fix",      "text": "Polimento geral do tema claro" }
+    ]
+  },
+  {
+    "version": "1.3",
+    "date": "2026-05-12",
+    "label": "Propostas, BSC & Sidebar",
+    "items": [
+      { "type": "feat",     "text": "Página Propostas de Marketing com paginação e filtros" },
+      { "type": "feat",     "text": "Ranking BSC com modo TV (rotação automática de telas) e sincronização Supabase" },
+      { "type": "feat",     "text": "Modo TV BSC com navegação manual e duração configurável por tela" },
+      { "type": "feat",     "text": "Sidebar colapsável com modo somente ícones e tooltips" },
+      { "type": "feat",     "text": "Gestão unificada em uma aba (PROCV + Revisão Manual + Confirmados)" },
+      { "type": "feat",     "text": "Filtro rápido com presets de data (hoje, esta semana, este mês, etc.)" },
+      { "type": "feat",     "text": "Metas com barras de progresso e comparação vs. meta configurada" }
+    ]
+  },
+  {
+    "version": "1.2",
+    "date": "2026-05-08",
+    "label": "Overview & Identidade Visual",
+    "items": [
+      { "type": "feat",     "text": "Redesign da Visão Geral com hierarquia de cards e rankings por vendedor, time, público, produto e banco" },
+      { "type": "feat",     "text": "Card visual Quase Pago na esteira de vendas" },
+      { "type": "feat",     "text": "Modo claro/escuro com toggle na sidebar" },
+      { "type": "feat",     "text": "Sistema renomeado para Smart RYC" },
+      { "type": "feat",     "text": "Modularização do código: 2.216 linhas divididas em 30 módulos ES com Vite" },
+      { "type": "fix",      "text": "Cores e contraste ajustados no tema claro em toda a aplicação" }
+    ]
+  },
+  {
+    "version": "1.1",
+    "date": "2026-05-05",
+    "label": "Sincronização & PROCV",
+    "items": [
+      { "type": "feat",     "text": "Snapshot compartilhado via Supabase: todos os usuários veem os mesmos dados" },
+      { "type": "feat",     "text": "Sincronização de classificações entre usuários via Supabase" },
+      { "type": "feat",     "text": "PROCV como fila de pendentes + aba Clientes para confirmados" },
+      { "type": "feat",     "text": "Critério de marketing refatorado: Ecorban como fonte primária, Smart como sinalizador" },
+      { "type": "feat",     "text": "Confirmações de divergência persistidas no Supabase entre usuários" },
+      { "type": "feat",     "text": "Alerta de propostas sem valor Multiplicador na Visão Geral" },
+      { "type": "feat",     "text": "26 novos status do Ecorban mapeados (aprovado e reprovado)" }
+    ]
+  },
+  {
+    "version": "1.0",
+    "date": "2026-04-28",
+    "label": "Lançamento Inicial",
+    "items": [
+      { "type": "feat",     "text": "Dashboard de marketing com importação de Ecorban e Smart" },
+      { "type": "feat",     "text": "Cruzamento automático de leads Smart vs. propostas Ecorban" },
+      { "type": "feat",     "text": "Autenticação via Supabase com login por e-mail e senha" },
+      { "type": "feat",     "text": "Classificação manual de propostas como Marketing ou Não Marketing" },
+      { "type": "feat",     "text": "KPIs de resultado: Válidas, Pagas, CAC, ROAS, CPL e Taxa de Conversão" },
+      { "type": "feat",     "text": "Filtro de período com datas de início e fim" },
+      { "type": "feat",     "text": "Sincronização de metas com Supabase" }
+    ]
+  }
+]
