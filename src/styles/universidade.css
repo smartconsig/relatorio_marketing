@@ -354,13 +354,168 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
 .uni-aula-num { font-size: 10px; color: #444; width: 22px; text-align: center; flex-shrink: 0; }
 .uni-aula-dur { margin-left: auto; font-size: 10px; color: #444; white-space: nowrap; }
 
+/* ── Card badges (concluído) ─────────────────────────── */
+.uni-card-concluido-badge {
+  position: absolute; top: 7px; right: 7px;
+  font-size: 8px; font-family: var(--font-h); font-weight: 700;
+  padding: 2px 6px; border-radius: 3px;
+  background: rgba(74,222,128,.18); color: #4ade80;
+  border: 1px solid rgba(74,222,128,.3);
+  display: flex; align-items: center; gap: 3px;
+  letter-spacing: 0.4px;
+}
+
+/* ── Aula item states ────────────────────────────────── */
+.uni-aula-item.uni-aula-concluida { color: #4ade80; }
+.uni-aula-item.uni-aula-concluida .uni-aula-num { color: #4ade80; }
+.uni-aula-item.uni-aula-clicavel  { cursor: pointer; }
+.uni-aula-item.uni-aula-clicavel:hover { color: #fff; }
+.uni-aula-check-icon { color: #4ade80; flex-shrink: 0; }
+
+/* ── Progresso do curso (detalhe) ────────────────────── */
+.uni-detail-progress {
+  margin-bottom: 24px;
+  max-width: 480px;
+}
+.uni-detail-progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-family: var(--font-b); color: #555;
+  margin-bottom: 7px;
+}
+.uni-detail-progress-track {
+  height: 4px; background: #1e1e1e; border-radius: 2px; overflow: hidden;
+}
+.uni-detail-progress-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .4s ease;
+}
+
+/* ── Player ──────────────────────────────────────────── */
+.uni-player-wrap {
+  display: flex; flex-direction: column;
+  min-height: 100%;
+  background: #0a0a0a;
+}
+.uni-player-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 24px 12px;
+  background: rgba(10,10,10,.9);
+  border-bottom: 1px solid #141414;
+  position: sticky; top: 0; z-index: 5;
+  backdrop-filter: blur(8px);
+}
+.uni-player-back-btn {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  color: #bbb; border-radius: 8px; padding: 7px 14px;
+  font-size: 12px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: all .15s; flex-shrink: 0;
+}
+.uni-player-back-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+.uni-player-course-info { min-width: 0; }
+.uni-player-course-name {
+  font-family: var(--font-h); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.uni-player-stage {
+  width: 100%;
+  background: #000;
+  position: relative;
+}
+.uni-player-iframe {
+  width: 100%; aspect-ratio: 16/9;
+  display: block; border: none;
+  max-height: 70vh;
+}
+.uni-player-no-video {
+  aspect-ratio: 16/9; max-height: 70vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #0d0d0d; border-bottom: 1px solid #181818;
+}
+
+.uni-player-info {
+  padding: 20px 28px 16px;
+  border-bottom: 1px solid #141414;
+}
+.uni-player-aula-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-bottom: 14px;
+}
+.uni-player-aula-title {
+  font-family: var(--font-h); font-size: 18px; font-weight: 700;
+  color: #fff; line-height: 1.3;
+}
+.uni-player-aula-meta {
+  font-size: 11px; color: #555; font-family: var(--font-b);
+  display: flex; align-items: center; gap: 5px; margin-top: 5px;
+}
+.uni-player-complete-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.25);
+  color: #4ade80; padding: 5px 12px; border-radius: 20px;
+  font-size: 11px; font-family: var(--font-h); font-weight: 700;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.uni-player-progress-track {
+  height: 3px; background: #1c1c1c; border-radius: 2px; overflow: hidden;
+  margin-bottom: 6px;
+}
+.uni-player-progress-fill {
+  height: 100%; background: var(--red); border-radius: 2px;
+  transition: width .3s linear;
+}
+.uni-player-progress-label {
+  font-size: 10px; color: #444; font-family: var(--font-b);
+}
+
+.uni-player-next {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 28px;
+  cursor: pointer; transition: background .15s;
+  border-bottom: 1px solid #141414;
+}
+.uni-player-next:hover { background: #111; }
+.uni-player-next > svg { margin-left: auto; color: #555; flex-shrink: 0; }
+.uni-player-next-label { font-size: 10px; color: #555; font-family: var(--font-b); margin-bottom: 3px; }
+.uni-player-next-title { font-size: 13px; color: #bbb; font-family: var(--font-h); font-weight: 600; }
+.uni-player-fim { cursor: default; }
+.uni-player-fim:hover { background: transparent; }
+
+/* ── Spinner ─────────────────────────────────────────── */
+.uni-spinner {
+  width: 28px; height: 28px;
+  border: 2px solid #1e1e1e;
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: uni-spin .7s linear infinite;
+}
+@keyframes uni-spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ───────────────────────────────────────────── */
+.uni-toast {
+  position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+  background: #1a1a1a; border: 1px solid #2e2e2e;
+  color: #eee; font-family: var(--font-h); font-size: 13px; font-weight: 600;
+  padding: 12px 20px; border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
+  display: flex; align-items: center; gap: 10px;
+  transform: translateY(16px); opacity: 0;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.uni-toast.uni-toast-show { transform: translateY(0); opacity: 1; }
+.uni-toast.uni-toast-big { font-size: 14px; padding: 14px 24px; }
+
 /* ── Coming soon ─────────────────────────────────────── */
 .uni-coming-soon {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   height: 70vh; gap: 12px; text-align: center; padding: 40px;
 }
-.uni-coming-soon-icon  { font-size: 52px; margin-bottom: 4px; }
+.uni-coming-soon-icon  { margin-bottom: 4px; }
 .uni-coming-soon-title { font-family: var(--font-h); font-size: 22px; font-weight: 700; color: #fff; }
 .uni-coming-soon-week  {
   display: inline-block;
@@ -393,4 +548,13 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
   .uni-detail-content  { padding: 0 16px 48px; }
   .uni-detail-title    { font-size: 24px; }
   .uni-detail-hero     { height: 42vh; min-height: 240px; }
+
+  /* Player mobile */
+  .uni-player-topbar   { padding: 12px 16px 10px; }
+  .uni-player-iframe   { max-height: 55vw; }
+  .uni-player-no-video { max-height: 55vw; }
+  .uni-player-info     { padding: 16px 16px 12px; }
+  .uni-player-aula-title { font-size: 15px; }
+  .uni-player-next     { padding: 16px; }
+  .uni-toast           { bottom: 72px; right: 16px; left: 16px; justify-content: center; }
 }

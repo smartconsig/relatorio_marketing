@@ -8,7 +8,7 @@ import './styles/mobile.css';
 import './styles/quitacoes.css';
 import './styles/universidade.css';
 
-import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack } from './navigation.js';
+import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV, exportNoValueCSV } from './pages/overview.js';
@@ -86,6 +86,7 @@ window.sortPropostas       = sortPropostas;
 window.exitUniversidade  = exitUniversidade;
 window.uniOpenCurso      = uniOpenCurso;
 window.uniGoBack         = uniGoBack;
+window.uniPlayAula       = uniPlayAula;
 window.toggleAccordion   = toggleAccordion;
 window.renderBSC         = renderBSC;
 window.importBSCFile     = importBSCFile;

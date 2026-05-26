@@ -14,7 +14,7 @@ import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
-import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack } from './pages/universidade.js';
+import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula } from './pages/universidade.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -40,7 +40,7 @@ const TITLES = {
   admin:        'Administração',
 };
 
-export { exitUniversidade, uniOpenCurso, uniGoBack };
+export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula };
 
 export function navigate(sec) {
   // Sai do modo imersivo da Universidade ao navegar para outra seção
