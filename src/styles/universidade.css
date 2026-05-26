@@ -199,8 +199,8 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
 
 /* ── Rows ────────────────────────────────────────────── */
 .uni-rows {
-  padding: 0 52px 64px;
-  margin-top: -56px;
+  padding: 40px 52px 64px;
+  margin-top: 0;
   position: relative;
   z-index: 3;
 }
@@ -232,7 +232,7 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
 
 /* ── Card ────────────────────────────────────────────── */
 .uni-card {
-  flex-shrink: 0; width: 210px;
+  flex-shrink: 0; width: 155px;
   cursor: pointer; position: relative; z-index: 1;
   border-radius: 8px;
   transition: transform .22s cubic-bezier(.4,0,.2,1);
@@ -240,11 +240,11 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
 .uni-card:hover { transform: scale(1.07); z-index: 10; }
 
 .uni-card-thumb {
-  width: 100%; aspect-ratio: 16/9;
-  background-size: cover; background-position: center;
+  width: 100%; aspect-ratio: 2/3;
+  background-size: cover; background-position: center top;
   background-color: #181818;
   border-radius: 8px; position: relative; overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,.5);
+  box-shadow: 0 4px 16px rgba(0,0,0,.6);
 }
 .uni-card-overlay {
   position: absolute; inset: 0;
@@ -389,7 +389,7 @@ body.uni-mode #sec-universidade   { display: flex !important; flex-direction: co
   .uni-hero-title   { font-size: 22px; }
   .uni-hero-desc    { display: none; }
   .uni-rows { padding: 0 16px 48px; margin-top: -28px; }
-  .uni-card { width: 155px; }
+  .uni-card { width: 110px; }
   .uni-detail-content  { padding: 0 16px 48px; }
   .uni-detail-title    { font-size: 24px; }
   .uni-detail-hero     { height: 42vh; min-height: 240px; }

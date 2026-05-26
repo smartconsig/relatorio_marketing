@@ -12,6 +12,7 @@ const TRILHAS_CFG = [
   { nome: 'Backoffice & Operações',  cor: '#8020e0' },
 ];
 
+// Imagens em formato retrato (2:3) via Unsplash com crop centrado no rosto/assunto
 const DEMO_CURSOS = [
   // ── Vendas & Consignado ──────────────────────────────────────────────
   {
@@ -19,21 +20,21 @@ const DEMO_CURSOS = [
     titulo: 'Fundamentos do Crédito Consignado',
     descricao: 'Entenda como funciona o crédito consignado, seus produtos, regras e regulamentação. O ponto de partida para qualquer vendedor da Smart Consig.',
     trilha: 'Vendas & Consignado', nivel: 'basico', aulas: 14, min: 200,
-    img: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=600&fit=crop&q=80',
   },
   {
     id: 'demo-vc-2',
     titulo: 'Técnicas de Abordagem e Captação',
     descricao: 'Domine as melhores estratégias para abordar, engajar e captar novos clientes no mercado consignado.',
     trilha: 'Vendas & Consignado', nivel: 'intermediario', aulas: 10, min: 145,
-    img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face&q=80',
   },
   {
     id: 'demo-vc-3',
     titulo: 'Fechamento de Vendas de Alto Impacto',
     descricao: 'Estratégias avançadas de negociação, contorno de objeções e fechamento para maximizar sua taxa de conversão.',
     trilha: 'Vendas & Consignado', nivel: 'avancado', aulas: 8, min: 120,
-    img: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=400&h=600&fit=crop&q=80',
   },
   // ── Marketing Digital ────────────────────────────────────────────────
   {
@@ -41,7 +42,7 @@ const DEMO_CURSOS = [
     titulo: 'Marketing Digital do Zero',
     descricao: 'Aprenda os fundamentos do marketing digital: funil, persona, conteúdo e métricas para alavancar os resultados da Smart Consig.',
     trilha: 'Marketing Digital', nivel: 'basico', aulas: 18, min: 270,
-    img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=600&fit=crop&q=80',
     destaque: true,
     hero_img: 'https://images.unsplash.com/photo-1552581234-26160f608093?w=1600&q=85',
   },
@@ -50,7 +51,7 @@ const DEMO_CURSOS = [
     titulo: 'Gestão de Tráfego Pago — Meta Ads',
     descricao: 'Crie e gerencie campanhas de alta performance no Facebook e Instagram com foco em leads qualificados.',
     trilha: 'Marketing Digital', nivel: 'intermediario', aulas: 22, min: 330,
-    img: 'https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400&h=600&fit=crop&q=80',
   },
   // ── Liderança & Gestão ───────────────────────────────────────────────
   {
@@ -58,14 +59,14 @@ const DEMO_CURSOS = [
     titulo: 'Liderança de Alta Performance',
     descricao: 'Desenvolva as competências essenciais para liderar equipes com foco em resultado, engajamento e cultura de alta performance.',
     trilha: 'Liderança & Gestão', nivel: 'intermediario', aulas: 16, min: 240,
-    img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=600&fit=crop&crop=face&q=80',
   },
   {
     id: 'demo-lider-2',
     titulo: 'Gestão de Metas e OKRs',
     descricao: 'Aprenda a definir, acompanhar e alcançar metas com clareza usando a metodologia OKR.',
     trilha: 'Liderança & Gestão', nivel: 'avancado', aulas: 10, min: 150,
-    img: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop&q=80',
   },
   // ── RH & Cultura ─────────────────────────────────────────────────────
   {
@@ -73,7 +74,7 @@ const DEMO_CURSOS = [
     titulo: 'Cultura Organizacional Smart',
     descricao: 'Conheça, fortaleça e viva os valores e a cultura da Smart Consig. Obrigatório para todos os colaboradores.',
     trilha: 'RH & Cultura', nivel: 'basico', aulas: 6, min: 90,
-    img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=600&fit=crop&q=80',
   },
   // ── Desenvolvimento Pessoal ──────────────────────────────────────────
   {
@@ -81,14 +82,14 @@ const DEMO_CURSOS = [
     titulo: 'Mindset de Alta Performance',
     descricao: 'Construa a mentalidade necessária para superar limitações, manter foco e alcançar seus objetivos profissionais.',
     trilha: 'Desenvolvimento Pessoal', nivel: 'basico', aulas: 12, min: 180,
-    img: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&h=600&fit=crop&q=80',
   },
   {
     id: 'demo-dp-2',
     titulo: 'Comunicação e Oratória',
     descricao: 'Desenvolva sua comunicação verbal e não-verbal para se expressar com clareza e confiança em qualquer situação.',
     trilha: 'Desenvolvimento Pessoal', nivel: 'intermediario', aulas: 10, min: 140,
-    img: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=600&fit=crop&crop=face&q=80',
   },
   // ── Formalização ─────────────────────────────────────────────────────
   {
@@ -96,7 +97,7 @@ const DEMO_CURSOS = [
     titulo: 'Processo de Formalização Completo',
     descricao: 'Domine cada etapa do processo de formalização de contratos: documentação, sistemas, prazos e boas práticas.',
     trilha: 'Formalização', nivel: 'basico', aulas: 10, min: 150,
-    img: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=400&h=600&fit=crop&q=80',
   },
   // ── Backoffice & Operações ───────────────────────────────────────────
   {
@@ -104,7 +105,7 @@ const DEMO_CURSOS = [
     titulo: 'Operações e Rotinas do Backoffice',
     descricao: 'Domine os sistemas, processos e rotinas operacionais da Smart Consig com eficiência e qualidade.',
     trilha: 'Backoffice & Operações', nivel: 'basico', aulas: 8, min: 120,
-    img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=700&q=80',
+    img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=600&fit=crop&q=80',
   },
 ];
 
@@ -205,16 +206,16 @@ function _showView(view, data = null) {
       main.innerHTML = _renderHome();
       break;
     case 'cursos':
-      main.innerHTML = _renderComingSoon('📚', 'Meus Cursos', 'Seus cursos em andamento e concluídos', 'Semana 2');
+      main.innerHTML = _renderComingSoon('cursos', 'Meus Cursos', 'Seus cursos em andamento e concluídos', 'Semana 2');
       break;
     case 'ranking':
-      main.innerHTML = _renderComingSoon('🏆', 'Ranking', 'Veja quem está acumulando mais XP na empresa', 'Semana 3');
+      main.innerHTML = _renderComingSoon('ranking', 'Ranking', 'Veja quem está acumulando mais XP na empresa', 'Semana 3');
       break;
     case 'perfil':
-      main.innerHTML = _renderComingSoon('👤', 'Meu Perfil', 'XP, nível, badges e certificados', 'Semana 3');
+      main.innerHTML = _renderComingSoon('perfil', 'Meu Perfil', 'XP, nível, badges e certificados', 'Semana 3');
       break;
     case 'detail':
-      main.innerHTML = data ? _renderDetail(data) : _renderComingSoon('❓', 'Curso não encontrado', '', '');
+      main.innerHTML = data ? _renderDetail(data) : _renderComingSoon('default', 'Curso não encontrado', '', '');
       break;
   }
 }
@@ -228,7 +229,7 @@ function _renderHome() {
     <div class="uni-hero" style="background-image:url('${hero.hero_img || hero.img}')">
       <div class="uni-hero-gradient"></div>
       <div class="uni-hero-content">
-        <div class="uni-hero-eyebrow" style="color:${trilhaCor}">🎓 ${hero.trilha.toUpperCase()}</div>
+        <div class="uni-hero-eyebrow" style="color:${trilhaCor}">${hero.trilha.toUpperCase()}</div>
         <h1 class="uni-hero-title">${hero.titulo}</h1>
         <p class="uni-hero-desc">${hero.descricao}</p>
         <div class="uni-hero-meta">
@@ -378,13 +379,23 @@ function _renderDetail(c) {
   `;
 }
 
+const COMING_SOON_SVG = {
+  cursos:  '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+  ranking: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  perfil:  '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  default: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+};
+
 // ── Coming soon ────────────────────────────────────────────────────────────
-function _renderComingSoon(icon, title, sub, semana) {
+function _renderComingSoon(svgKey, title, sub, semana) {
+  const svg = COMING_SOON_SVG[svgKey] || COMING_SOON_SVG.default;
   return `
     <div class="uni-coming-soon">
-      <div class="uni-coming-soon-icon">${icon}</div>
+      <div class="uni-coming-soon-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="52" height="52" style="color:#333">${svg}</svg>
+      </div>
       <div class="uni-coming-soon-title">${title}</div>
-      ${semana ? `<span class="uni-coming-soon-week">🔧 Disponível na ${semana}</span>` : ''}
+      ${semana ? `<span class="uni-coming-soon-week">Em desenvolvimento — ${semana}</span>` : ''}
       ${sub ? `<div class="uni-coming-soon-sub">${sub}</div>` : ''}
     </div>
   `;
