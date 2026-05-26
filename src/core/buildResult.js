@@ -110,7 +110,10 @@ export function buildResult() {
         'Data Cadastro', 'Data de Cadastro', 'DT_CADASTRO',
       )
     );
-    const ecorbanOrigem = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();
+    const ecorbanOrigem  = String(getCol(row, 'Origem', 'origem', 'Canal', 'canal', 'Mídia', 'midia') || '').trim();
+    const statusObs      = String(getCol(row, 'Observações ultimo status', 'Observacoes ultimo status') || '').trim();
+    const statusUpdatedAt = parseExcelDate(getCol(row, 'Ultimo status atualizado em'));
+    const statusUpdatedBy = String(getCol(row, 'Ultimo status atualizado por') || '').trim();
 
     // ── Campos de perfil ──────────────────────────────────────────────────
     const nascimento    = parseExcelDate(getCol(row, 'Cliente - Data de Nascimento', 'Data de Nascimento', 'Nascimento'));
@@ -139,6 +142,7 @@ export function buildResult() {
       loja:          String(getCol(row, 'Loja', 'loja', 'Time') || ''),
       vendedor:      String(getCol(row, 'Vendedor', 'vendedor', 'Consultor') || ''),
       isMarketing:   isMarketingByEcorban,
+      statusObs, statusUpdatedAt, statusUpdatedBy,
       matchMethod:   null,
       origem:        null,
       audiencia:     null,

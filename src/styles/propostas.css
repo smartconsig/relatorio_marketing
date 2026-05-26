@@ -79,3 +79,47 @@
 }
 .export-col-item:hover   { background: var(--surface2); }
 .export-col-item input   { accent-color: var(--red); cursor: pointer; width: 15px; height: 15px; }
+
+/* ── Status tooltip ──────────────────────────────────── */
+.status-tip-wrap {
+  position: relative;
+  display: inline-block;
+}
+.status-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 13px;
+  min-width: 200px;
+  max-width: 300px;
+  z-index: 200;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  pointer-events: none;
+  white-space: normal;
+  text-align: left;
+}
+.status-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 14px;
+  border: 6px solid transparent;
+  border-top-color: var(--border);
+}
+.status-tip-wrap:hover .status-tip { display: block; }
+.status-tip-date {
+  font-size: 11px;
+  color: var(--gray);
+  font-family: var(--font-b);
+  margin-bottom: 5px;
+}
+.status-tip-obs {
+  font-size: 12px;
+  color: var(--white);
+  font-family: var(--font-b);
+  line-height: 1.5;
+}

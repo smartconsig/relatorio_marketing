@@ -105,7 +105,14 @@ function propostaCard(e) {
           <span class="proposta-cpf">${fmtCPF(e.cpf)}</span>
         </div>
         <div class="proposta-header-right">
-          <span class="badge ${sb.cls}">${e.rawStatus || sb.label}</span>
+          <div class="status-tip-wrap">
+            <span class="badge ${sb.cls}">${e.rawStatus || sb.label}</span>
+            ${(e.statusObs || e.statusUpdatedAt) ? `
+            <div class="status-tip">
+              ${e.statusUpdatedAt ? `<div class="status-tip-date">📅 ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
+              ${e.statusObs ? `<div class="status-tip-obs">${e.statusObs}</div>` : ''}
+            </div>` : ''}
+          </div>
           <span class="proposta-valor">${e.valor ? fmtBRL(e.valor) : '—'}</span>
         </div>
       </div>
