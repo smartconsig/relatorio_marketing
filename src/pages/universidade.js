@@ -216,7 +216,7 @@ async function _loadData() {
       sb.from('uni_cursos')
         .select('*, uni_trilhas(nome, cor)')
         .eq('ativo', true)
-        .order('criado_em', { ascending: false }),
+        .order('created_at', { ascending: false }),
     ]);
 
     _trilhasDB = trilhas || [];

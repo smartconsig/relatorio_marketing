@@ -59,7 +59,7 @@ export async function renderUniAdmin() {
 async function _loadData() {
   const [{ data: t }, { data: c }] = await Promise.all([
     sb.from('uni_trilhas').select('*').order('id'),
-    sb.from('uni_cursos').select('*, uni_trilhas(nome, cor)').order('criado_em', { ascending: false }),
+    sb.from('uni_cursos').select('*, uni_trilhas(nome, cor)').order('created_at', { ascending: false }),
   ]);
   _trilhas = t || [];
   _cursos  = c || [];
