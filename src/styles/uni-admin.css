@@ -2,9 +2,14 @@
    UNIVERSIDADE SMART — Painel Criador
    ══════════════════════════════════════════════════════ */
 
-/* ── Modo admin: esconde filtro de período e fixa fundo escuro ── */
-body.uni-admin-mode .date-filter          { display: none !important; }
-body.uni-admin-mode .content              { background: #0a0a0a !important; }
+/* ── Modo admin: esconde tudo do Smart RYC e fixa fundo escuro ── */
+body.uni-admin-mode .date-filter,
+body.uni-admin-mode .topbar,
+body.uni-admin-mode .nav-float,
+body.uni-admin-mode #sidebar,
+body.uni-admin-mode .mobile-bottom-nav    { display: none !important; }
+body.uni-admin-mode .main                 { margin-left: 0 !important; width: 100% !important; }
+body.uni-admin-mode .content              { background: #0a0a0a !important; padding: 0 !important; }
 body.uni-admin-mode #sec-uni-admin        { padding: 0 !important; }
 
 .uadm-page {

@@ -182,6 +182,7 @@ export async function renderUniversidade() {
 
 export function exitUniversidade() {
   document.body.classList.remove('uni-mode');
+  // Remove o botão fixo de retorno do DOM (estava no shell)
   window.navigate('overview');
 }
 
@@ -254,13 +255,18 @@ function _buildShell() {
             ${svg(n.paths, 20, 20)}
           </div>
         `).join('')}
-        <div class="uni-sidebar-spacer"></div>
-        <div class="uni-back-btn" data-tip="Voltar ao Smart RYC" onclick="exitUniversidade()">
-          ${svg(ICONS.back, 20, 20)}
-        </div>
       </aside>
       <div class="uni-main" id="uni-main"></div>
     </div>
+
+    <!-- Botão fixo de retorno ao Smart RYC -->
+    <button class="uni-ryc-return" onclick="exitUniversidade()">
+      <span class="uni-ryc-return-dot"></span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Smart RYC
+    </button>
   `;
 }
 

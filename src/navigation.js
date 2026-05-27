@@ -47,8 +47,21 @@ export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula };
 export function navigate(sec) {
   // Sai do modo imersivo da Universidade ao navegar para outra seção
   if (sec !== 'universidade') document.body.classList.remove('uni-mode');
-  if (sec !== 'uni-admin')   document.body.classList.remove('uni-admin-mode');
-  if (sec === 'uni-admin')   document.body.classList.add('uni-admin-mode');
+  if (sec !== 'uni-admin') {
+    document.body.classList.remove('uni-admin-mode');
+    document.getElementById('uni-admin-ryc-return')?.remove();
+  }
+  if (sec === 'uni-admin') {
+    document.body.classList.add('uni-admin-mode');
+    if (!document.getElementById('uni-admin-ryc-return')) {
+      const btn = document.createElement('button');
+      btn.id = 'uni-admin-ryc-return';
+      btn.className = 'uni-ryc-return';
+      btn.innerHTML = `<span class="uni-ryc-return-dot"></span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>Smart RYC`;
+      btn.addEventListener('click', () => navigate('overview'));
+      document.body.appendChild(btn);
+    }
+  }
   localStorage.setItem('sc_last_section', sec);
   // Atualiza o hash da URL sem recarregar — sobrevive ao F5
   if (!window.location.hash.includes('access_token')) {

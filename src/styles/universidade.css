@@ -5,10 +5,53 @@
 /* ── Uni Mode: esconde o chrome do Smart RYC ─────────── */
 body.uni-mode #sidebar,
 body.uni-mode .topbar,
-body.uni-mode .mobile-bottom-nav  { display: none !important; }
-body.uni-mode .main               { margin-left: 0 !important; width: 100% !important; }
-body.uni-mode .content            { padding: 0 !important; height: 100vh !important; overflow: hidden !important; }
-body.uni-mode #sec-universidade   { display: flex !important; flex-direction: column; height: 100%; overflow: hidden; padding: 0 !important; }
+body.uni-mode .mobile-bottom-nav,
+body.uni-mode .nav-float           { display: none !important; }
+body.uni-mode .main                { margin-left: 0 !important; width: 100% !important; }
+body.uni-mode .content             { padding: 0 !important; height: 100vh !important; overflow: hidden !important; }
+body.uni-mode #sec-universidade    { display: flex !important; flex-direction: column; height: 100%; overflow: hidden; padding: 0 !important; }
+
+/* ── Botão de retorno ao Smart RYC (fixo, canto inferior esquerdo) ── */
+.uni-ryc-return {
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15,15,15,.88);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.45);
+  padding: 8px 14px 8px 10px;
+  border-radius: 20px;
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  user-select: none;
+}
+.uni-ryc-return:hover {
+  background: rgba(25,25,25,.96);
+  border-color: rgba(255,255,255,.2);
+  color: rgba(255,255,255,.75);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+}
+.uni-ryc-return svg { flex-shrink: 0; opacity: .6; transition: opacity .2s; }
+.uni-ryc-return:hover svg { opacity: 1; }
+.uni-ryc-return-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red); flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .uni-ryc-return { bottom: 70px; left: 14px; }
+}
 
 /* ── App shell ───────────────────────────────────────── */
 .uni-app {
