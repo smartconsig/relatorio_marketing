@@ -552,6 +552,107 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-toast.uni-toast-show { transform: translateY(0); opacity: 1; }
 .uni-toast.uni-toast-big { font-size: 14px; padding: 14px 24px; }
 
+/* ── Prova ───────────────────────────────────────────── */
+.uni-prova-section {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; border-radius: 12px; margin-bottom: 24px;
+  border: 1px solid #1e1e1e;
+}
+.uni-prova-section.uni-prova-disponivel { border-color: rgba(224,32,32,.3); background: rgba(224,32,32,.06); }
+.uni-prova-section.uni-prova-aprovado   { border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.06); }
+.uni-prova-section.uni-prova-bloqueada  { border-color: #1e1e1e; background: #111; }
+.uni-prova-icon  { font-size: 24px; flex-shrink: 0; }
+.uni-prova-info  { flex: 1; min-width: 0; }
+.uni-prova-titulo { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: #fff; }
+.uni-prova-sub    { font-size: 12px; color: #666; font-family: var(--font-b); margin-top: 3px; }
+
+.uni-prova-wrap { min-height: 100vh; background: #0a0a0a; display: flex; flex-direction: column; }
+.uni-prova-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid #1a1a1a;
+  position: sticky; top: 0; background: rgba(10,10,10,.96);
+  backdrop-filter: blur(8px); z-index: 10;
+}
+.uni-prova-topbar-title { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: #fff; }
+.uni-prova-body { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; width: 100%; }
+.uni-prova-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #1a1a1a;
+}
+.uni-prova-badge    { font-family: var(--font-h); font-size: 12px; font-weight: 700; color: #888; }
+.uni-prova-nota-info { font-size: 12px; color: #555; font-family: var(--font-b); }
+.uni-prova-nota-info strong { color: #fff; }
+
+.uni-questao-wrap { margin-bottom: 32px; }
+.uni-questao-enunciado {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-family: var(--font-b); font-size: 14px; color: #ddd; line-height: 1.6; margin-bottom: 14px;
+}
+.uni-questao-num {
+  min-width: 26px; height: 26px; border-radius: 50%;
+  background: #1a1a1a; color: #666;
+  font-family: var(--font-h); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+.uni-questao-alts { display: flex; flex-direction: column; gap: 8px; }
+
+.uni-alt-label {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 10px;
+  border: 1px solid #1e1e1e; cursor: pointer;
+  transition: all .15s; background: #111;
+}
+.uni-alt-label:hover { border-color: #333; background: #161616; }
+.uni-alt-label.selecionada { border-color: var(--red); background: rgba(224,32,32,.08); }
+.uni-alt-label input[type="radio"] { display: none; }
+.uni-alt-letra {
+  min-width: 26px; height: 26px; border-radius: 50%;
+  background: #1a1a1a; color: #555;
+  font-family: var(--font-h); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s;
+}
+.uni-alt-label.selecionada .uni-alt-letra { background: var(--red); color: #fff; }
+.uni-alt-text { font-size: 13px; color: #ccc; font-family: var(--font-b); line-height: 1.5; }
+
+.uni-prova-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 0 0; margin-top: 16px; border-top: 1px solid #1a1a1a;
+}
+.uni-prova-footer-info { font-size: 12px; color: #444; font-family: var(--font-b); }
+.uni-prova-submit { padding: 12px 32px; font-size: 14px; }
+
+.uni-resultado-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+.uni-resultado-card {
+  background: #111; border: 1px solid #1e1e1e; border-radius: 16px;
+  padding: 40px 32px; max-width: 420px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+}
+.uni-resultado-icon   { font-size: 52px; }
+.uni-resultado-status { font-family: var(--font-h); font-size: 22px; font-weight: 800; }
+.uni-resultado-status.aprovado  { color: #4ade80; }
+.uni-resultado-status.reprovado { color: #f87171; }
+.uni-resultado-nota   { font-family: var(--font-h); font-size: 64px; font-weight: 900; color: #fff; line-height: 1; }
+.uni-resultado-pct    { font-size: 28px; color: #555; }
+.uni-resultado-detalhe { font-size: 13px; color: #666; font-family: var(--font-b); }
+.uni-resultado-xp     { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.uni-xp-pill {
+  background: rgba(224,32,32,.1); border: 1px solid rgba(224,32,32,.2);
+  color: var(--red); font-size: 12px; font-family: var(--font-h); font-weight: 700;
+  padding: 5px 14px; border-radius: 20px;
+}
+.uni-resultado-cert {
+  background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2);
+  border-radius: 10px; padding: 14px 20px; width: 100%;
+}
+.uni-resultado-cert-label { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #4ade80; }
+.uni-resultado-cert-code  { font-size: 11px; color: #555; font-family: monospace; margin-top: 4px; }
+.uni-resultado-cert-code strong { color: #888; }
+.uni-resultado-dica {
+  font-size: 12px; color: #555; font-family: var(--font-b); line-height: 1.7;
+  background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 8px; padding: 12px 16px; width: 100%;
+}
+.uni-resultado-dica strong { color: #888; }
+
 /* ── Coming soon ─────────────────────────────────────── */
 .uni-coming-soon {
   display: flex; flex-direction: column;
