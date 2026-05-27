@@ -47,6 +47,8 @@ export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula };
 export function navigate(sec) {
   // Sai do modo imersivo da Universidade ao navegar para outra seção
   if (sec !== 'universidade') document.body.classList.remove('uni-mode');
+  if (sec !== 'uni-admin')   document.body.classList.remove('uni-admin-mode');
+  if (sec === 'uni-admin')   document.body.classList.add('uni-admin-mode');
   localStorage.setItem('sc_last_section', sec);
   // Atualiza o hash da URL sem recarregar — sobrevive ao F5
   if (!window.location.hash.includes('access_token')) {
