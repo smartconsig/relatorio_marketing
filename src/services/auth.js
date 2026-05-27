@@ -107,10 +107,17 @@ export async function onAuthenticated() {
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
   const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes','universidade']);
-  const hashSec = window.location.hash.replace('#', '');
   const defaultSec = can('visao_geral') ? 'overview' : 'universidade';
-  const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
-    || localStorage.getItem('sc_last_section')
+  // Valida se o usuário tem permissão para acessar a seção
+  const canAccessSec = (sec) => {
+    if (!sec || !VALID_SECS.has(sec)) return false;
+    if (sec === 'overview') return can('visao_geral');
+    return true;
+  };
+  const hashSec   = window.location.hash.replace('#', '');
+  const storedSec = localStorage.getItem('sc_last_section');
+  const lastSection = (canAccessSec(hashSec) ? hashSec : null)
+    || (canAccessSec(storedSec) ? storedSec : null)
     || defaultSec;
   navigate(lastSection);
 
