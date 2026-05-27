@@ -442,7 +442,7 @@ export function toggleSidebar() {
   const isCollapsed = sidebar.classList.toggle('collapsed');
   document.body.classList.toggle('sidebar-collapsed', isCollapsed);
   localStorage.setItem('sc_sidebar_collapsed', isCollapsed ? '1' : '0');
-  if (isCollapsed) { _buildFloatRail(); } else { _destroyFloatRail(); }
+  if (isCollapsed) { _buildFloatRail(); applyPermissionsToUI(); } else { _destroyFloatRail(); }
 }
 
 export function initNavigation() {

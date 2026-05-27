@@ -13,7 +13,7 @@ import { initBSC } from '../pages/bsc-page.js';
 import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
-import { DEFAULT_PERMISSIONS } from './permissions.js';
+import { can, DEFAULT_PERMISSIONS } from './permissions.js';
 
 /**
  * Carrega o perfil e permissões do usuário logado a partir do Supabase.
@@ -106,11 +106,12 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes']);
+  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes','universidade']);
   const hashSec = window.location.hash.replace('#', '');
+  const defaultSec = can('visao_geral') ? 'overview' : 'universidade';
   const lastSection = (VALID_SECS.has(hashSec) ? hashSec : null)
     || localStorage.getItem('sc_last_section')
-    || 'overview';
+    || defaultSec;
   navigate(lastSection);
 
   // 2. Carrega cache local e preenche os dados
