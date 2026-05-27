@@ -302,16 +302,18 @@ function _showView(view, data = null) {
 
 // ── Home ───────────────────────────────────────────────────────────────────
 function _renderHome() {
-  // Herói: primeiro curso DB destaque, ou demo destaque
-  const heroReal = _cursosDB.find(c => c.destaque);
-  const heroDemo = DEMO_CURSOS.find(c => c.destaque);
-  const heroSrc  = heroReal || heroDemo;
-  const heroIsDemo = !heroReal;
-  const heroTrilha = heroIsDemo
-    ? (TRILHAS_CFG.find(t => t.nome === heroSrc.trilha) || {})
-    : { cor: heroSrc.uni_trilhas?.cor || '#E02020' };
-  const heroCor  = heroTrilha.cor || '#E02020';
-  const heroImg  = heroIsDemo ? (heroSrc.hero_img || heroSrc.img) : (heroSrc.hero_img || heroSrc.capa_url || heroSrc.img || '');
+  // Se tem cursos reais no banco, usa SOMENTE cursos reais (sem demos)
+  const temCursosReais = _cursosDB.length > 0;
+
+  // Herói
+  const heroSrc = temCursosReais
+    ? (_cursosDB.find(c => c.destaque) || _cursosDB[0])
+    : (DEMO_CURSOS.find(c => c.destaque) || DEMO_CURSOS[0]);
+  const heroIsDemo = !temCursosReais;
+  const heroCor  = heroIsDemo
+    ? (TRILHAS_CFG.find(t => t.nome === heroSrc.trilha)?.cor || '#E02020')
+    : (heroSrc.uni_trilhas?.cor || '#E02020');
+  const heroImg  = heroIsDemo ? (heroSrc.hero_img || heroSrc.img) : (heroSrc.hero_img || heroSrc.capa_url || '');
   const heroAulas = heroIsDemo ? heroSrc.aulas : (heroSrc.total_aulas || 0);
   const heroMin   = heroIsDemo ? heroSrc.min   : (heroSrc.duracao_minutos || 0);
   const heroTrilhaNome = heroIsDemo ? heroSrc.trilha : (heroSrc.uni_trilhas?.nome || '');
@@ -340,28 +342,44 @@ function _renderHome() {
     </div>
   `;
 
-  const rowsHtml = TRILHAS_CFG.map(trilha => {
-    const realCursos = _cursosDB.filter(c => c.uni_trilhas?.nome === trilha.nome);
-    const demoCursos = DEMO_CURSOS.filter(c => c.trilha === trilha.nome);
-    const cursos = realCursos.length ? realCursos : demoCursos;
-    if (!cursos.length) return '';
-    const useDemo = !realCursos.length;
-
-    const cards = cursos.map(c => _buildCard(c, useDemo)).join('');
-
-    return `
-      <div class="uni-row">
-        <div class="uni-row-header">
-          <div class="uni-row-title">
-            <span class="uni-row-dot" style="background:${trilha.cor}"></span>
-            ${trilha.nome}
+  let rowsHtml;
+  if (temCursosReais) {
+    // Agrupa cursos reais por trilha — sem nenhum demo
+    rowsHtml = TRILHAS_CFG.map(trilha => {
+      const cursos = _cursosDB.filter(c => c.uni_trilhas?.nome === trilha.nome);
+      if (!cursos.length) return '';
+      return `
+        <div class="uni-row">
+          <div class="uni-row-header">
+            <div class="uni-row-title">
+              <span class="uni-row-dot" style="background:${trilha.cor}"></span>
+              ${trilha.nome}
+            </div>
+            <span class="uni-row-see-all">Ver todos ›</span>
           </div>
-          <span class="uni-row-see-all">Ver todos ›</span>
+          <div class="uni-cards-scroll">${cursos.map(c => _buildCard(c, false)).join('')}</div>
         </div>
-        <div class="uni-cards-scroll">${cards}</div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  } else {
+    // Sem cursos reais: mostra todos os demos como placeholder
+    rowsHtml = TRILHAS_CFG.map(trilha => {
+      const cursos = DEMO_CURSOS.filter(c => c.trilha === trilha.nome);
+      if (!cursos.length) return '';
+      return `
+        <div class="uni-row">
+          <div class="uni-row-header">
+            <div class="uni-row-title">
+              <span class="uni-row-dot" style="background:${trilha.cor}"></span>
+              ${trilha.nome}
+            </div>
+            <span class="uni-row-see-all">Ver todos ›</span>
+          </div>
+          <div class="uni-cards-scroll">${cursos.map(c => _buildCard(c, true)).join('')}</div>
+        </div>
+      `;
+    }).join('');
+  }
 
   return heroHtml + `<div class="uni-rows">${rowsHtml}</div>`;
 }
