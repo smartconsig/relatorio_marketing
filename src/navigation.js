@@ -16,6 +16,7 @@ import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
 import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula } from './pages/universidade.js';
 import { renderUniAdmin } from './pages/uni-admin.js';
+import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -38,8 +39,9 @@ const TITLES = {
   goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
   universidade: 'Universidade Smart',
-  'uni-admin':  'Criador de Cursos',
-  admin:        'Administração',
+  'uni-admin':       'Criador de Cursos',
+  'uni-gamificacao': 'Gamificação',
+  admin:             'Administração',
 };
 
 export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula };
@@ -47,11 +49,11 @@ export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula };
 export function navigate(sec) {
   // Sai do modo imersivo da Universidade ao navegar para outra seção
   if (sec !== 'universidade') document.body.classList.remove('uni-mode');
-  if (sec !== 'uni-admin') {
+  if (sec !== 'uni-admin' && sec !== 'uni-gamificacao') {
     document.body.classList.remove('uni-admin-mode');
     document.getElementById('uni-admin-ryc-return')?.remove();
   }
-  if (sec === 'uni-admin') {
+  if (sec === 'uni-admin' || sec === 'uni-gamificacao') {
     document.body.classList.add('uni-admin-mode');
     if (!document.getElementById('uni-admin-ryc-return')) {
       const btn = document.createElement('button');
@@ -99,7 +101,8 @@ export function navigate(sec) {
   if (sec === 'quitacoes')   renderQuitacoes();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
-  if (sec === 'uni-admin')   renderUniAdmin();
+  if (sec === 'uni-admin')        renderUniAdmin();
+  if (sec === 'uni-gamificacao')  renderUniGamificacao();
 }
 
 /**
@@ -118,8 +121,9 @@ export function applyPermissionsToUI() {
     goals:     () => can('metas_visualizar'),
     bsc:          () => can('bsc'),
     universidade: () => true,
-    'uni-admin':  () => perm.isAdmin(),
-    admin:        () => perm.isAdmin(),
+    'uni-admin':       () => perm.isAdmin(),
+    'uni-gamificacao': () => perm.isAdmin(),
+    admin:             () => perm.isAdmin(),
   };
 
   // Sidebar nav items (standalone + filhos de grupos)
@@ -351,6 +355,10 @@ const FLOAT_NAV_ITEMS = [
   {
     sec: 'uni-admin', title: 'Criador', badgeId: null,
     svg: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  },
+  {
+    sec: 'uni-gamificacao', title: 'Gamificação', badgeId: null,
+    svg: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
   },
   {
     sec: 'admin', title: 'Administração', badgeId: null,

@@ -1,5 +1,5 @@
 // ── Universidade Smart — Painel Criador ───────────────────────────────────
-// Interface CMS completa para gestão de cursos, módulos, aulas e uploads.
+// Interface CMS completa para gestão de cursos, módulos, aulas, prova e certificado.
 
 import { sb } from '../services/supabase.js';
 
@@ -10,8 +10,10 @@ let _view     = 'list'; // 'list' | 'editor'
 
 // Estado do editor
 let _curso    = _emptyCurso();
-let _modulos  = [];          // ver _emptyModulo()
-let _deletes  = { modulos: [], aulas: [] };
+let _modulos  = [];
+let _prova    = _emptyProva();
+let _questoes = [];
+let _deletes  = { modulos: [], aulas: [], questoes: [] };
 let _saving   = false;
 
 function _emptyCurso() {
@@ -21,6 +23,13 @@ function _emptyCurso() {
     destaque: false, capa_url: '', hero_img: '',
   };
 }
+function _emptyProva() {
+  return {
+    id: null, curso_id: null, ativa: false,
+    nota_minima: 70, max_tentativas: 3, dias_para_retry: 7,
+    tem_certificado: true,
+  };
+}
 function _emptyModulo(ordem) {
   return { _key: `m${Date.now()}${Math.random()}`, id: null, titulo: '', ordem, aulas: [] };
 }
@@ -28,7 +37,13 @@ function _emptyAula(ordem) {
   return {
     _key: `a${Date.now()}${Math.random()}`, id: null, titulo: '',
     tipo: 'video', bunny_video_id: '', duracao_segundos: '',
-    ordem, _up: null,  // _up: estado do upload em andamento
+    ordem, _up: null,
+  };
+}
+function _emptyQuestao(ordem) {
+  return {
+    _key: `q${Date.now()}${Math.random()}`, id: null,
+    enunciado: '', alternativas: ['', '', '', ''], correta: 0, ordem,
   };
 }
 
@@ -55,7 +70,9 @@ function _showList(el) {
   _view = 'list';
   _curso   = _emptyCurso();
   _modulos = [];
-  _deletes = { modulos: [], aulas: [] };
+  _prova   = _emptyProva();
+  _questoes = [];
+  _deletes = { modulos: [], aulas: [], questoes: [] };
 
   const rows = _cursos.map(c => `
     <tr class="uadm-tr">
@@ -128,23 +145,37 @@ async function _openEditor(cursoExistente, el) {
 
   if (cursoExistente) {
     _curso = { ...cursoExistente };
-    // Carrega módulos e aulas do DB
-    const [{ data: mods }, { data: aulas }] = await Promise.all([
+    const [{ data: mods }, { data: aulas }, { data: provaData }] = await Promise.all([
       sb.from('uni_modulos').select('*').eq('curso_id', cursoExistente.id).order('ordem'),
       sb.from('uni_aulas').select('*').eq('curso_id', cursoExistente.id).order('ordem'),
+      sb.from('uni_provas').select('*').eq('curso_id', cursoExistente.id).single(),
     ]);
     _modulos = (mods || []).map(m => ({
-      _key: m.id,
-      ...m,
+      _key: m.id, ...m,
       aulas: (aulas || [])
         .filter(a => a.modulo_id === m.id)
         .map(a => ({ _key: a.id, ...a, _up: null })),
     }));
+
+    if (provaData) {
+      _prova = { ...provaData, ativa: true };
+      const { data: questoesData } = await sb.from('uni_questoes')
+        .select('*').eq('prova_id', provaData.id).order('ordem');
+      _questoes = (questoesData || []).map(q => ({
+        _key: q.id, ...q,
+        alternativas: Array.isArray(q.alternativas) ? q.alternativas : ['', '', '', ''],
+      }));
+    } else {
+      _prova = _emptyProva();
+      _questoes = [];
+    }
   } else {
     _curso   = _emptyCurso();
     _modulos = [];
+    _prova   = _emptyProva();
+    _questoes = [];
   }
-  _deletes = { modulos: [], aulas: [] };
+  _deletes = { modulos: [], aulas: [], questoes: [] };
 
   _renderEditor(el);
 }
@@ -279,6 +310,66 @@ function _renderEditor(el) {
           </button>
         </div>
 
+        <!-- Seção: Prova & Certificado -->
+        <div class="uadm-card">
+          <div class="uadm-card-title-row">
+            <div>
+              <div class="uadm-card-title">Prova &amp; Certificado</div>
+              <div class="uadm-card-sub">Configure a avaliação final e a emissão automática do certificado.</div>
+            </div>
+            <label class="uadm-toggle uadm-toggle-lg">
+              <input type="checkbox" id="f-tem-prova" ${_prova.ativa ? 'checked' : ''}>
+              <span class="uadm-toggle-slider"></span>
+              <span class="uadm-toggle-label">${_prova.ativa ? 'Ativada' : 'Desativada'}</span>
+            </label>
+          </div>
+
+          <div id="uadm-prova-body" style="display:${_prova.ativa ? 'block' : 'none'}">
+
+            <!-- Config da prova -->
+            <div class="uadm-prova-config">
+              <div class="uadm-field">
+                <label class="uadm-label">Nota mínima para aprovação (%)</label>
+                <div class="uadm-nota-wrap">
+                  <input class="uadm-input uadm-nota-input" id="f-nota-minima" type="number" min="1" max="100" value="${_prova.nota_minima}">
+                  <span class="uadm-nota-pct">%</span>
+                </div>
+              </div>
+              <div class="uadm-field">
+                <label class="uadm-label">Máx. tentativas</label>
+                <input class="uadm-input" id="f-max-tentativas" type="number" min="1" max="99" value="${_prova.max_tentativas}">
+              </div>
+              <div class="uadm-field">
+                <label class="uadm-label">Dias para nova tentativa</label>
+                <input class="uadm-input" id="f-dias-retry" type="number" min="0" max="365" value="${_prova.dias_para_retry}">
+              </div>
+              <div class="uadm-field">
+                <label class="uadm-label">Certificado</label>
+                <label class="uadm-toggle">
+                  <input type="checkbox" id="f-tem-certificado" ${_prova.tem_certificado ? 'checked' : ''}>
+                  <span class="uadm-toggle-slider"></span>
+                  Emitir certificado ao passar
+                </label>
+              </div>
+            </div>
+
+            <!-- Quiz builder -->
+            <div class="uadm-questoes-header">
+              <span class="uadm-questoes-count" id="uadm-questoes-count">${_questoes.length} questão${_questoes.length !== 1 ? 'ões' : ''}</span>
+              <span class="uadm-questoes-hint">Clique na alternativa correta para marcá-la</span>
+            </div>
+
+            <div id="uadm-questoes-wrap"></div>
+
+            <button class="uadm-btn-add-modulo" id="btn-add-questao">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Adicionar questão
+            </button>
+          </div>
+        </div>
+
         <!-- Rodapé de ações -->
         <div class="uadm-editor-footer">
           <button class="uadm-btn-ghost" id="btn-cancelar">Cancelar</button>
@@ -292,10 +383,8 @@ function _renderEditor(el) {
     </div>
   `;
 
-  // Renderiza módulos
   _syncModulosUI();
-
-  // Event listeners
+  _syncQuestoesUI();
   _attachEditorListeners(el);
 }
 
@@ -340,7 +429,6 @@ function _syncModulosUI() {
     </div>
   `).join('');
 
-  // Attach listeners para os elementos do builder
   _attachBuilderListeners(wrap);
 }
 
@@ -428,7 +516,6 @@ function _aulaRow(a, ai, mkey) {
 }
 
 function _attachBuilderListeners(wrap) {
-  // Remover módulo
   wrap.querySelectorAll('[data-rm-modulo]').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.rmModulo;
@@ -440,7 +527,6 @@ function _attachBuilderListeners(wrap) {
     });
   });
 
-  // Adicionar aula
   wrap.querySelectorAll('[data-add-aula]').forEach(btn => {
     btn.addEventListener('click', () => {
       const mkey = btn.dataset.addAula;
@@ -449,7 +535,6 @@ function _attachBuilderListeners(wrap) {
     });
   });
 
-  // Remover aula
   wrap.querySelectorAll('[data-rm-aula]').forEach(btn => {
     btn.addEventListener('click', () => {
       const akey = btn.dataset.rmAula;
@@ -464,7 +549,6 @@ function _attachBuilderListeners(wrap) {
     });
   });
 
-  // Editar campo de módulo (título)
   wrap.querySelectorAll('[data-field="titulo"][data-mkey]').forEach(input => {
     if (input.tagName === 'INPUT' && !input.dataset.akey) {
       input.addEventListener('input', () => {
@@ -474,7 +558,6 @@ function _attachBuilderListeners(wrap) {
     }
   });
 
-  // Editar campos de aula
   wrap.querySelectorAll('[data-akey]').forEach(input => {
     if (!input.dataset.field) return;
     input.addEventListener('change', () => {
@@ -494,25 +577,105 @@ function _attachBuilderListeners(wrap) {
     });
   });
 
-  // Upload de vídeo (TUS via Bunny.net)
   wrap.querySelectorAll('[data-upload-vid]').forEach(input => {
     input.addEventListener('change', async () => {
       const file = input.files[0];
       if (!file) return;
-      const akey = input.dataset.uploadVid;
-      const mkey = input.dataset.mkey;
-      await _uploadVideo(file, akey, mkey);
+      await _uploadVideo(file, input.dataset.uploadVid, input.dataset.mkey);
     });
   });
 
-  // Upload de PDF (Supabase Storage)
   wrap.querySelectorAll('[data-upload-pdf]').forEach(input => {
     input.addEventListener('change', async () => {
       const file = input.files[0];
       if (!file) return;
-      const akey = input.dataset.uploadPdf;
-      const mkey = input.dataset.mkey;
-      await _uploadPdf(file, akey, mkey);
+      await _uploadPdf(file, input.dataset.uploadPdf, input.dataset.mkey);
+    });
+  });
+}
+
+// ── Quiz builder ───────────────────────────────────────────────────────────
+function _syncQuestoesUI() {
+  const wrap = document.getElementById('uadm-questoes-wrap');
+  if (!wrap) return;
+
+  const cnt = document.getElementById('uadm-questoes-count');
+  if (cnt) cnt.textContent = `${_questoes.length} questão${_questoes.length !== 1 ? 'ões' : ''}`;
+
+  if (_questoes.length === 0) {
+    wrap.innerHTML = `<div class="uadm-modulos-empty">Nenhuma questão. Clique em "+ Adicionar questão" para começar.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = _questoes.map((q, qi) => `
+    <div class="uadm-questao" data-qkey="${q._key}">
+      <div class="uadm-questao-head">
+        <span class="uadm-questao-num">Questão ${qi + 1}</span>
+        <button class="uadm-btn-icon-danger" data-rm-questao="${q._key}" title="Remover questão">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <textarea class="uadm-textarea uadm-questao-enunciado" rows="2"
+                placeholder="Digite o enunciado da questão..."
+                data-qkey="${q._key}" data-qfield="enunciado">${_esc(q.enunciado)}</textarea>
+      <div class="uadm-alternativas">
+        ${['A', 'B', 'C', 'D'].map((letra, i) => `
+          <div class="uadm-alt-row ${q.correta === i ? 'correta' : ''}" data-qkey="${q._key}" data-alt-idx="${i}">
+            <span class="uadm-alt-letra ${q.correta === i ? 'correta' : ''}">${letra}</span>
+            <input class="uadm-input uadm-alt-input" type="text"
+                   placeholder="Alternativa ${letra}..."
+                   value="${_esc(q.alternativas[i] || '')}"
+                   data-qkey="${q._key}" data-qfield="alternativa" data-alt-i="${i}">
+            <button class="uadm-alt-check ${q.correta === i ? 'correta' : ''}"
+                    data-qkey="${q._key}" data-set-correta="${i}" title="Marcar como correta">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  _attachQuestoesListeners(wrap);
+}
+
+function _attachQuestoesListeners(wrap) {
+  wrap.querySelectorAll('[data-rm-questao]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qkey = btn.dataset.rmQuestao;
+      const q = _questoes.find(x => x._key === qkey);
+      if (q?.id) _deletes.questoes.push(q.id);
+      _questoes = _questoes.filter(x => x._key !== qkey);
+      _questoes.forEach((x, i) => { x.ordem = i + 1; });
+      _syncQuestoesUI();
+    });
+  });
+
+  wrap.querySelectorAll('[data-qfield="enunciado"]').forEach(ta => {
+    ta.addEventListener('input', () => {
+      const q = _questoes.find(x => x._key === ta.dataset.qkey);
+      if (q) q.enunciado = ta.value;
+    });
+  });
+
+  wrap.querySelectorAll('[data-qfield="alternativa"]').forEach(input => {
+    input.addEventListener('input', () => {
+      const q = _questoes.find(x => x._key === input.dataset.qkey);
+      if (q) q.alternativas[parseInt(input.dataset.altI)] = input.value;
+    });
+  });
+
+  wrap.querySelectorAll('[data-set-correta]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = _questoes.find(x => x._key === btn.dataset.qkey);
+      if (q) {
+        q.correta = parseInt(btn.dataset.setCorreta);
+        _syncQuestoesUI();
+      }
     });
   });
 }
@@ -527,7 +690,6 @@ async function _uploadVideo(file, akey, mkey) {
   _syncModulosUI();
 
   try {
-    // 1. Cria entrada no Bunny via Vercel Function
     const initRes = await fetch('/api/bunny-create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -535,17 +697,15 @@ async function _uploadVideo(file, akey, mkey) {
     });
 
     if (!initRes.ok) throw new Error(await initRes.text());
-
     const { videoId, authSignature, authExpire, libraryId } = await initRes.json();
 
-    // 2. Upload via TUS (carrega tus-js-client dinamicamente)
     await _loadTusClient();
 
     await new Promise((resolve, reject) => {
       const upload = new window.tus.Upload(file, {
         endpoint: 'https://video.bunnycdn.com/tusupload',
         retryDelays: [0, 3000, 5000],
-        chunkSize: 5 * 1024 * 1024, // 5MB por chunk
+        chunkSize: 5 * 1024 * 1024,
         headers: {
           AuthorizationSignature: authSignature,
           AuthorizationExpire:    String(authExpire),
@@ -559,7 +719,6 @@ async function _uploadVideo(file, akey, mkey) {
           const aa = mm?.aulas.find(x => x._key === akey);
           if (aa?._up) {
             aa._up.pct = pct;
-            // Atualiza só a barra de progresso sem re-render completo
             const bar = document.querySelector(`[data-akey="${akey}"] .uadm-upload-fill`);
             const lbl = document.querySelector(`[data-akey="${akey}"] .uadm-upload-label`);
             if (bar) bar.style.width = `${pct}%`;
@@ -572,13 +731,9 @@ async function _uploadVideo(file, akey, mkey) {
       upload.start();
     });
 
-    // 3. Sucesso — salva o videoId
     const mm = _modulos.find(x => x._key === mkey);
     const aa = mm?.aulas.find(x => x._key === akey);
-    if (aa) {
-      aa.bunny_video_id = videoId;
-      aa._up = null;
-    }
+    if (aa) { aa.bunny_video_id = videoId; aa._up = null; }
     _syncModulosUI();
 
   } catch (err) {
@@ -614,9 +769,8 @@ async function _uploadPdf(file, akey, mkey) {
     const path = `pdfs/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const { error } = await sb.storage.from('uni-assets').upload(path, file, { upsert: true });
     if (error) throw error;
-
     const { data: { publicUrl } } = sb.storage.from('uni-assets').getPublicUrl(path);
-    a.bunny_video_id = publicUrl; // reutilizamos o campo para PDF URL
+    a.bunny_video_id = publicUrl;
     a._up = null;
     _syncModulosUI();
   } catch (err) {
@@ -638,11 +792,11 @@ async function _uploadImagem(file, tipo) {
   return publicUrl;
 }
 
-// ── Salvar curso ───────────────────────────────────────────────────────────
+// ── Salvar curso + prova + questões ───────────────────────────────────────
 async function _salvar(publicar, el) {
   if (_saving) return;
 
-  // Coleta os dados do formulário antes de salvar
+  // Coleta dados do DOM antes de salvar
   _curso.titulo    = document.getElementById('f-titulo')?.value?.trim() || '';
   _curso.descricao = document.getElementById('f-desc')?.value?.trim()   || '';
   _curso.trilha_id = document.getElementById('f-trilha')?.value         || '';
@@ -651,7 +805,14 @@ async function _salvar(publicar, el) {
   _curso.destaque  = document.getElementById('f-destaque')?.checked ?? false;
   _curso.ativo     = publicar;
 
-  // Coleta títulos de módulos/aulas do DOM (para não perder edições em andamento)
+  // Coleta config da prova do DOM
+  _prova.ativa          = document.getElementById('f-tem-prova')?.checked ?? false;
+  _prova.nota_minima    = parseInt(document.getElementById('f-nota-minima')?.value) || 70;
+  _prova.max_tentativas = parseInt(document.getElementById('f-max-tentativas')?.value) || 3;
+  _prova.dias_para_retry = parseInt(document.getElementById('f-dias-retry')?.value) ?? 7;
+  _prova.tem_certificado = document.getElementById('f-tem-certificado')?.checked ?? true;
+
+  // Coleta títulos de módulos/aulas
   _modulos.forEach(m => {
     const tituloEl = document.querySelector(`input[data-mkey="${m._key}"]:not([data-akey])`);
     if (tituloEl) m.titulo = tituloEl.value;
@@ -663,37 +824,35 @@ async function _salvar(publicar, el) {
     });
   });
 
+  // Coleta enunciados/alternativas das questões
+  _questoes.forEach(q => {
+    const ta = document.querySelector(`[data-qkey="${q._key}"][data-qfield="enunciado"]`);
+    if (ta) q.enunciado = ta.value;
+    document.querySelectorAll(`[data-qkey="${q._key}"][data-qfield="alternativa"]`).forEach(inp => {
+      q.alternativas[parseInt(inp.dataset.altI)] = inp.value;
+    });
+  });
+
   if (!_curso.titulo) { alert('Informe o título do curso.'); return; }
   if (!_curso.trilha_id) { alert('Selecione uma trilha.'); return; }
 
   _saving = true;
-  const btnP = document.getElementById('btn-publicar');
-  const btnP2 = document.getElementById('btn-publicar-2');
-  const btnR = document.getElementById('btn-rascunho');
-  const btnR2 = document.getElementById('btn-rascunho-2');
-  [btnP, btnP2, btnR, btnR2].forEach(b => { if (b) { b.disabled = true; b.textContent = 'Salvando…'; } });
+  const btns = ['btn-publicar','btn-publicar-2','btn-rascunho','btn-rascunho-2'].map(id => document.getElementById(id));
+  btns.forEach(b => { if (b) { b.disabled = true; b.textContent = 'Salvando…'; } });
 
   try {
-    // 1. Total de aulas
+    // 1. Salva o curso
     const totalAulas = _modulos.reduce((s, m) => s + m.aulas.length, 0);
     const totalMin   = _modulos.reduce((s, m) => s + m.aulas.reduce((ss, a) => ss + (a.duracao_segundos || 0), 0), 0);
 
     const cursoPayload = {
-      titulo:           _curso.titulo,
-      descricao:        _curso.descricao,
-      trilha_id:        _curso.trilha_id,
-      nivel:            _curso.nivel,
-      instrutor:        _curso.instrutor,
-      destaque:         _curso.destaque,
-      ativo:            _curso.ativo,
-      capa_url:         _curso.capa_url || null,
-      hero_img:         _curso.hero_img || null,
-      total_aulas:      totalAulas,
-      duracao_minutos:  Math.round(totalMin / 60),
+      titulo: _curso.titulo, descricao: _curso.descricao, trilha_id: _curso.trilha_id,
+      nivel: _curso.nivel, instrutor: _curso.instrutor, destaque: _curso.destaque,
+      ativo: _curso.ativo, capa_url: _curso.capa_url || null, hero_img: _curso.hero_img || null,
+      total_aulas: totalAulas, duracao_minutos: Math.round(totalMin / 60),
     };
 
     let cursoId = _curso.id;
-
     if (cursoId) {
       await sb.from('uni_cursos').update(cursoPayload).eq('id', cursoId);
     } else {
@@ -704,50 +863,85 @@ async function _salvar(publicar, el) {
     }
 
     // 2. Deletes
-    if (_deletes.aulas.length)   await sb.from('uni_aulas').delete().in('id', _deletes.aulas);
-    if (_deletes.modulos.length) await sb.from('uni_modulos').delete().in('id', _deletes.modulos);
+    if (_deletes.aulas.length)    await sb.from('uni_aulas').delete().in('id', _deletes.aulas);
+    if (_deletes.modulos.length)  await sb.from('uni_modulos').delete().in('id', _deletes.modulos);
+    if (_deletes.questoes.length) await sb.from('uni_questoes').delete().in('id', _deletes.questoes);
 
     // 3. Salva módulos e aulas
     for (let mi = 0; mi < _modulos.length; mi++) {
       const m = _modulos[mi];
       m.ordem = mi + 1;
       const mPayload = { titulo: m.titulo, curso_id: cursoId, ordem: m.ordem };
-
       if (m.id) {
         await sb.from('uni_modulos').update(mPayload).eq('id', m.id);
       } else {
         const { data, error } = await sb.from('uni_modulos').insert(mPayload).select().single();
         if (error) throw error;
-        m.id = data.id;
-        m._key = data.id;
+        m.id = data.id; m._key = data.id;
       }
 
       for (let ai = 0; ai < m.aulas.length; ai++) {
         const a = m.aulas[ai];
         a.ordem = ai + 1;
         const aPayload = {
-          titulo:          a.titulo,
-          modulo_id:       m.id,
-          curso_id:        cursoId,
-          tipo:            a.tipo,
-          bunny_video_id:  a.bunny_video_id || null,
-          duracao_segundos: a.duracao_segundos || 0,
-          ordem:           a.ordem,
-          ativo:           true,
+          titulo: a.titulo, modulo_id: m.id, curso_id: cursoId,
+          tipo: a.tipo, bunny_video_id: a.bunny_video_id || null,
+          duracao_segundos: a.duracao_segundos || 0, ordem: a.ordem, ativo: true,
         };
-
         if (a.id) {
           await sb.from('uni_aulas').update(aPayload).eq('id', a.id);
         } else {
           const { data, error } = await sb.from('uni_aulas').insert(aPayload).select().single();
           if (error) throw error;
-          a.id = data.id;
-          a._key = data.id;
+          a.id = data.id; a._key = data.id;
         }
       }
     }
 
-    // 4. Volta para a lista
+    // 4. Salva prova
+    if (_prova.ativa) {
+      const provaPayload = {
+        curso_id: cursoId,
+        nota_minima:     _prova.nota_minima,
+        max_tentativas:  _prova.max_tentativas,
+        dias_para_retry: _prova.dias_para_retry,
+        tem_certificado: _prova.tem_certificado,
+      };
+      let provaId = _prova.id;
+      if (provaId) {
+        await sb.from('uni_provas').update(provaPayload).eq('id', provaId);
+      } else {
+        const { data, error } = await sb.from('uni_provas').insert(provaPayload).select().single();
+        if (error) throw error;
+        provaId = data.id;
+        _prova.id = provaId;
+      }
+
+      // 5. Salva questões
+      for (let qi = 0; qi < _questoes.length; qi++) {
+        const q = _questoes[qi];
+        q.ordem = qi + 1;
+        const qPayload = {
+          prova_id: provaId,
+          enunciado: q.enunciado,
+          alternativas: q.alternativas,
+          correta: q.correta,
+          ordem: q.ordem,
+        };
+        if (q.id) {
+          await sb.from('uni_questoes').update(qPayload).eq('id', q.id);
+        } else {
+          const { data, error } = await sb.from('uni_questoes').insert(qPayload).select().single();
+          if (error) throw error;
+          q.id = data.id; q._key = data.id;
+        }
+      }
+    } else if (_prova.id) {
+      // Prova foi desativada — remove do DB
+      await sb.from('uni_provas').delete().eq('id', _prova.id);
+      _prova.id = null;
+    }
+
     await _loadData();
     _showList(el);
 
@@ -755,8 +949,7 @@ async function _salvar(publicar, el) {
     console.error('Erro ao salvar:', err);
     alert(`Erro ao salvar: ${err.message}`);
     _saving = false;
-    [btnP, btnP2].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Publicar curso'; } });
-    [btnR, btnR2].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Salvar rascunho'; } });
+    btns.forEach(b => { if (b) { b.disabled = false; b.textContent = b.id?.includes('rascunho') ? 'Salvar rascunho' : 'Publicar curso'; } });
   } finally {
     _saving = false;
   }
@@ -777,6 +970,21 @@ function _attachEditorListeners(el) {
     _syncModulosUI();
   });
 
+  // Toggle prova
+  el.querySelector('#f-tem-prova')?.addEventListener('change', e => {
+    _prova.ativa = e.target.checked;
+    const body = document.getElementById('uadm-prova-body');
+    const lbl  = e.target.closest('.uadm-toggle')?.querySelector('.uadm-toggle-label');
+    if (body) body.style.display = _prova.ativa ? 'block' : 'none';
+    if (lbl)  lbl.textContent = _prova.ativa ? 'Ativada' : 'Desativada';
+  });
+
+  // Adicionar questão
+  el.querySelector('#btn-add-questao')?.addEventListener('click', () => {
+    _questoes.push(_emptyQuestao(_questoes.length + 1));
+    _syncQuestoesUI();
+  });
+
   // Upload imagem capa
   el.querySelector('#upload-capa')?.addEventListener('change', async e => {
     const file = e.target.files[0];
@@ -788,7 +996,6 @@ function _attachEditorListeners(el) {
     } catch (err) { alert(`Erro no upload: ${err.message}`); }
   });
 
-  // Upload imagem hero
   el.querySelector('#upload-hero')?.addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -799,11 +1006,9 @@ function _attachEditorListeners(el) {
     } catch (err) { alert(`Erro no upload: ${err.message}`); }
   });
 
-  // Remover imagens
   el.querySelector('#rm-capa')?.addEventListener('click', () => { _curso.capa_url = ''; _renderEditor(el); });
   el.querySelector('#rm-hero')?.addEventListener('click', () => { _curso.hero_img = ''; _renderEditor(el); });
 
-  // Radio nivel
   el.querySelectorAll('input[name="nivel"]').forEach(r => {
     r.addEventListener('change', () => {
       _curso.nivel = r.value;
