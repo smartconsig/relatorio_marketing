@@ -7,6 +7,7 @@ import './styles/propostas.css';
 import './styles/mobile.css';
 import './styles/quitacoes.css';
 import './styles/universidade.css';
+import './styles/uni-admin.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';

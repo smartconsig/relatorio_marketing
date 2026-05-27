@@ -15,6 +15,7 @@ import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
 import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula } from './pages/universidade.js';
+import { renderUniAdmin } from './pages/uni-admin.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -37,6 +38,7 @@ const TITLES = {
   goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
   universidade: 'Universidade Smart',
+  'uni-admin':  'Criador de Cursos',
   admin:        'Administração',
 };
 
@@ -82,6 +84,7 @@ export function navigate(sec) {
   if (sec === 'quitacoes')   renderQuitacoes();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
+  if (sec === 'uni-admin')   renderUniAdmin();
 }
 
 /**
@@ -100,6 +103,7 @@ export function applyPermissionsToUI() {
     goals:     () => can('metas_visualizar'),
     bsc:          () => can('bsc'),
     universidade: () => true,
+    'uni-admin':  () => perm.isAdmin(),
     admin:        () => perm.isAdmin(),
   };
 
@@ -328,6 +332,10 @@ const FLOAT_NAV_ITEMS = [
   {
     sec: 'universidade', title: 'Universidade', badgeId: null,
     svg: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M12 15v7"/><path d="M6 11.8v5.5c3.3 2.8 8.7 2.8 12 0v-5.5"/>',
+  },
+  {
+    sec: 'uni-admin', title: 'Criador', badgeId: null,
+    svg: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
   },
   {
     sec: 'admin', title: 'Administração', badgeId: null,

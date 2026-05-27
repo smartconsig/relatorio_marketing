@@ -1,0 +1,366 @@
+/* ══════════════════════════════════════════════════════
+   UNIVERSIDADE SMART — Painel Criador
+   ══════════════════════════════════════════════════════ */
+
+.uadm-page {
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg, #0f0f0f);
+}
+
+/* ── Topbar ──────────────────────────────────────────── */
+.uadm-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 32px;
+  border-bottom: 1px solid #1a1a1a;
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(15,15,15,.96);
+  backdrop-filter: blur(8px);
+}
+.uadm-h1 {
+  font-family: var(--font-h); font-size: 18px; font-weight: 700;
+  color: #fff; margin: 0;
+}
+.uadm-sub {
+  font-size: 11px; color: #555; font-family: var(--font-b); margin: 3px 0 0;
+}
+.uadm-topbar-actions { display: flex; gap: 10px; margin-left: auto; }
+.uadm-editor-title {
+  font-family: var(--font-h); font-size: 14px; font-weight: 600; color: #888;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+}
+
+/* ── Botões ──────────────────────────────────────────── */
+.uadm-btn-primary {
+  background: var(--red); color: #fff; border: none;
+  padding: 9px 20px; border-radius: 7px;
+  font-family: var(--font-h); font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.uadm-btn-primary:hover:not(:disabled) { background: #c91818; }
+.uadm-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.uadm-btn-ghost {
+  background: transparent; color: #888;
+  border: 1px solid #2a2a2a; padding: 9px 18px; border-radius: 7px;
+  font-family: var(--font-h); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.uadm-btn-ghost:hover:not(:disabled) { border-color: #444; color: #ccc; }
+.uadm-btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+
+.uadm-btn-back {
+  display: flex; align-items: center; gap: 7px;
+  background: transparent; border: 1px solid #2a2a2a;
+  color: #888; padding: 7px 14px; border-radius: 7px;
+  font-family: var(--font-h); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.uadm-btn-back:hover { border-color: #444; color: #ccc; }
+
+.uadm-btn-sm {
+  padding: 5px 14px; border-radius: 6px;
+  border: 1px solid #2a2a2a; background: transparent; color: #888;
+  font-size: 11px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.uadm-btn-sm:hover { border-color: #444; color: #fff; }
+
+.uadm-btn-sm-ghost {
+  padding: 4px 10px; border-radius: 5px; background: transparent;
+  border: 1px solid #2a2a2a; color: #555;
+  font-size: 10px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.uadm-btn-sm-ghost:hover { border-color: #f87171; color: #f87171; }
+
+.uadm-btn-icon-danger {
+  background: transparent; border: none; color: #444;
+  cursor: pointer; padding: 4px; border-radius: 5px;
+  transition: all .15s; display: flex; align-items: center; flex-shrink: 0;
+}
+.uadm-btn-icon-danger:hover { color: #f87171; background: rgba(248,113,113,.1); }
+
+/* ── Lista de cursos ─────────────────────────────────── */
+.uadm-table-wrap {
+  padding: 24px 32px 48px;
+  overflow-x: auto;
+}
+.uadm-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-b); font-size: 12px;
+}
+.uadm-table th {
+  text-align: left; padding: 10px 14px;
+  font-family: var(--font-h); font-size: 10px; font-weight: 700;
+  color: #444; text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid #181818;
+}
+.uadm-tr td {
+  padding: 12px 14px; border-bottom: 1px solid #141414;
+  vertical-align: middle; color: #aaa;
+}
+.uadm-tr:hover td { background: #111; }
+
+.uadm-curso-thumb {
+  width: 36px; height: 54px; border-radius: 5px;
+  background-size: cover; background-position: center;
+  background-color: #181818;
+  display: flex; align-items: center; justify-content: center;
+}
+.uadm-curso-nome { font-family: var(--font-h); font-size: 13px; font-weight: 600; color: #eee; margin-bottom: 2px; }
+.uadm-curso-meta { font-size: 11px; color: #555; }
+.uadm-trilha-tag {
+  font-size: 10px; font-family: var(--font-h); font-weight: 700;
+  color: var(--cor); border: 1px solid var(--cor);
+  padding: 2px 8px; border-radius: 20px;
+  background: color-mix(in srgb, var(--cor) 12%, transparent);
+}
+.uadm-badge-pub {
+  font-size: 10px; font-family: var(--font-h); font-weight: 700; color: #4ade80;
+  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25);
+  padding: 2px 8px; border-radius: 20px;
+}
+.uadm-badge-ras {
+  font-size: 10px; font-family: var(--font-h); font-weight: 700; color: #888;
+  background: rgba(255,255,255,.05); border: 1px solid #2a2a2a;
+  padding: 2px 8px; border-radius: 20px;
+}
+
+/* ── Empty state ─────────────────────────────────────── */
+.uadm-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; text-align: center;
+  padding: 80px 40px;
+}
+.uadm-empty-title { font-family: var(--font-h); font-size: 18px; font-weight: 700; color: #fff; }
+.uadm-empty-sub   { font-size: 13px; color: #555; font-family: var(--font-b); }
+
+/* ── Editor ──────────────────────────────────────────── */
+.uadm-editor-body {
+  padding: 28px 32px 48px;
+  display: flex; flex-direction: column; gap: 20px;
+  max-width: 900px;
+}
+.uadm-card {
+  background: #111; border: 1px solid #1c1c1c;
+  border-radius: 12px; padding: 24px;
+}
+.uadm-card-title {
+  font-family: var(--font-h); font-size: 14px; font-weight: 700;
+  color: #fff; margin-bottom: 6px;
+}
+.uadm-card-sub {
+  font-size: 11px; color: #555; font-family: var(--font-b); margin-bottom: 20px;
+}
+
+/* Grid de campos */
+.uadm-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.uadm-col-2  { grid-column: span 2; }
+.uadm-field  { display: flex; flex-direction: column; gap: 6px; }
+
+/* Inputs */
+.uadm-label {
+  font-size: 11px; font-family: var(--font-h); font-weight: 700;
+  color: #666; letter-spacing: 0.4px;
+}
+.uadm-input {
+  background: #0d0d0d; border: 1px solid #222;
+  color: #eee; border-radius: 7px;
+  padding: 10px 13px; font-size: 13px; font-family: var(--font-b);
+  transition: border-color .15s; outline: none;
+}
+.uadm-input:focus { border-color: #444; }
+.uadm-input::placeholder { color: #333; }
+.uadm-textarea {
+  background: #0d0d0d; border: 1px solid #222;
+  color: #eee; border-radius: 7px;
+  padding: 10px 13px; font-size: 13px; font-family: var(--font-b);
+  resize: vertical; outline: none; transition: border-color .15s;
+}
+.uadm-textarea:focus  { border-color: #444; }
+.uadm-select {
+  background: #0d0d0d; border: 1px solid #222;
+  color: #eee; border-radius: 7px;
+  padding: 10px 13px; font-size: 13px; font-family: var(--font-b);
+  outline: none; cursor: pointer;
+}
+.uadm-select:focus { border-color: #444; }
+
+/* Radio grupo */
+.uadm-radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.uadm-radio {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 7px;
+  border: 1px solid #2a2a2a; color: #666;
+  font-size: 12px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.uadm-radio input[type="radio"] { display: none; }
+.uadm-radio.checked,
+.uadm-radio:has(input:checked) { border-color: var(--red); color: var(--red); background: rgba(224,32,32,.1); }
+.uadm-radio:hover:not(.checked) { border-color: #3a3a3a; color: #aaa; }
+
+/* Toggle */
+.uadm-toggle-group { display: flex; flex-direction: column; gap: 8px; }
+.uadm-toggle {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; font-family: var(--font-b); color: #777;
+  cursor: pointer;
+}
+.uadm-toggle input[type="checkbox"] { display: none; }
+.uadm-toggle-slider {
+  width: 36px; height: 20px; border-radius: 10px;
+  background: #222; position: relative; transition: background .2s; flex-shrink: 0;
+}
+.uadm-toggle-slider::after {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #555; top: 3px; left: 3px;
+  transition: all .2s;
+}
+.uadm-toggle input:checked ~ .uadm-toggle-slider { background: var(--red); }
+.uadm-toggle input:checked ~ .uadm-toggle-slider::after { left: 19px; background: #fff; }
+
+/* ── Imagens ─────────────────────────────────────────── */
+.uadm-imagens-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
+.uadm-img-slot    { display: flex; flex-direction: column; gap: 8px; }
+.uadm-img-label   { font-size: 11px; font-family: var(--font-h); font-weight: 700; color: #666; }
+.uadm-img-dim     { font-weight: 400; color: #444; }
+.uadm-img-preview {
+  background-color: #0d0d0d; background-size: cover; background-position: center;
+  border: 1px solid #222; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.uadm-img-portrait { width: 100%; aspect-ratio: 2/3; max-width: 140px; }
+.uadm-img-hero     { width: 100%; aspect-ratio: 16/5; }
+.uadm-img-placeholder { font-size: 11px; color: #333; font-family: var(--font-b); }
+.uadm-img-actions { display: flex; gap: 8px; align-items: center; }
+.uadm-img-hint    { font-size: 10px; color: #3a3a3a; font-family: var(--font-b); }
+.uadm-btn-upload {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1a1a1a; border: 1px solid #2a2a2a; color: #888;
+  padding: 7px 14px; border-radius: 6px;
+  font-size: 11px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.uadm-btn-upload:hover { border-color: #444; color: #ccc; }
+
+/* ── Módulos e Aulas ─────────────────────────────────── */
+.uadm-modulos-empty {
+  padding: 20px; text-align: center;
+  font-size: 12px; color: #3a3a3a; font-family: var(--font-b);
+}
+.uadm-modulo {
+  background: #0d0d0d; border: 1px solid #1a1a1a;
+  border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+}
+.uadm-modulo-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid #161616;
+  background: #111;
+}
+.uadm-modulo-num {
+  font-size: 10px; font-family: var(--font-h); font-weight: 700;
+  color: #555; white-space: nowrap; flex-shrink: 0;
+}
+.uadm-modulo-titulo { flex: 1; background: transparent; border-color: transparent; padding: 6px 10px; }
+.uadm-modulo-titulo:focus { background: #0d0d0d; border-color: #2a2a2a; }
+
+.uadm-aulas-list { padding: 6px 0; }
+.uadm-aulas-empty {
+  padding: 12px 16px; font-size: 11px; color: #333; font-family: var(--font-b);
+}
+.uadm-aula-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; flex-wrap: wrap;
+  border-bottom: 1px solid #141414;
+}
+.uadm-aula-row:last-child { border-bottom: none; }
+.uadm-aula-num { font-size: 10px; color: #444; font-family: var(--font-b); flex-shrink: 0; width: 18px; text-align: center; }
+.uadm-aula-titulo { flex: 1; min-width: 160px; }
+.uadm-aula-tipo { width: 90px; flex-shrink: 0; font-size: 12px; padding: 7px 10px; }
+.uadm-aula-dur {
+  width: 64px; flex-shrink: 0; text-align: center;
+  font-size: 12px; padding: 7px 8px;
+}
+.uadm-aula-dur::placeholder { color: #333; font-size: 10px; }
+
+/* Upload area dentro da aula */
+.uadm-aula-upload-area {
+  width: 100%; padding-left: 26px;
+  display: flex; align-items: center; gap: 10px;
+}
+.uadm-btn-upload-video {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(224,32,32,.08); border: 1px dashed rgba(224,32,32,.3);
+  color: #c04040; padding: 6px 14px; border-radius: 6px;
+  font-size: 11px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.uadm-btn-upload-video:hover { background: rgba(224,32,32,.14); border-color: rgba(224,32,32,.5); }
+.uadm-btn-replace {
+  font-size: 10px; color: #555; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; text-decoration: underline; transition: color .15s;
+}
+.uadm-btn-replace:hover { color: #aaa; }
+
+/* Vídeo OK badge */
+.uadm-video-ok {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-family: var(--font-h); font-weight: 600; color: #4ade80;
+}
+.uadm-video-id { font-size: 9px; color: #3a3a3a; font-family: monospace; }
+
+/* Progress upload */
+.uadm-upload-progress { flex: 1; max-width: 240px; }
+.uadm-upload-label { font-size: 10px; color: #777; font-family: var(--font-b); margin-bottom: 4px; }
+.uadm-upload-track {
+  height: 3px; background: #1e1e1e; border-radius: 2px; overflow: hidden;
+}
+.uadm-upload-fill {
+  height: 100%; background: var(--red); border-radius: 2px;
+  transition: width .2s linear;
+}
+.uadm-upload-fill.error { background: #f87171; }
+
+/* Botão adicionar aula */
+.uadm-btn-add-aula {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 10px 16px;
+  background: transparent; border: none; color: #444;
+  font-size: 11px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: color .15s;
+}
+.uadm-btn-add-aula:hover { color: var(--red); }
+
+/* Botão adicionar módulo */
+.uadm-btn-add-modulo {
+  display: flex; align-items: center; gap: 8px;
+  background: transparent; border: 1px dashed #2a2a2a;
+  color: #555; padding: 11px 20px; border-radius: 8px;
+  font-size: 12px; font-family: var(--font-h); font-weight: 600;
+  cursor: pointer; transition: all .15s; margin-top: 8px;
+  width: 100%;
+}
+.uadm-btn-add-modulo:hover { border-color: #444; color: #aaa; }
+
+/* ── Rodapé do editor ────────────────────────────────── */
+.uadm-editor-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 0 0; border-top: 1px solid #1a1a1a; margin-top: 8px;
+}
+
+/* ── Mobile ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .uadm-topbar { padding: 14px 16px; flex-wrap: wrap; }
+  .uadm-topbar-actions { flex-wrap: wrap; }
+  .uadm-table-wrap { padding: 16px; }
+  .uadm-editor-body { padding: 16px 16px 48px; }
+  .uadm-grid-2 { grid-template-columns: 1fr; }
+  .uadm-col-2 { grid-column: span 1; }
+  .uadm-imagens-grid { grid-template-columns: 1fr; }
+  .uadm-img-portrait { max-width: 100px; }
+  .uadm-aula-row { gap: 6px; }
+  .uadm-aula-tipo { width: 80px; }
+}
