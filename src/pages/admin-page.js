@@ -38,6 +38,11 @@ const PERM_TREE = [
   { key: 'bsc',                  label: 'Ranking BSC' },
   { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
   { key: 'quitacoes_visualizar', label: 'Quitações' },
+  { label: 'Universidade Smart', children: [
+    { key: 'universidade_acessar',    label: 'Acessar Universidade' },
+    { key: 'universidade_criador',    label: 'Criador de Cursos (Admin)' },
+    { key: 'universidade_gamificacao',label: 'Gamificação (Admin)' },
+  ]},
   { label: 'Administração', children: [
     { key: 'admin_usuarios', label: 'Gerenciar Usuários' },
     { key: 'admin_grupos',   label: 'Gerenciar Grupos de Acesso' },
