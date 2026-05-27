@@ -2,6 +2,7 @@
 // Plataforma de desenvolvimento profissional — layout streaming
 
 import { sb } from '../services/supabase.js';
+import { can } from '../services/permissions.js';
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const BUNNY_LIB_ID = 670540;
@@ -182,8 +183,12 @@ export async function renderUniversidade() {
 
 export function exitUniversidade() {
   document.body.classList.remove('uni-mode');
-  // Remove o botão fixo de retorno do DOM (estava no shell)
+  _initialized = false; // força rebuild do shell no próximo acesso
   window.navigate('overview');
+}
+
+export function resetUniversidade() {
+  _initialized = false; // chamado no logout para limpar estado
 }
 
 export function uniOpenCurso(id) {
@@ -239,34 +244,60 @@ async function _loadData() {
 
 // ── Shell (permanente, não re-renderiza) ───────────────────────────────────
 function _buildShell() {
-  const navItems = [
+  const mainNav = [
     { view: 'home',   tip: 'Início',      paths: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
     { view: 'cursos', tip: 'Meus Cursos', paths: ICONS.book },
     { view: 'ranking',tip: 'Ranking',     paths: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
     { view: 'perfil', tip: 'Meu Perfil',  paths: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
   ];
 
+  const temAcessoRYC = can('visao_geral');
+  const temCriador   = can('universidade_criador')     || can('admin_usuarios') || can('admin_grupos');
+  const temGamif     = can('universidade_gamificacao') || can('admin_usuarios') || can('admin_grupos');
+
   return `
     <div class="uni-app">
       <aside class="uni-sidebar">
         <div class="uni-sidebar-logo">U<em>S</em></div>
-        ${navItems.map(n => `
+
+        ${mainNav.map(n => `
           <div class="uni-nav-btn" data-view="${n.view}" data-tip="${n.tip}">
             ${svg(n.paths, 20, 20)}
           </div>
         `).join('')}
+
+        ${temCriador || temGamif ? `<div class="uni-sidebar-divider"></div>` : ''}
+
+        ${temCriador ? `
+          <div class="uni-nav-btn" data-tip="Criador de Cursos" onclick="navigate('uni-admin')">
+            ${svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>', 20, 20)}
+          </div>
+        ` : ''}
+
+        ${temGamif ? `
+          <div class="uni-nav-btn" data-tip="Gamificação" onclick="navigate('uni-gamificacao')">
+            ${svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', 20, 20)}
+          </div>
+        ` : ''}
+
+        <div class="uni-sidebar-spacer"></div>
+
+        <div class="uni-nav-btn uni-nav-logout" data-tip="Sair" onclick="doSignOut()">
+          ${svg('<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>', 20, 20)}
+        </div>
       </aside>
       <div class="uni-main" id="uni-main"></div>
     </div>
 
-    <!-- Botão fixo de retorno ao Smart RYC -->
-    <button class="uni-ryc-return" onclick="exitUniversidade()">
-      <span class="uni-ryc-return-dot"></span>
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
-      </svg>
-      Smart RYC
-    </button>
+    ${temAcessoRYC ? `
+      <button class="uni-ryc-return" onclick="exitUniversidade()">
+        <span class="uni-ryc-return-dot"></span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Smart RYC
+      </button>
+    ` : ''}
   `;
 }
 

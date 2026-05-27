@@ -14,6 +14,7 @@ import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
 import { can, DEFAULT_PERMISSIONS } from './permissions.js';
+import { resetUniversidade } from '../pages/universidade.js';
 
 /**
  * Carrega o perfil e permissões do usuário logado a partir do Supabase.
@@ -72,8 +73,10 @@ export async function doSignIn() {
 
 export async function doSignOut() {
   stopSessionTimeout();
+  resetUniversidade();
   await sb.auth.signOut();
   state.currentUser = null;
+  document.body.classList.remove('uni-mode');
   document.getElementById('user-email').textContent = '';
   document.getElementById('login-email').value = '';
   document.getElementById('login-pass').value  = '';

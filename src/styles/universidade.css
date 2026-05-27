@@ -114,6 +114,13 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   box-shadow: 0 4px 12px rgba(0,0,0,.5);
 }
 .uni-sidebar-spacer { flex: 1; }
+.uni-sidebar-divider {
+  width: 28px; height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 6px 0;
+}
+.uni-nav-logout { color: #444; }
+.uni-nav-logout:hover { background: rgba(224,32,32,.12); color: var(--red); }
 .uni-back-btn {
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;

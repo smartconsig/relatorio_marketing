@@ -353,14 +353,6 @@ const FLOAT_NAV_ITEMS = [
     svg: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M12 15v7"/><path d="M6 11.8v5.5c3.3 2.8 8.7 2.8 12 0v-5.5"/>',
   },
   {
-    sec: 'uni-admin', title: 'Criador', badgeId: null,
-    svg: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
-  },
-  {
-    sec: 'uni-gamificacao', title: 'Gamificação', badgeId: null,
-    svg: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>',
-  },
-  {
     sec: 'admin', title: 'Administração', badgeId: null,
     svg: '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><circle cx="19" cy="19" r="3"/><line x1="19" y1="16" x2="19" y2="19"/><line x1="19" y1="19" x2="22" y2="19"/>',
   },
