@@ -308,71 +308,70 @@ export function libAddCliente() {
   const empresa = _empresaParceira();
   const hoje = new Date().toLocaleDateString('pt-BR');
 
-  const overlay = document.createElement('div');
-  overlay.className = 'lib-modal-overlay';
-  overlay.id = 'lib-modal-overlay';
-  overlay.innerHTML = `
-    <div class="lib-modal">
-      <h2>Novo Cliente</h2>
+  const content = document.getElementById('lib-modal-content');
+  const modal   = document.getElementById('lib-modal');
+  if (!content || !modal) return;
 
-      <div class="lib-form-row">
-        <label>CPF</label>
-        <input type="text" id="lib-f-cpf" placeholder="000.000.000-00" maxlength="14" />
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Novo Cliente</h2>
+
+    <div class="lib-form-row">
+      <label>CPF</label>
+      <input type="text" id="lib-f-cpf" placeholder="000.000.000-00" maxlength="14" />
+    </div>
+
+    <div class="lib-form-row">
+      <label>Nome Completo</label>
+      <input type="text" id="lib-f-nome" placeholder="Nome do cliente" />
+    </div>
+
+    <div class="lib-form-row-2">
+      <div>
+        <label>Saldo Devedor (R$)</label>
+        <input type="number" id="lib-f-sd" placeholder="0,00" min="0" step="0.01" oninput="libCalcPreview()" />
       </div>
-
-      <div class="lib-form-row">
-        <label>Nome Completo</label>
-        <input type="text" id="lib-f-nome" placeholder="Nome do cliente" />
+      <div>
+        <label>Troco (R$)</label>
+        <input type="number" id="lib-f-troco" placeholder="0,00" min="0" step="0.01" value="0" oninput="libCalcPreview()" />
       </div>
+    </div>
 
-      <div class="lib-form-row-2">
-        <div>
-          <label>Saldo Devedor (R$)</label>
-          <input type="number" id="lib-f-sd" placeholder="0,00" min="0" step="0.01" oninput="libCalcPreview()" />
-        </div>
-        <div>
-          <label>Troco (R$)</label>
-          <input type="number" id="lib-f-troco" placeholder="0,00" min="0" step="0.01" value="0" oninput="libCalcPreview()" />
-        </div>
+    <div class="lib-calc-preview">
+      <div class="lib-calc-preview-item">
+        <span class="lbl">Saldo Total</span>
+        <span class="val" id="lib-prev-total">R$ —</span>
       </div>
-
-      <div class="lib-calc-preview" id="lib-calc-preview">
-        <div class="lib-calc-preview-item">
-          <span class="lbl">Saldo Total</span>
-          <span class="val" id="lib-prev-total">R$ —</span>
-        </div>
-        <div class="lib-calc-preview-item">
-          <span class="lbl">Comissão 6%</span>
-          <span class="val" id="lib-prev-com">R$ —</span>
-        </div>
+      <div class="lib-calc-preview-item">
+        <span class="lbl">Comissão 6%</span>
+        <span class="val" id="lib-prev-com">R$ —</span>
       </div>
+    </div>
 
-      <div class="lib-modal-auto">
-        Empresa: <span>${_esc(empresa)}</span> &nbsp;·&nbsp;
-        Data Quitado: <span>${hoje}</span>
-      </div>
+    <div class="lib-modal-auto">
+      Empresa: <span>${_esc(empresa)}</span> &nbsp;·&nbsp;
+      Data Quitado: <span>${hoje}</span>
+    </div>
 
-      <div class="lib-form-row">
-        <label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
-        <textarea id="lib-f-obs" placeholder="Deixe em branco se não houver observações"></textarea>
-      </div>
+    <div class="lib-form-row">
+      <label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+      <textarea id="lib-f-obs" placeholder="Deixe em branco se não houver observações"></textarea>
+    </div>
 
-      <div id="lib-modal-err" style="color:var(--red);font-size:.8rem;margin-bottom:8px;display:none"></div>
+    <div id="lib-modal-err" style="color:var(--red);font-size:.8rem;margin-bottom:8px;display:none"></div>
 
-      <div class="lib-modal-actions">
-        <button class="lib-btn-cancel" onclick="libFecharModal()">Cancelar</button>
-        <button class="lib-btn-save" id="lib-btn-save" onclick="libSalvarCliente()">Salvar Cliente</button>
-      </div>
+    <div class="lib-modal-actions">
+      <button class="lib-btn-cancel" onclick="libFecharModal()">Cancelar</button>
+      <button class="lib-btn-save" id="lib-btn-save" onclick="libSalvarCliente()">Salvar Cliente</button>
     </div>
   `;
 
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) libFecharModal(); });
+  modal.classList.add('open');
+  modal.onclick = e => { if (e.target === modal) libFecharModal(); };
   document.getElementById('lib-f-cpf')?.focus();
 }
 
 export function libFecharModal() {
-  document.getElementById('lib-modal-overlay')?.remove();
+  document.getElementById('lib-modal')?.classList.remove('open');
 }
 
 export function libCalcPreview() {
