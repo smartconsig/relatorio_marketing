@@ -128,7 +128,7 @@ export function applyPermissionsToUI() {
     goals:     () => can('metas_visualizar'),
     bsc:          () => can('bsc'),
     liberacao:    () => can('liberacao_margem') || perm.isAdmin(),
-    universidade: () => true,
+    universidade: () => can('universidade_acessar') || perm.isAdmin(),
     'uni-admin':       () => perm.isAdmin(),
     'uni-gamificacao': () => perm.isAdmin(),
     admin:             () => perm.isAdmin(),
