@@ -3,6 +3,8 @@
 
 import { sb } from '../services/supabase.js';
 import { can } from '../services/permissions.js';
+import { renderUniAdmin } from './uni-admin.js';
+import { renderUniGamificacao } from './uni-gamificacao.js';
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const BUNNY_LIB_ID = 670540;
@@ -195,6 +197,14 @@ export function uniOpenCurso(id) {
   _showView('detail', id);
 }
 
+export function uniOpenAdmin() {
+  _showView('uni-admin');
+}
+
+export function uniOpenGamificacao() {
+  _showView('uni-gamificacao');
+}
+
 export function uniGoBack() {
   if (_activeView === 'player') {
     _showView('detail', _currentDetail?.curso?.id);
@@ -269,13 +279,13 @@ function _buildShell() {
         ${temCriador || temGamif ? `<div class="uni-sidebar-divider"></div>` : ''}
 
         ${temCriador ? `
-          <div class="uni-nav-btn" data-tip="Criador de Cursos" onclick="navigate('uni-admin')">
+          <div class="uni-nav-btn" data-view="uni-admin" data-tip="Criador de Cursos" onclick="uniOpenAdmin()">
             ${svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>', 20, 20)}
           </div>
         ` : ''}
 
         ${temGamif ? `
-          <div class="uni-nav-btn" data-tip="Gamificação" onclick="navigate('uni-gamificacao')">
+          <div class="uni-nav-btn" data-view="uni-gamificacao" data-tip="Gamificação" onclick="uniOpenGamificacao()">
             ${svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', 20, 20)}
           </div>
         ` : ''}
@@ -322,12 +332,14 @@ function _showView(view, data = null) {
   main.scrollTo({ top: 0, behavior: 'instant' });
 
   switch (view) {
-    case 'home':    main.innerHTML = _renderHome(); break;
-    case 'cursos':  main.innerHTML = _renderMeusCursos(); break;
-    case 'ranking': main.innerHTML = _renderComingSoon('ranking', 'Ranking', 'Veja quem está acumulando mais XP na empresa', 'Semana 3'); break;
-    case 'perfil':  main.innerHTML = _renderComingSoon('perfil',  'Meu Perfil', 'XP, nível, badges e certificados', 'Semana 3'); break;
-    case 'detail':  _renderDetailAsync(main, data); break;
-    case 'player':  _renderPlayerView(main, data); break;
+    case 'home':           main.innerHTML = _renderHome(); break;
+    case 'cursos':         main.innerHTML = _renderMeusCursos(); break;
+    case 'ranking':        main.innerHTML = _renderComingSoon('ranking', 'Ranking', 'Veja quem está acumulando mais XP na empresa', 'Semana 3'); break;
+    case 'perfil':         main.innerHTML = _renderComingSoon('perfil',  'Meu Perfil', 'XP, nível, badges e certificados', 'Semana 3'); break;
+    case 'detail':         _renderDetailAsync(main, data); break;
+    case 'player':         _renderPlayerView(main, data); break;
+    case 'uni-admin':      renderUniAdmin(main); break;
+    case 'uni-gamificacao':renderUniGamificacao(main); break;
   }
 }
 

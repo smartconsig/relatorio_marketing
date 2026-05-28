@@ -26,8 +26,8 @@ function _emptyPremio() {
 }
 
 // ── Entry ──────────────────────────────────────────────────────────────────
-export async function renderUniGamificacao() {
-  const el = document.getElementById('sec-uni-gamificacao');
+export async function renderUniGamificacao(container) {
+  const el = container || document.getElementById('sec-uni-gamificacao');
   if (!el) return;
   el.innerHTML = _spinner();
   await _loadAll();

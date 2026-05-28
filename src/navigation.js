@@ -14,7 +14,7 @@ import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
-import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado } from './pages/universidade.js';
+import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './pages/universidade.js';
 import { renderUniAdmin } from './pages/uni-admin.js';
 import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 
@@ -44,7 +44,7 @@ const TITLES = {
   admin:             'Administração',
 };
 
-export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado };
+export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao };
 
 export function navigate(sec) {
   // Sai do modo imersivo da Universidade ao navegar para outra seção

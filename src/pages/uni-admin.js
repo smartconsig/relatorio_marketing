@@ -48,8 +48,8 @@ function _emptyQuestao(ordem) {
 }
 
 // ── Entry ──────────────────────────────────────────────────────────────────
-export async function renderUniAdmin() {
-  const el = document.getElementById('sec-uni-admin');
+export async function renderUniAdmin(container) {
+  const el = container || document.getElementById('sec-uni-admin');
   if (!el) return;
   el.innerHTML = _spinner();
   await _loadData();
