@@ -41,6 +41,9 @@ export const perm = {
   // Quitações
   quitacoesVisualizar: () => can('quitacoes_visualizar'),
 
+  // Liberação de Margem Master
+  liberacaoMargem:     () => can('liberacao_margem') || can('admin_usuarios') || can('admin_grupos'),
+
   // Administração
   adminUsuarios:       () => can('admin_usuarios'),
   adminGrupos:         () => can('admin_grupos'),
@@ -79,6 +82,7 @@ export const DEFAULT_PERMISSIONS = {
   bsc: true,
   perfil_visualizar: false,
   quitacoes_visualizar: false,
+  liberacao_margem: false,
   admin_usuarios: false,
   admin_grupos: false,
 };

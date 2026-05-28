@@ -38,6 +38,7 @@ const PERM_TREE = [
   { key: 'bsc',                  label: 'Ranking BSC' },
   { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
   { key: 'quitacoes_visualizar', label: 'Quitações' },
+  { key: 'liberacao_margem',    label: 'Liberação de Margem Master' },
   { label: 'Universidade Smart', children: [
     { key: 'universidade_acessar',    label: 'Acessar Universidade' },
     { key: 'universidade_criador',    label: 'Criador de Cursos (Admin)' },

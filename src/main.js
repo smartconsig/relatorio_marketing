@@ -8,6 +8,7 @@ import './styles/mobile.css';
 import './styles/quitacoes.css';
 import './styles/universidade.css';
 import './styles/uni-admin.css';
+import './styles/liberacao.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
@@ -28,6 +29,7 @@ import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 import { q_search, q_openModal, q_openEditModal, q_closeModal, q_save, q_showDetail, q_backToList, q_showComprovante, q_closeComprovante, q_attachDoc, q_toggleDev, q_onDocSelect, q_maskCPF, q_maskCNPJ, q_maskMoney } from './pages/quitacoes-page.js';
+import { renderLiberacao, libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto } from './pages/liberacao-page.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -84,6 +86,12 @@ window.clearBatchSelection = clearBatchSelection;
 window.batchClassify       = batchClassify;
 window.sortClientes        = sortClientes;
 window.sortPropostas       = sortPropostas;
+window.libAddCliente       = libAddCliente;
+window.libFecharModal      = libFecharModal;
+window.libCalcPreview      = libCalcPreview;
+window.libSalvarCliente    = libSalvarCliente;
+window.libToggleOk         = libToggleOk;
+window.libSalvarAcerto     = libSalvarAcerto;
 window.exitUniversidade    = exitUniversidade;
 window.uniOpenCurso        = uniOpenCurso;
 window.uniGoBack           = uniGoBack;

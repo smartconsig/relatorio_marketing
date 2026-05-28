@@ -17,6 +17,7 @@ import { initGoalsPage } from './pages/goals-page.js';
 import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './pages/universidade.js';
 import { renderUniAdmin } from './pages/uni-admin.js';
 import { renderUniGamificacao } from './pages/uni-gamificacao.js';
+import { renderLiberacao } from './pages/liberacao-page.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -38,6 +39,7 @@ const TITLES = {
   propostas:    'Propostas de Marketing',
   goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
+  liberacao:    'Liberação de Margem Master',
   universidade: 'Universidade Smart',
   'uni-admin':       'Criador de Cursos',
   'uni-gamificacao': 'Gamificação',
@@ -99,6 +101,7 @@ export function navigate(sec) {
   // Renderiza seções sob demanda
   if (sec === 'admin')        renderAdminPage();
   if (sec === 'quitacoes')   renderQuitacoes();
+  if (sec === 'liberacao')   renderLiberacao();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
   if (sec === 'uni-admin')        renderUniAdmin();
@@ -120,6 +123,7 @@ export function applyPermissionsToUI() {
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
     bsc:          () => can('bsc'),
+    liberacao:    () => can('liberacao_margem') || perm.isAdmin(),
     universidade: () => true,
     'uni-admin':       () => perm.isAdmin(),
     'uni-gamificacao': () => perm.isAdmin(),
@@ -347,6 +351,10 @@ const FLOAT_NAV_ITEMS = [
       { sec: 'propostas', title: 'Propostas', svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
       { sec: 'goals',     title: 'Metas',     svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
     ],
+  },
+  {
+    sec: 'liberacao', title: 'Lib. Margem', badgeId: null,
+    svg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   },
   {
     sec: 'universidade', title: 'Universidade', badgeId: null,
