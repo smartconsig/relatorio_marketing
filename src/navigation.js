@@ -66,6 +66,10 @@ export function navigate(sec) {
       document.body.appendChild(btn);
     }
   }
+  // Oculta o filtro de data global na tela de Lib. Margem
+  const dateFilter = document.querySelector('.date-filter');
+  if (dateFilter) dateFilter.style.display = sec === 'liberacao' ? 'none' : '';
+
   localStorage.setItem('sc_last_section', sec);
   // Atualiza o hash da URL sem recarregar — sobrevive ao F5
   if (!window.location.hash.includes('access_token')) {
