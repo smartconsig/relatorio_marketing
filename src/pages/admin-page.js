@@ -756,6 +756,7 @@ function _summarizePerms(permissoes) {
     { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
     { key: 'quitacoes_visualizar',     label: 'Quitações' },
+    { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'universidade_acessar',     label: 'Universidade' },
     { key: 'universidade_criador',     label: 'Criador' },
     { key: 'universidade_gamificacao', label: 'Gamificação' },
