@@ -29,7 +29,7 @@ import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 import { q_search, q_openModal, q_openEditModal, q_closeModal, q_save, q_showDetail, q_backToList, q_showComprovante, q_closeComprovante, q_attachDoc, q_toggleDev, q_onDocSelect, q_maskCPF, q_maskCNPJ, q_maskMoney } from './pages/quitacoes-page.js';
-import { renderLiberacao, libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libDeletarCliente, libLimparBase } from './pages/liberacao-page.js';
+import { renderLiberacao, libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libDeletarCliente, libLimparBase, libExportar, libEditarCliente, libSalvarEdicao } from './pages/liberacao-page.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -101,6 +101,9 @@ window.libImportarPlanilha = libImportarPlanilha;
 window.libOnImportFile     = libOnImportFile;
 window.libDeletarCliente   = libDeletarCliente;
 window.libLimparBase       = libLimparBase;
+window.libExportar         = libExportar;
+window.libEditarCliente    = libEditarCliente;
+window.libSalvarEdicao     = libSalvarEdicao;
 window.exitUniversidade    = exitUniversidade;
 window.uniOpenCurso        = uniOpenCurso;
 window.uniGoBack           = uniGoBack;

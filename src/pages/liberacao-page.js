@@ -119,6 +119,10 @@ function _render(el) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             Limpar Base
           </button>` : ''}
+          ${admin ? `<button class="lib-btn-export" onclick="libExportar()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>` : ''}
           <button class="lib-btn-import" onclick="libImportarPlanilha()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar Planilha
@@ -167,7 +171,7 @@ function _render(el) {
               <th>Data Quitado</th>
               <th>Obs</th>
               <th>Status</th>
-              ${admin ? '<th></th>' : ''}
+              <th></th>
             </tr>
           </thead>
           <tbody id="lib-tbody"></tbody>
@@ -185,7 +189,7 @@ function _updateTable() {
   const filtered = _filtered();
   const visible  = filtered.slice(0, _page * PAGE_SIZE);
   const hasMore  = filtered.length > visible.length;
-  const cols     = admin ? 13 : 11;
+  const cols     = admin ? 13 : 12;
 
   // Contagem
   const countEl = document.querySelector('.lib-count');
@@ -245,20 +249,26 @@ function _updateTable() {
 }
 
 function _renderRow(r, admin) {
-  const cls = r.aprovado ? ' lib-row-ok' : '';
+  const cls      = r.aprovado ? ' lib-row-ok' : '';
+  const grupoNome = state.currentUser?.grupoNome || '';
+  const canAct   = admin || r.empresa_parceira === grupoNome;
+
   const acertoCell = admin
     ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" onchange="libSalvarAcerto('${r.id}', this.value)" />`
     : fmtDate(r.acerto);
 
-  const okBtn = admin ? `
+  const okBtn = canAct ? `
     <td class="lib-td-actions">
       <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}" onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
-      <button class="lib-btn-del" onclick="libDeletarCliente('${r.id}', '${r.nome.replace(/'/g, "\\'")}')" title="Excluir cliente">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      <button class="lib-btn-edit" onclick="libEditarCliente('${r.id}')" title="Editar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
-    </td>` : '';
+      ${admin ? `<button class="lib-btn-del" onclick="libDeletarCliente('${r.id}', '${r.nome.replace(/'/g, "\\'")}')" title="Excluir">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>` : ''}
+    </td>` : '<td></td>';
 
   return `
     <tr class="lib-tr${cls}" data-id="${r.id}">
@@ -319,6 +329,142 @@ export function libVerMais() {
   _updateTable();
   // Scroll suave até o fim da tabela
   document.getElementById('lib-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Exportar Excel (admin) ────────────────────────────────────────────────
+export function libExportar() {
+  const data = _filtered();
+  if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
+
+  const headers = ['CPF','NOME','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS'];
+  const rows = data.map(r => [
+    r.cpf, r.nome, r.empresa_parceira,
+    r.saldo_devedor, r.troco, r.saldo_total, r.comissao_6pct, r.troco_liquido,
+    r.acerto || '', r.data_quitado || '', r.obs || '',
+    r.aprovado ? 'OK' : 'Pendente',
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Aplica verde nas linhas aprovadas
+  const greenFill = { patternType: 'solid', fgColor: { rgb: '00B050' } };
+  data.forEach((r, i) => {
+    if (!r.aprovado) return;
+    headers.forEach((_, c) => {
+      const addr = XLSX.utils.encode_cell({ r: i + 1, c });
+      if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+      ws[addr].s = { fill: greenFill, font: { color: { rgb: 'FFFFFF' } } };
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Liberação de Margem');
+  XLSX.writeFile(wb, `liberacao_margem_${new Date().toISOString().slice(0,10)}.xlsx`, { cellStyles: true });
+  toast(`${data.length} clientes exportados.`);
+}
+
+// ── Editar Cliente ────────────────────────────────────────────────────────
+export function libEditarCliente(id) {
+  const r = _registros.find(x => x.id === id);
+  if (!r) return;
+
+  const admin   = isAdmin();
+  const content = document.getElementById('lib-modal-content');
+  const modal   = document.getElementById('lib-modal');
+  if (!content || !modal) return;
+
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Editar Cliente</h2>
+
+    <div class="lib-form-row">
+      <label>CPF</label>
+      <input type="text" id="lib-f-cpf" value="${_esc(r.cpf || '')}" maxlength="14" />
+    </div>
+
+    <div class="lib-form-row">
+      <label>Nome Completo</label>
+      <input type="text" id="lib-f-nome" value="${_esc(r.nome || '')}" />
+    </div>
+
+    <div class="lib-form-row-2">
+      <div>
+        <label>Saldo Devedor (R$)</label>
+        <input type="number" id="lib-f-sd" value="${r.saldo_devedor || 0}" min="0" step="0.01" oninput="libCalcPreview()" />
+      </div>
+      <div>
+        <label>Troco (R$)</label>
+        <input type="number" id="lib-f-troco" value="${r.troco || 0}" min="0" step="0.01" oninput="libCalcPreview()" />
+      </div>
+    </div>
+
+    <div class="lib-calc-preview">
+      <div class="lib-calc-preview-item">
+        <span class="lbl">Saldo Total</span>
+        <span class="val" id="lib-prev-total">${fmtBRL((r.saldo_devedor || 0) + (r.troco || 0))}</span>
+      </div>
+      <div class="lib-calc-preview-item">
+        <span class="lbl">Comissão 6%</span>
+        <span class="val" id="lib-prev-com">${fmtBRL(((r.saldo_devedor || 0) + (r.troco || 0)) * 0.06)}</span>
+      </div>
+    </div>
+
+    <div class="lib-modal-auto">
+      Empresa: <span>${_esc(r.empresa_parceira)}</span> &nbsp;·&nbsp;
+      Data Quitado: <span>${fmtDate(r.data_quitado)}</span>
+    </div>
+
+    <div class="lib-form-row">
+      <label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+      <textarea id="lib-f-obs">${_esc(r.obs || '')}</textarea>
+    </div>
+
+    <div id="lib-modal-err" style="color:var(--red);font-size:.8rem;margin-bottom:8px;display:none"></div>
+
+    <div class="lib-modal-actions">
+      <button class="lib-btn-cancel" onclick="libFecharModal()">Cancelar</button>
+      <button class="lib-btn-save" id="lib-btn-save" onclick="libSalvarEdicao('${id}')">Salvar</button>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.onclick = e => { if (e.target === modal) libFecharModal(); };
+}
+
+export async function libSalvarEdicao(id) {
+  const cpf   = document.getElementById('lib-f-cpf')?.value.trim();
+  const nome  = document.getElementById('lib-f-nome')?.value.trim();
+  const sd    = parseFloat(document.getElementById('lib-f-sd')?.value);
+  const troco = parseFloat(document.getElementById('lib-f-troco')?.value) || 0;
+  const obs   = document.getElementById('lib-f-obs')?.value.trim() || null;
+  const err   = document.getElementById('lib-modal-err');
+  const btn   = document.getElementById('lib-btn-save');
+
+  if (!cpf)       { err.textContent = 'Informe o CPF.';           err.style.display = ''; return; }
+  if (!nome)      { err.textContent = 'Informe o nome.';          err.style.display = ''; return; }
+  if (!sd || sd <= 0) { err.textContent = 'Informe o saldo devedor.'; err.style.display = ''; return; }
+
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const { error } = await sb
+    .from('liberacao_margem_master')
+    .update({ cpf, nome, saldo_devedor: sd, troco, obs })
+    .eq('id', id);
+
+  if (error) {
+    handleError('Erro ao salvar.', error);
+    btn.disabled = false; btn.textContent = 'Salvar';
+    return;
+  }
+
+  const reg = _registros.find(r => r.id === id);
+  if (reg) { reg.cpf = cpf; reg.nome = nome; reg.saldo_devedor = sd; reg.troco = troco; reg.obs = obs; }
+
+  libFecharModal();
+  toast('Cliente atualizado!');
+  await _loadData();
+  const el = document.getElementById('sec-liberacao');
+  if (el) _render(el);
 }
 
 // ── Limpar Base (admin) ───────────────────────────────────────────────────
