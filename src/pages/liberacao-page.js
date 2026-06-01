@@ -115,6 +115,10 @@ function _render(el) {
           <p class="lib-count"></p>
         </div>
         <div class="lib-topbar-actions">
+          ${admin ? `<button class="lib-btn-limpar" onclick="libLimparBase()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Limpar Base
+          </button>` : ''}
           <button class="lib-btn-import" onclick="libImportarPlanilha()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar Planilha
@@ -315,6 +319,30 @@ export function libVerMais() {
   _updateTable();
   // Scroll suave até o fim da tabela
   document.getElementById('lib-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Limpar Base (admin) ───────────────────────────────────────────────────
+export function libLimparBase() {
+  const total = _registros.length;
+  showConfirm(
+    'Limpar toda a base',
+    `Isso vai excluir TODOS os ${total} clientes permanentemente. Essa ação não pode ser desfeita.`,
+    'Excluir tudo',
+    async () => {
+      const { error } = await sb
+        .from('liberacao_margem_master')
+        .delete()
+        .not('id', 'is', null);
+
+      if (error) { handleError('Erro ao limpar a base.', error); return; }
+
+      _registros = [];
+      _page = 1;
+      toast('Base limpa com sucesso.');
+      const el = document.getElementById('sec-liberacao');
+      if (el) _render(el);
+    }
+  );
 }
 
 // ── Deletar Cliente (admin) ───────────────────────────────────────────────

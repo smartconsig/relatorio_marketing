@@ -33,6 +33,23 @@
   gap: 8px;
 }
 
+.lib-btn-limpar {
+  background: transparent;
+  color: #e53e3e;
+  border: 1px solid #e53e3e;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.lib-btn-limpar:hover { background: #e53e3e; color: #fff; }
+
 .lib-btn-import {
   background: transparent;
   color: var(--text);
