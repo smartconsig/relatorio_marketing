@@ -147,6 +147,7 @@ function _render(el) {
               <th>Nome</th>
               <th>Saldo Devedor</th>
               <th>Troco</th>
+              <th>Troco Líquido</th>
               <th>Saldo Total</th>
               <th>Comissão 6%</th>
               <th>Acerto</th>
@@ -171,7 +172,7 @@ function _updateTable() {
   const filtered = _filtered();
   const visible  = filtered.slice(0, _page * PAGE_SIZE);
   const hasMore  = filtered.length > visible.length;
-  const cols     = admin ? 12 : 11;
+  const cols     = admin ? 13 : 12;
 
   // Contagem
   const countEl = document.querySelector('.lib-count');
@@ -250,6 +251,7 @@ function _renderRow(r, admin) {
       <td>${r.nome || '—'}</td>
       <td class="lib-val">${fmtBRL(r.saldo_devedor)}</td>
       <td class="lib-val">${fmtBRL(r.troco)}</td>
+      <td class="lib-val">${fmtBRL(r.troco_liquido)}</td>
       <td class="lib-val lib-val-destaque">${fmtBRL(r.saldo_total)}</td>
       <td class="lib-val">${fmtBRL(r.comissao_6pct)}</td>
       <td>${acertoCell}</td>
