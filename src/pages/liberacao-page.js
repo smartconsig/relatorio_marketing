@@ -350,62 +350,114 @@ export async function libOnImportFile(input) {
   if (!file) return;
   input.value = '';
 
-  const empresa  = _empresaParceira();
-  const hoje     = new Date().toISOString().slice(0, 10);
+  const admin          = isAdmin();
+  const empresaParceiro = _empresaParceira();
+  const hoje           = new Date().toISOString().slice(0, 10);
 
-  let rows;
+  let wb;
   try {
-    const buf  = await file.arrayBuffer();
-    const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
-    const ws   = wb.Sheets[wb.SheetNames[0]];
-    rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    const buf = await file.arrayBuffer();
+    wb = XLSX.read(buf, { type: 'array', cellDates: true, cellStyles: true });
   } catch {
-    toast('Erro ao ler o arquivo.', 'err');
+    handleError('Erro ao ler o arquivo.', null);
     return;
   }
 
-  // Normaliza nome das colunas (minúsculo, sem acentos, sem parênteses)
-  const norm = s => String(s).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, '');
+  const ws    = wb.Sheets[wb.SheetNames[0]];
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
 
-  const findCol = (row, ...candidates) => {
-    const keys = Object.keys(row);
-    for (const c of candidates) {
-      const match = keys.find(k => norm(k) === norm(c));
-      if (match !== undefined) return row[match];
+  // Lê cabeçalhos da linha 1
+  const normStr = s => String(s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, '').trim();
+
+  const headers = [];
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    headers.push(cell?.v ? normStr(cell.v) : '');
+  }
+
+  const colIdx = (...names) => {
+    for (const n of names) {
+      const idx = headers.indexOf(normStr(n));
+      if (idx >= 0) return idx;
     }
-    return undefined;
+    return -1;
+  };
+
+  const iCpf    = colIdx('cpf');
+  const iNome   = colIdx('nome', 'nome completo');
+  const iEmp    = colIdx('empresa', 'empresa parceira');
+  const iSd     = colIdx('saldo devedor', 'saldo devedor r');
+  const iTroco  = colIdx('troco', 'troco r');
+  const iAcerto = colIdx('acerto');
+  const iDq     = colIdx('data quitado');
+  const iObs    = colIdx('obs', 'observacoes', 'observações');
+
+  const getVal = (r, colI) => {
+    if (colI < 0) return undefined;
+    return ws[XLSX.utils.encode_cell({ r, c: colI })]?.v;
   };
 
   const parseMoney = v => {
-    if (v === '' || v === null || v === undefined) return 0;
+    if (v == null || v === '') return 0;
     if (typeof v === 'number') return v;
     return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
   };
 
-  const padCpf = v => {
-    const digits = String(v).replace(/\D/g, '');
-    return digits.padStart(11, '0');
+  const padCpf = v => String(v).replace(/\D/g, '').padStart(11, '0');
+
+  const parseDate = v => {
+    if (!v) return null;
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    const m = String(v).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return null;
   };
 
-  // Constrói registros válidos e detecta duplicatas (CPF + saldo_devedor)
+  // Detecta linha verde pela cor FF00B050 (verde padrão do template)
+  const isGreenRow = r => {
+    for (let c = range.s.c; c <= Math.min(range.e.c, 4); c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      const rgb  = (cell?.s?.fgColor?.rgb || cell?.s?.bgColor?.rgb || '').toUpperCase();
+      if (rgb.includes('00B050')) return true;
+    }
+    return false;
+  };
+
+  // Normaliza nome da empresa para bater com os grupos do sistema
+  const normalizeEmpresa = v => {
+    if (!v) return 'Smart Consig';
+    const s = String(v).toLowerCase();
+    if (s.includes('smart'))                          return 'Smart Consig';
+    if (s.includes('vital'))                          return 'Vital Cred';
+    if (s.includes('rz') || s.includes('r z'))        return 'RZ Cred';
+    if (s.includes('cred vale') || s.includes('credvale')) return 'Cred Vale';
+    if (s.includes('tem cred') || s.includes('temcred'))   return 'Tem Credito';
+    if (s.includes('alg'))                            return 'ALG Promotora';
+    if (s.includes('neg'))                            return 'Negócio Certo';
+    if (s.includes('pnl'))                            return 'PNL Credito';
+    if (s.includes('ita'))                            return 'ITA Promotora';
+    return String(v).trim();
+  };
+
   const seen   = new Set();
   const valid  = [];
   let skipped  = 0;
 
-  for (const row of rows) {
-    const cpfRaw  = findCol(row, 'CPF', 'cpf');
-    const nome    = String(findCol(row, 'Nome Completo', 'Nome', 'nome') || '').trim();
-    const sdRaw   = findCol(row, 'Saldo Devedor (R$)', 'Saldo Devedor', 'saldo_devedor', 'saldo devedor');
-    const trocoRaw= findCol(row, 'Troco (R$)', 'Troco', 'troco');
-    const obs     = String(findCol(row, 'Observações', 'Observacoes', 'OBS', 'obs') || '').trim() || null;
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const cpfRaw = getVal(r, iCpf);
+    const nome   = String(getVal(r, iNome) || '').trim();
+    if (!cpfRaw && !nome) continue;
 
-    if (!cpfRaw && !nome) continue; // linha vazia
-
-    const cpf = padCpf(cpfRaw);
-    const sd  = parseMoney(sdRaw);
-    const troco = parseMoney(trocoRaw);
+    const cpf    = padCpf(cpfRaw);
+    const sd     = parseMoney(getVal(r, iSd));
+    const troco  = parseMoney(getVal(r, iTroco));
+    const obs    = String(getVal(r, iObs) || '').trim() || null;
+    const acerto = parseDate(getVal(r, iAcerto));
+    const dq     = parseDate(getVal(r, iDq)) || hoje;
+    const aprovado = isGreenRow(r);
+    const empresa  = admin ? normalizeEmpresa(getVal(r, iEmp)) : empresaParceiro;
 
     if (!cpf || cpf === '00000000000' || !nome || sd <= 0) { skipped++; continue; }
 
@@ -413,7 +465,7 @@ export async function libOnImportFile(input) {
     if (seen.has(dupKey)) { skipped++; continue; }
     seen.add(dupKey);
 
-    valid.push({ cpf, nome, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: hoje, obs, aprovado: false });
+    valid.push({ cpf, nome, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: dq, acerto, obs, aprovado });
   }
 
   if (valid.length === 0) {
@@ -421,18 +473,16 @@ export async function libOnImportFile(input) {
     return;
   }
 
-  // INSERT em batches de 500
   const BATCH = 500;
   let inserted = 0;
   for (let i = 0; i < valid.length; i += BATCH) {
-    const batch = valid.slice(i, i + BATCH);
-    const { error } = await sb.from('liberacao_margem_master').insert(batch);
+    const { error } = await sb.from('liberacao_margem_master').insert(valid.slice(i, i + BATCH));
     if (error) { handleError('Erro ao importar planilha.', error); return; }
-    inserted += batch.length;
+    inserted += valid.slice(i, i + BATCH).length;
   }
 
   const msg = skipped > 0
-    ? `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''}, ${skipped} ignorado${skipped !== 1 ? 's' : ''} (duplicata ou inválido).`
+    ? `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''}, ${skipped} ignorado${skipped !== 1 ? 's' : ''}.`
     : `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''} com sucesso!`;
   toast(msg);
 
