@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
+import { showConfirm } from '../utils/confirm.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
@@ -318,8 +319,12 @@ export function libVerMais() {
 
 // ── Deletar Cliente (admin) ───────────────────────────────────────────────
 export function libDeletarCliente(id, nome) {
-  if (!confirm(`Tem certeza que deseja excluir "${nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
-  _confirmarDelete(id);
+  showConfirm(
+    'Excluir cliente',
+    `Tem certeza que deseja excluir "${nome}"? Essa ação não pode ser desfeita.`,
+    'Excluir',
+    () => _confirmarDelete(id)
+  );
 }
 
 async function _confirmarDelete(id) {
