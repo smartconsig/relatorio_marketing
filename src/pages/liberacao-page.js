@@ -3,6 +3,7 @@ import { sb } from '../services/supabase.js';
 import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
+import * as XLSX from 'xlsx';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
@@ -112,10 +113,17 @@ function _render(el) {
           <h1>Liberação de Margem Master</h1>
           <p class="lib-count"></p>
         </div>
-        <button class="lib-btn-add" onclick="libAddCliente()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Adicionar Cliente
-        </button>
+        <div class="lib-topbar-actions">
+          <button class="lib-btn-import" onclick="libImportarPlanilha()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar Planilha
+          </button>
+          <input type="file" id="lib-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportFile(this)" />
+          <button class="lib-btn-add" onclick="libAddCliente()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Cliente
+          </button>
+        </div>
       </div>
 
       <div class="lib-filters">
@@ -303,6 +311,107 @@ export function libVerMais() {
   _updateTable();
   // Scroll suave até o fim da tabela
   document.getElementById('lib-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Importar Planilha ─────────────────────────────────────────────────────
+export function libImportarPlanilha() {
+  document.getElementById('lib-import-input')?.click();
+}
+
+export async function libOnImportFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = '';
+
+  const empresa  = _empresaParceira();
+  const hoje     = new Date().toISOString().slice(0, 10);
+
+  let rows;
+  try {
+    const buf  = await file.arrayBuffer();
+    const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  } catch {
+    toast('Erro ao ler o arquivo.', 'err');
+    return;
+  }
+
+  // Normaliza nome das colunas (minúsculo, sem acentos, sem parênteses)
+  const norm = s => String(s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+  const findCol = (row, ...candidates) => {
+    const keys = Object.keys(row);
+    for (const c of candidates) {
+      const match = keys.find(k => norm(k) === norm(c));
+      if (match !== undefined) return row[match];
+    }
+    return undefined;
+  };
+
+  const parseMoney = v => {
+    if (v === '' || v === null || v === undefined) return 0;
+    if (typeof v === 'number') return v;
+    return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+  };
+
+  const padCpf = v => {
+    const digits = String(v).replace(/\D/g, '');
+    return digits.padStart(11, '0');
+  };
+
+  // Constrói registros válidos e detecta duplicatas (CPF + saldo_devedor)
+  const seen   = new Set();
+  const valid  = [];
+  let skipped  = 0;
+
+  for (const row of rows) {
+    const cpfRaw  = findCol(row, 'CPF', 'cpf');
+    const nome    = String(findCol(row, 'Nome Completo', 'Nome', 'nome') || '').trim();
+    const sdRaw   = findCol(row, 'Saldo Devedor (R$)', 'Saldo Devedor', 'saldo_devedor', 'saldo devedor');
+    const trocoRaw= findCol(row, 'Troco (R$)', 'Troco', 'troco');
+    const obs     = String(findCol(row, 'Observações', 'Observacoes', 'OBS', 'obs') || '').trim() || null;
+
+    if (!cpfRaw && !nome) continue; // linha vazia
+
+    const cpf = padCpf(cpfRaw);
+    const sd  = parseMoney(sdRaw);
+    const troco = parseMoney(trocoRaw);
+
+    if (!cpf || cpf === '00000000000' || !nome || sd <= 0) { skipped++; continue; }
+
+    const dupKey = `${cpf}|${sd}`;
+    if (seen.has(dupKey)) { skipped++; continue; }
+    seen.add(dupKey);
+
+    valid.push({ cpf, nome, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: hoje, obs, aprovado: false });
+  }
+
+  if (valid.length === 0) {
+    toast('Nenhum registro válido encontrado na planilha.', 'err');
+    return;
+  }
+
+  // INSERT em batches de 500
+  const BATCH = 500;
+  let inserted = 0;
+  for (let i = 0; i < valid.length; i += BATCH) {
+    const batch = valid.slice(i, i + BATCH);
+    const { error } = await sb.from('liberacao_margem_master').insert(batch);
+    if (error) { toast('Erro ao importar: ' + error.message, 'err'); return; }
+    inserted += batch.length;
+  }
+
+  const msg = skipped > 0
+    ? `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''}, ${skipped} ignorado${skipped !== 1 ? 's' : ''} (duplicata ou inválido).`
+    : `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''} com sucesso!`;
+  toast(msg);
+
+  await _loadData();
+  const el = document.getElementById('sec-liberacao');
+  if (el) _render(el);
 }
 
 // ── Modal Adicionar Cliente ─────────────────────────────────────────────────
