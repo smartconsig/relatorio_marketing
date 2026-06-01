@@ -1,3 +1,8 @@
+export function handleError(msg, error) {
+  console.error(msg, error);
+  toast(msg, 'err');
+}
+
 export function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
   el.textContent = msg;

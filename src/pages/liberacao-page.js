@@ -1,7 +1,7 @@
 // ── Liberação de Margem Master ─────────────────────────────────────────────
 import { sb } from '../services/supabase.js';
 import { state } from '../state.js';
-import { toast } from '../utils/ui.js';
+import { toast, handleError } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
 import { showConfirm } from '../utils/confirm.js';
@@ -100,7 +100,7 @@ async function _loadData() {
     .from('liberacao_margem_master')
     .select('*')
     .order('created_at', { ascending: false });
-  if (error) { console.warn('[liberacao]', error); _registros = []; return; }
+  if (error) { handleError('Erro ao carregar dados.', error); _registros = []; return; }
   _registros = data || [];
 }
 
@@ -333,7 +333,7 @@ async function _confirmarDelete(id) {
     .delete()
     .eq('id', id);
 
-  if (error) { toast('Erro ao excluir cliente.', 'err'); return; }
+  if (error) { handleError('Erro ao excluir cliente.', error); return; }
 
   _registros = _registros.filter(r => r.id !== id);
   _updateTable();
@@ -427,7 +427,7 @@ export async function libOnImportFile(input) {
   for (let i = 0; i < valid.length; i += BATCH) {
     const batch = valid.slice(i, i + BATCH);
     const { error } = await sb.from('liberacao_margem_master').insert(batch);
-    if (error) { toast('Erro ao importar: ' + error.message, 'err'); return; }
+    if (error) { handleError('Erro ao importar planilha.', error); return; }
     inserted += batch.length;
   }
 
@@ -574,7 +574,7 @@ export async function libToggleOk(id, atual) {
     .update({ aprovado: novoValor })
     .eq('id', id);
 
-  if (error) { toast('Erro ao atualizar.'); return; }
+  if (error) { handleError('Erro ao atualizar status.', error); return; }
 
   const reg = _registros.find(r => r.id === id);
   if (reg) reg.aprovado = novoValor;
@@ -603,7 +603,7 @@ export async function libSalvarAcerto(id, valor) {
     .update({ acerto: valor || null })
     .eq('id', id);
 
-  if (error) { toast('Erro ao salvar data de acerto.'); return; }
+  if (error) { handleError('Erro ao salvar data de acerto.', error); return; }
 
   const reg = _registros.find(r => r.id === id);
   if (reg) reg.acerto = valor || null;
