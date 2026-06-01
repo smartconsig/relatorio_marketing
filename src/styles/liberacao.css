@@ -145,6 +145,29 @@
 .lib-btn-ok:hover { border-color: #20b450; color: #20b450; }
 .lib-btn-ok.ok { border-color: #20b450; background: #20b450; color: #fff; }
 
+/* Célula de ações (OK + Delete) */
+.lib-td-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Botão excluir */
+.lib-btn-del {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: all .15s;
+}
+.lib-btn-del:hover { border-color: #e53e3e; color: #e53e3e; }
+
 /* Acerto — input inline */
 .lib-acerto-input {
   background: transparent;

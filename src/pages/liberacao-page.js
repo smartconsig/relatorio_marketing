@@ -246,9 +246,12 @@ function _renderRow(r, admin) {
     : fmtDate(r.acerto);
 
   const okBtn = admin ? `
-    <td>
+    <td class="lib-td-actions">
       <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}" onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <button class="lib-btn-del" onclick="libDeletarCliente('${r.id}', '${r.nome.replace(/'/g, "\\'")}')" title="Excluir cliente">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       </button>
     </td>` : '';
 
@@ -311,6 +314,25 @@ export function libVerMais() {
   _updateTable();
   // Scroll suave até o fim da tabela
   document.getElementById('lib-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Deletar Cliente (admin) ───────────────────────────────────────────────
+export function libDeletarCliente(id, nome) {
+  if (!confirm(`Tem certeza que deseja excluir "${nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
+  _confirmarDelete(id);
+}
+
+async function _confirmarDelete(id) {
+  const { error } = await sb
+    .from('liberacao_margem_master')
+    .delete()
+    .eq('id', id);
+
+  if (error) { toast('Erro ao excluir cliente.', 'err'); return; }
+
+  _registros = _registros.filter(r => r.id !== id);
+  _updateTable();
+  toast('Cliente excluído.');
 }
 
 // ── Importar Planilha ─────────────────────────────────────────────────────
