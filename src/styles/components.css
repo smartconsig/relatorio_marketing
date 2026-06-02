@@ -69,13 +69,75 @@
 .btn-dots:hover { background: var(--surface); color: var(--white); border-color: var(--gray); }
 
 /* ── FUNIL TABLE ── */
-.funil-table thead tr:first-child th { border-bottom: none; }
-.funil-table thead tr:last-child th  { font-size: .7rem; color: var(--gray); font-weight: 500; }
-.funil-th-estagio { text-align: center; border-left: 1px solid var(--border); font-size: .75rem; }
-.funil-sub  { text-align: center; font-size: .7rem; }
-.funil-num  { text-align: center; font-variant-numeric: tabular-nums; }
-.funil-and  { text-align: center; font-size: .8rem; color: var(--gray); }
-.funil-pct  { text-align: center; font-size: .8rem; color: var(--green, #20b450); font-weight: 600; }
+.funil-table { border-collapse: separate; border-spacing: 0; }
+.funil-table th, .funil-table td { padding: 10px 14px; }
+
+.funil-th-est {
+  text-align: center;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 8px 14px;
+}
+
+/* Célula de estágio */
+.funil-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 12px;
+  border-right: 1px solid rgba(0,0,0,0.04);
+}
+.funil-cell-total {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+}
+.funil-cell-pct {
+  font-size: .75rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.funil-cell-and {
+  font-size: .7rem;
+  color: var(--gray);
+  margin-top: 3px;
+  border-top: 1px dashed rgba(255,255,255,.15);
+  padding-top: 3px;
+}
+
+/* Leads, aprovadas */
+.funil-cell-leads { text-align: center; font-weight: 700; font-size: 1rem; }
+.funil-cell-apr   { text-align: center; color: var(--gray); }
+.funil-cell-conv  { text-align: center; }
+
+/* Badge % conversão — semáforo */
+.funil-conv-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.funil-conv-green  { background: rgba(16,185,129,.15); color: #059669; }
+.funil-conv-yellow { background: rgba(245,158,11,.15);  color: #d97706; }
+.funil-conv-red    { background: rgba(239,68,68,.12);   color: #dc2626; }
+
+/* Botão toggle andamento */
+.funil-toggle-and {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: .78rem;
+  color: var(--gray-light);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.funil-toggle-and:hover { border-color: var(--red); color: var(--red); }
 
 /* ── LAYOUT ── */
 .main { margin-left: 220px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; transition: margin-left 0.25s ease; }

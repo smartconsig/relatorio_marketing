@@ -110,23 +110,39 @@ export function renderRanking(entries) {
 }
 
 // ── Funil ─────────────────────────────────────────────────────────────────
+const FUNIL_COLORS = {
+  'Novo Lead':       { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',  text: '#3b82f6' },
+  'Negociação':      { bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.25)',  text: '#d97706' },
+  'Venda':           { bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)',  text: '#059669' },
+  'Pago':            { bg: 'rgba(5,150,105,0.10)',   border: 'rgba(5,150,105,0.30)',   text: '#047857' },
+  'Desqualificado':  { bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.20)',   text: '#dc2626' },
+};
+
+function _convBadge(pct) {
+  if (!pct) return '<span style="color:var(--gray)">—</span>';
+  const cls = pct >= 30 ? 'funil-conv-green' : pct >= 15 ? 'funil-conv-yellow' : 'funil-conv-red';
+  return `<span class="funil-conv-badge ${cls}">${pct}%</span>`;
+}
+
 function _renderFunil() {
-  const hasLeads = (state.result?.smartLeads?.length || 0) > 0;
+  const hasLeads  = (state.result?.smartLeads?.length || 0) > 0;
+  const showAnd   = state.funilShowAnd || false;
+  const v         = state.funilView || 'vendedor';
+
+  const _tabs = `
+    <div class="table-filters">
+      <button class="filter-btn" onclick="setRankView('seller')">Vendedor</button>
+      <button class="filter-btn" onclick="setRankView('team')">Time</button>
+      <button class="filter-btn" onclick="setRankView('sup')">Supervisor</button>
+      <button class="filter-btn" onclick="setRankView('ger')">Gerente</button>
+      <button class="filter-btn active" onclick="setRankView('funil')">Funil</button>
+    </div>`;
 
   if (!hasLeads) {
     document.getElementById('ranking-body').innerHTML = `
       <div class="section-title"><span class="bar"></span>Funil de Conversão</div>
       <div class="table-card">
-        <div class="table-header">
-          <div class="table-header-title">Funil por vendedor</div>
-          <div class="table-filters">
-            <button class="filter-btn" onclick="setRankView('seller')">Vendedor</button>
-            <button class="filter-btn" onclick="setRankView('team')">Time</button>
-            <button class="filter-btn" onclick="setRankView('sup')">Supervisor</button>
-            <button class="filter-btn" onclick="setRankView('ger')">Gerente</button>
-            <button class="filter-btn active" onclick="setRankView('funil')">Funil</button>
-          </div>
-        </div>
+        <div class="table-header"><div class="table-header-title">Funil por vendedor</div>${_tabs}</div>
         <div style="padding:48px;text-align:center;color:var(--gray)">
           Importe o arquivo Smart para visualizar o funil de conversão.
         </div>
@@ -134,37 +150,39 @@ function _renderFunil() {
     return;
   }
 
-  const v         = state.funilView || 'vendedor';
-  const data      = v === 'time' ? calcFunilByTime() : calcFunilByVendedor();
-  const colLabel  = v === 'time' ? 'Time' : 'Vendedor';
+  const data     = v === 'time' ? calcFunilByTime() : calcFunilByVendedor();
+  const colLabel = v === 'time' ? 'Time' : 'Vendedor';
 
-  const estagioHeaders = ESTAGIOS.map(e =>
-    `<th colspan="3" class="funil-th-estagio">${e}</th>`
-  ).join('');
+  // Ordena por % conversão decrescente
+  const sorted = [...data].sort((a, b) => b.convPct - a.convPct);
 
-  const estagioSubHeaders = ESTAGIOS.map(() =>
-    `<th class="funil-sub">Total</th><th class="funil-sub">And.</th><th class="funil-sub">%</th>`
-  ).join('');
+  const estagioHeaders = ESTAGIOS.map(est => {
+    const c = FUNIL_COLORS[est] || {};
+    return `<th class="funil-th-est" style="background:${c.bg};border-bottom:2px solid ${c.border};color:${c.text}">${est}</th>`;
+  }).join('');
 
-  const rowsHtml = data.length === 0
-    ? `<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--gray)">Nenhum dado no período</td></tr>`
-    : data.map((row, i) => {
+  const rowsHtml = sorted.length === 0
+    ? `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--gray)">Nenhum dado no período</td></tr>`
+    : sorted.map((row, i) => {
         const cols = ESTAGIOS.map(est => {
-          const e   = row.estagios[est] || { total: 0, emAndamento: 0, finalizado: 0, pct: 0 };
-          return `<td class="funil-num">${e.total || '—'}</td><td class="funil-and">${e.emAndamento || '—'}</td><td class="funil-pct">${e.pct > 0 ? e.pct + '%' : '—'}</td>`;
+          const e = row.estagios[est] || { total: 0, emAndamento: 0, pct: 0 };
+          const c = FUNIL_COLORS[est] || {};
+          const andEl = showAnd && e.emAndamento > 0
+            ? `<div class="funil-cell-and">${e.emAndamento} em and.</div>` : '';
+          return `<td class="funil-cell" style="background:${c.bg}">
+            <div class="funil-cell-total">${e.total || '—'}</div>
+            ${e.pct > 0 ? `<div class="funil-cell-pct" style="color:${c.text}">${e.pct}%</div>` : ''}
+            ${andEl}
+          </td>`;
         }).join('');
-
-        const convBadge = row.convPct > 0
-          ? `<span class="badge ${row.convPct >= 10 ? 'badge-green' : 'badge-gray'}">${row.convPct}%</span>`
-          : '—';
 
         return `<tr>
           <td><div class="rank-num">${i + 1}</div></td>
           <td><strong>${row.operador}</strong></td>
-          <td class="funil-num">${row.totalLeads}</td>
+          <td class="funil-cell-leads">${row.totalLeads}</td>
           ${cols}
-          <td>${row.aprovadas || '—'}</td>
-          <td>${convBadge}</td>
+          <td class="funil-cell-apr">${row.aprovadas || '—'}</td>
+          <td class="funil-cell-conv">${_convBadge(row.convPct)}</td>
         </tr>`;
       }).join('');
 
@@ -173,29 +191,27 @@ function _renderFunil() {
     <div class="table-card">
       <div class="table-header">
         <div class="table-header-title">Funil por ${colLabel.toLowerCase()}</div>
-        <div class="table-filters">
-          <button class="filter-btn" onclick="setRankView('seller')">Vendedor</button>
-          <button class="filter-btn" onclick="setRankView('team')">Time</button>
-          <button class="filter-btn" onclick="setRankView('sup')">Supervisor</button>
-          <button class="filter-btn" onclick="setRankView('ger')">Gerente</button>
-          <button class="filter-btn active" onclick="setRankView('funil')">Funil</button>
-          <span style="margin-left:12px;color:var(--gray);font-size:.8rem">Agrupar:</span>
-          <button class="filter-btn ${v === 'vendedor' ? 'active' : ''}" onclick="setFunilView('vendedor')">Vendedor</button>
-          <button class="filter-btn ${v === 'time'     ? 'active' : ''}" onclick="setFunilView('time')">Time</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${_tabs}
+          <div style="display:flex;align-items:center;gap:6px;margin-left:8px;border-left:1px solid var(--border);padding-left:8px">
+            <span style="font-size:.78rem;color:var(--gray)">Agrupar:</span>
+            <button class="filter-btn ${v === 'vendedor' ? 'active' : ''}" onclick="setFunilView('vendedor')">Vendedor</button>
+            <button class="filter-btn ${v === 'time' ? 'active' : ''}" onclick="setFunilView('time')">Time</button>
+          </div>
+          <button class="funil-toggle-and" onclick="toggleFunilAndamento()">
+            ${showAnd ? '▲ Ocultar andamento' : '▼ Ver andamento'}
+          </button>
         </div>
       </div>
       <div class="table-wrap"><table class="funil-table">
-        <thead>
-          <tr>
-            <th rowspan="2">#</th>
-            <th rowspan="2">${colLabel}</th>
-            <th rowspan="2">Total Leads</th>
-            ${estagioHeaders}
-            <th rowspan="2">Aprovadas</th>
-            <th rowspan="2">% Conversão</th>
-          </tr>
-          <tr>${estagioSubHeaders}</tr>
-        </thead>
+        <thead><tr>
+          <th>#</th>
+          <th>${colLabel}</th>
+          <th>Leads</th>
+          ${estagioHeaders}
+          <th>Aprovadas</th>
+          <th>% Conversão</th>
+        </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
     </div>`;
@@ -209,5 +225,10 @@ export function setRankView(v) {
 
 export function setFunilView(v) {
   state.funilView = v;
+  _renderFunil();
+}
+
+export function toggleFunilAndamento() {
+  state.funilShowAnd = !state.funilShowAnd;
   _renderFunil();
 }
