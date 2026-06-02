@@ -221,6 +221,8 @@ export function buildResult() {
   // ── Leads de marketing por Operador e Time (todo o Smart, sem filtro de data) ──
   const smartLeadsByOperador = {};
   const smartLeadsByTime     = {};
+  const smartLeads           = []; // dados estruturados para o funil
+
   for (const row of smartRows) {
     const o = String(getCol(row, 'Origem', 'origem') || '').trim();
     const a = String(getCol(row, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
@@ -229,6 +231,16 @@ export function buildResult() {
       const tm = normStr(getCol(row, 'Time', 'time') || '');
       if (op) smartLeadsByOperador[op] = (smartLeadsByOperador[op] || 0) + 1;
       if (tm) smartLeadsByTime[tm]     = (smartLeadsByTime[tm]     || 0) + 1;
+    }
+
+    // Coleta dados para o funil — todos os Smart rows
+    const op          = normStr(getCol(row, 'Operador', 'operador') || '');
+    const tm          = normStr(getCol(row, 'Time', 'time') || '');
+    const estagio     = String(getCol(row, 'Estágio', 'Estagio', 'estagio', 'Estgio') || '').trim();
+    const andamento   = String(getCol(row, 'Status', 'status') || '').trim();
+    const dataCriacao = parseExcelDate(getCol(row, 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data de Criacao'));
+    if (op || tm) {
+      smartLeads.push({ operador: op, time: tm, estagio, andamento, dataCriacao });
     }
   }
 
@@ -246,5 +258,5 @@ export function buildResult() {
     statusSample,
   };
 
-  return { entries, facebook: fbRows, unknownStatuses: [...unknownStats], diag, smartLeadsByOperador, smartLeadsByTime };
+  return { entries, facebook: fbRows, unknownStatuses: [...unknownStats], diag, smartLeadsByOperador, smartLeadsByTime, smartLeads };
 }
