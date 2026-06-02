@@ -8,11 +8,12 @@ import { showConfirm } from '../utils/confirm.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
-let _page      = 1;
-let _search    = '';
-let _dateFrom  = null;
-let _dateTo    = null;
-let _preset    = null;
+let _page        = 1;
+let _search      = '';
+let _dateFrom    = null;
+let _dateTo      = null;
+let _preset      = null;
+let _empresaFiltro = '';
 
 const PAGE_SIZE = 25;
 
@@ -79,8 +80,9 @@ function _filtered() {
       (digits && r.cpf?.replace(/\D/g,'').includes(digits))
     );
   }
-  if (_dateFrom) list = list.filter(r => r.data_quitado && r.data_quitado >= _dateFrom);
-  if (_dateTo)   list = list.filter(r => r.data_quitado && r.data_quitado <= _dateTo);
+  if (_dateFrom)      list = list.filter(r => r.data_quitado && r.data_quitado >= _dateFrom);
+  if (_dateTo)        list = list.filter(r => r.data_quitado && r.data_quitado <= _dateTo);
+  if (_empresaFiltro) list = list.filter(r => r.empresa_parceira === _empresaFiltro);
   return list;
 }
 
@@ -88,7 +90,7 @@ function _filtered() {
 export async function renderLiberacao() {
   const el = document.getElementById('sec-liberacao');
   if (!el) return;
-  _page = 1; _search = ''; _dateFrom = null; _dateTo = null; _preset = null;
+  _page = 1; _search = ''; _dateFrom = null; _dateTo = null; _preset = null; _empresaFiltro = '';
   el.innerHTML = _spinner();
   await _loadData();
   _render(el);
@@ -141,6 +143,12 @@ function _render(el) {
           <input class="lib-search" id="lib-search" type="text" placeholder="Buscar por nome ou CPF…" oninput="libSetSearch(this.value)" />
           <button class="lib-search-clear" id="lib-search-clear" onclick="libSetSearch('')" title="Limpar busca" style="display:none">×</button>
         </div>
+
+        ${admin ? `<div class="lib-empresa-filter-wrap">
+          <select class="lib-empresa-select" id="lib-empresa-select" onchange="libSetEmpresaFiltro(this.value)">
+            <option value="">Todas as empresas</option>
+          </select>
+        </div>` : ''}
 
         <div class="lib-date-row">
           <div class="lib-presets">
@@ -246,6 +254,16 @@ function _updateTable() {
   const toEl   = document.getElementById('lib-date-to');
   if (fromEl) fromEl.value = _dateFrom || '';
   if (toEl)   toEl.value   = _dateTo   || '';
+
+  // Popula dropdown de empresas (admin)
+  const empSelect = document.getElementById('lib-empresa-select');
+  if (empSelect) {
+    const empresas = [...new Set(_registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
+    const current  = empSelect.value;
+    empSelect.innerHTML = `<option value="">Todas as empresas</option>` +
+      empresas.map(e => `<option value="${_esc(e)}"${e === _empresaFiltro ? ' selected' : ''}>${_esc(e)}</option>`).join('');
+    if (current && empresas.includes(current)) empSelect.value = current;
+  }
 }
 
 function _renderRow(r, admin) {
@@ -262,7 +280,7 @@ function _renderRow(r, admin) {
       <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}" onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
-      <button class="lib-btn-edit" onclick="libEditarCliente('${r.id}')" title="Editar">
+      <button class="lib-btn-edit${!admin && r.acerto ? ' disabled' : ''}" ${!admin && r.acerto ? 'disabled title="Acerto preenchido — edição bloqueada"' : `onclick="libEditarCliente('${r.id}')" title="Editar"`}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
       ${admin ? `<button class="lib-btn-del" onclick="libDeletarCliente('${r.id}', '${r.nome.replace(/'/g, "\\'")}')" title="Excluir">
@@ -307,6 +325,12 @@ export function libSetPreset(key) {
   _dateFrom = range.from;
   _dateTo   = range.to;
   _page     = 1;
+  _updateTable();
+}
+
+export function libSetEmpresaFiltro(val) {
+  _empresaFiltro = val;
+  _page = 1;
   _updateTable();
 }
 

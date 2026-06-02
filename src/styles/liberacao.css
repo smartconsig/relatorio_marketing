@@ -82,6 +82,10 @@
   transition: all .15s;
 }
 .lib-btn-edit:hover { border-color: #3b82f6; color: #3b82f6; }
+.lib-btn-edit.disabled,
+.lib-btn-edit:disabled { opacity: 0.3; cursor: not-allowed; }
+.lib-btn-edit.disabled:hover,
+.lib-btn-edit:disabled:hover { border-color: var(--border); color: var(--muted); }
 
 .lib-btn-import {
   background: transparent;
@@ -379,6 +383,23 @@
   gap: 10px;
   margin-bottom: 16px;
 }
+
+/* Filtro de empresa */
+.lib-empresa-filter-wrap {
+  margin-bottom: 8px;
+}
+
+.lib-empresa-select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 200px;
+}
+.lib-empresa-select:focus { outline: none; border-color: var(--red); }
 
 /* Barra de busca */
 .lib-search-wrap {
