@@ -271,7 +271,7 @@ function _renderRow(r, admin) {
   const grupoNome = state.currentUser?.grupoNome || '';
   const canAct   = admin || r.empresa_parceira === grupoNome;
 
-  const acertoCell = admin
+  const acertoCell = canAct
     ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" onchange="libSalvarAcerto('${r.id}', this.value)" />`
     : fmtDate(r.acerto);
 
