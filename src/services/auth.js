@@ -166,6 +166,19 @@ export async function onAuthenticated() {
   if (!result) return;
 
   const { snapshot, updatedAt } = result;
+  // Restaura datas serializadas como string de volta para objetos Date
+  if (snapshot.entries) {
+    snapshot.entries = snapshot.entries.map(e => ({
+      ...e,
+      saleDate: e.saleDate ? new Date(e.saleDate) : null,
+    }));
+  }
+  if (snapshot.smartLeads) {
+    snapshot.smartLeads = snapshot.smartLeads.map(l => ({
+      ...l,
+      dataCriacao: l.dataCriacao ? new Date(l.dataCriacao) : null,
+    }));
+  }
   state.result = snapshot;
   state.confirmedDivergences = snapshot.confirmedDivergences || {};
   state.vendorMappings       = snapshot.vendorMappings       || {};

@@ -19,6 +19,7 @@ export async function saveSnapshotToSupabase() {
       diag:                 state.result.diag,
       smartLeadsByOperador: state.result.smartLeadsByOperador || {},
       smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+      smartLeads:           state.result.smartLeads           || [],
       confirmedDivergences: state.confirmedDivergences,
       vendorMappings:       state.vendorMappings || {},
     });

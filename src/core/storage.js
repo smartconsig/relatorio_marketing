@@ -17,6 +17,7 @@ export function saveState() {
       diag:                 state.result.diag,
       smartLeadsByOperador: state.result.smartLeadsByOperador || {},
       smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+      smartLeads:           state.result.smartLeads           || [],
       confirmedDivergences: state.confirmedDivergences,
       vendorMappings:       state.vendorMappings || {},
     }));
@@ -37,6 +38,12 @@ export function loadState() {
       ...e,
       saleDate: e.saleDate ? new Date(e.saleDate) : null,
     }));
+    if (parsed.smartLeads) {
+      parsed.smartLeads = parsed.smartLeads.map(l => ({
+        ...l,
+        dataCriacao: l.dataCriacao ? new Date(l.dataCriacao) : null,
+      }));
+    }
     state.result = parsed;
     state.confirmedDivergences = parsed.confirmedDivergences || {};
     state.vendorMappings       = parsed.vendorMappings       || {};
