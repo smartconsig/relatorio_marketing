@@ -271,8 +271,9 @@ function _renderRow(r, admin) {
   const grupoNome = state.currentUser?.grupoNome || '';
   const canAct   = admin || r.empresa_parceira === grupoNome;
 
+  const acertoLocked = !admin && r.acerto;
   const acertoCell = canAct
-    ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" onchange="libSalvarAcerto('${r.id}', this.value)" />`
+    ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" ${acertoLocked ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onchange="libSalvarAcerto('${r.id}', this.value)"`} />`
     : fmtDate(r.acerto);
 
   const okBtn = canAct ? `
