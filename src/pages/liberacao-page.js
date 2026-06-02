@@ -857,4 +857,5 @@ export async function libSalvarAcerto(id, valor) {
   if (reg) reg.acerto = valor || null;
 
   toast('Acerto salvo!');
+  _updateTable();
 }
