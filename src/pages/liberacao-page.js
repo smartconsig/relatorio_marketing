@@ -101,6 +101,7 @@ async function _loadData() {
   const { data, error } = await sb
     .from('liberacao_margem_master')
     .select('*')
+    .order('data_quitado', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) { handleError('Erro ao carregar dados.', error); _registros = []; return; }
   _registros = data || [];
