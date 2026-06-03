@@ -6,6 +6,7 @@ import { saveClassificationToSupabase } from '../services/classifications.js';
 import { scheduleSaveSnapshot } from '../services/snapshot.js';
 import { logAction } from '../services/action-log.js';
 import { showConfirm } from '../utils/confirm.js';
+import { filterButtonsHTML } from '../components/FilterButtons.jsx';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
@@ -281,12 +282,14 @@ export function renderProcv(entries) {
         </svg>
       </div>
       <div class="table-filters">
-        <button class="filter-btn ${f === 'pending'      ? 'active' : ''}" onclick="setProcvFilter('pending')"       style="${f === 'pending'      ? '' : 'color:#f59e0b'}">⏳ Pendentes (${cPending})</button>
-        <button class="filter-btn ${f === 'doubt'        ? 'active' : ''}" onclick="setProcvFilter('doubt')"         style="${f === 'doubt'        ? '' : 'color:#f59e0b'}">❓ Dúvida (${cDoubt})</button>
-        <button class="filter-btn ${f === 'contradiction'? 'active' : ''}" onclick="setProcvFilter('contradiction')" style="${f === 'contradiction'? '' : 'color:#ef4444'}">🔴 Contradição (${cContradition})</button>
-        <button class="filter-btn ${f === 'smart'        ? 'active' : ''}" onclick="setProcvFilter('smart')"         style="${f === 'smart'        ? '' : 'color:#22c55e'}">✅ Smart confirma (${cConfirmedSmart})</button>
-        <button class="filter-btn ${f === 'manual'       ? 'active' : ''}" onclick="setProcvFilter('manual')"        style="${f === 'manual'       ? '' : 'color:#22c55e'}">✔ Revisados (${cManual})</button>
-        <button class="filter-btn ${f === 'all'          ? 'active' : ''}" onclick="setProcvFilter('all')">Todos (${cAll})</button>
+        ${filterButtonsHTML([
+          { value: 'pending',       label: `⏳ Pendentes (${cPending})`,         onclick: "setProcvFilter('pending')",       style: 'color:#f59e0b' },
+          { value: 'doubt',         label: `❓ Dúvida (${cDoubt})`,               onclick: "setProcvFilter('doubt')",         style: 'color:#f59e0b' },
+          { value: 'contradiction', label: `🔴 Contradição (${cContradition})`,   onclick: "setProcvFilter('contradiction')", style: 'color:#ef4444' },
+          { value: 'smart',         label: `✅ Smart confirma (${cConfirmedSmart})`, onclick: "setProcvFilter('smart')",      style: 'color:#22c55e' },
+          { value: 'manual',        label: `✔ Revisados (${cManual})`,            onclick: "setProcvFilter('manual')",       style: 'color:#22c55e' },
+          { value: 'all',           label: `Todos (${cAll})`,                     onclick: "setProcvFilter('all')" },
+        ], f)}
       </div>
       <button class="btn-sm btn-ghost" onclick="exportProcvCSV()">⬇ Exportar CSV</button>
     </div>

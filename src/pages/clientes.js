@@ -12,6 +12,7 @@ import { saveSnapshotTimestamp } from '../core/storage.js';
 import { logAction } from '../services/action-log.js';
 import { showConfirm } from '../utils/confirm.js';
 import { badgeHTML } from '../components/Badge.jsx';
+import { filterButtonsHTML } from '../components/FilterButtons.jsx';
 
 function thSort(label, col, cls = '') {
   const { col: sc, dir } = state.clientesSort;
@@ -140,9 +141,11 @@ export function renderClientes(entries) {
         </svg>
       </div>
       <div class="table-filters">
-        <button class="filter-btn ${f === 'all' ? 'active' : ''}" onclick="setClientesFilter('all')">Todos (${confirmed.length})</button>
-        <button class="filter-btn ${f === 'mkt' ? 'active' : ''}" onclick="setClientesFilter('mkt')">✅ Marketing (${cMkt})</button>
-        <button class="filter-btn ${f === 'no'  ? 'active' : ''}" onclick="setClientesFilter('no')">❌ Não Marketing (${cNo})</button>
+        ${filterButtonsHTML([
+          { value: 'all', label: `Todos (${confirmed.length})`,      onclick: "setClientesFilter('all')" },
+          { value: 'mkt', label: `✅ Marketing (${cMkt})`,            onclick: "setClientesFilter('mkt')" },
+          { value: 'no',  label: `❌ Não Marketing (${cNo})`,         onclick: "setClientesFilter('no')" },
+        ], f)}
       </div>
     </div>
 

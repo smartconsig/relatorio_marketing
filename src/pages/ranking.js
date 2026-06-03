@@ -4,6 +4,7 @@ import { getHierarchy } from '../core/calcKPIs.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { calcFunilByVendedor, calcFunilByTime, ESTAGIOS } from '../core/calcFunil.js';
 import { normStr } from '../utils/string.js';
+import { filterButtonsHTML } from '../components/FilterButtons.jsx';
 
 export function renderRanking(entries) {
   const v = state.rankView;
@@ -91,11 +92,13 @@ export function renderRanking(entries) {
       <div class="table-header">
         <div class="table-header-title">Ordenado por vendas pagas</div>
         <div class="table-filters">
-          <button class="filter-btn ${v === 'seller' ? 'active' : ''}" onclick="setRankView('seller')">Vendedor</button>
-          <button class="filter-btn ${v === 'team'   ? 'active' : ''}" onclick="setRankView('team')">Time</button>
-          <button class="filter-btn ${v === 'sup'    ? 'active' : ''}" onclick="setRankView('sup')">Supervisor</button>
-          <button class="filter-btn ${v === 'ger'    ? 'active' : ''}" onclick="setRankView('ger')">Gerente</button>
-          <button class="filter-btn ${v === 'funil'  ? 'active' : ''}" onclick="setRankView('funil')">Funil</button>
+          ${filterButtonsHTML([
+            { value: 'seller', label: 'Vendedor',   onclick: "setRankView('seller')" },
+            { value: 'team',   label: 'Time',        onclick: "setRankView('team')" },
+            { value: 'sup',    label: 'Supervisor',  onclick: "setRankView('sup')" },
+            { value: 'ger',    label: 'Gerente',     onclick: "setRankView('ger')" },
+            { value: 'funil',  label: 'Funil',       onclick: "setRankView('funil')" },
+          ], v)}
         </div>
       </div>
       <div class="table-wrap"><table>
@@ -131,11 +134,13 @@ function _renderFunil() {
 
   const _tabs = `
     <div class="table-filters">
-      <button class="filter-btn" onclick="setRankView('seller')">Vendedor</button>
-      <button class="filter-btn" onclick="setRankView('team')">Time</button>
-      <button class="filter-btn" onclick="setRankView('sup')">Supervisor</button>
-      <button class="filter-btn" onclick="setRankView('ger')">Gerente</button>
-      <button class="filter-btn active" onclick="setRankView('funil')">Funil</button>
+      ${filterButtonsHTML([
+        { value: 'seller', label: 'Vendedor',  onclick: "setRankView('seller')" },
+        { value: 'team',   label: 'Time',       onclick: "setRankView('team')" },
+        { value: 'sup',    label: 'Supervisor', onclick: "setRankView('sup')" },
+        { value: 'ger',    label: 'Gerente',    onclick: "setRankView('ger')" },
+        { value: 'funil',  label: 'Funil',      onclick: "setRankView('funil')" },
+      ], state.rankView)}
     </div>`;
 
   if (!hasLeads) {
@@ -195,8 +200,10 @@ function _renderFunil() {
           ${_tabs}
           <div style="display:flex;align-items:center;gap:6px;margin-left:8px;border-left:1px solid var(--border);padding-left:8px">
             <span style="font-size:.78rem;color:var(--gray)">Agrupar:</span>
-            <button class="filter-btn ${v === 'vendedor' ? 'active' : ''}" onclick="setFunilView('vendedor')">Vendedor</button>
-            <button class="filter-btn ${v === 'time' ? 'active' : ''}" onclick="setFunilView('time')">Time</button>
+            ${filterButtonsHTML([
+              { value: 'vendedor', label: 'Vendedor', onclick: "setFunilView('vendedor')" },
+              { value: 'time',     label: 'Time',     onclick: "setFunilView('time')" },
+            ], v)}
           </div>
           <button class="funil-toggle-and" onclick="toggleFunilAndamento()">
             ${showAnd ? '▲ Ocultar andamento' : '▼ Ver andamento'}
