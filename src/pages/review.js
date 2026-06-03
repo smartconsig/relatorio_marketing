@@ -6,12 +6,14 @@ import { saveClassificationToSupabase } from '../services/classifications.js';
 import { scheduleSaveSnapshot } from '../services/snapshot.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
+import { badgeHTML } from '../components/Badge.jsx';
+import { sectionTitle } from '../components/ui.js';
 
 export function renderReview(toReview, unknownStatuses) {
   let h = '';
 
   if (unknownStatuses.length > 0) {
-    h += `<div class="section-title"><span class="bar"></span>Status Não Mapeados</div>
+    h += sectionTitle('Status Não Mapeados')
     <div class="info-box">Os status abaixo não estão nas listas de Aprovados, Pagos ou Reprovados. Informe o desenvolvedor para que sejam categorizados.</div>
     <div class="table-card" style="margin-bottom:20px">
       <div class="table-wrap"><table>
@@ -24,7 +26,7 @@ export function renderReview(toReview, unknownStatuses) {
     </div>`;
   }
 
-  h += `<div class="section-title"><span class="bar"></span>Vendas a Revisar</div>`;
+  h += sectionTitle('Vendas a Revisar');
 
   if (toReview.length === 0) {
     h += `<div class="empty"><div class="empty-icon">✅</div>
@@ -46,7 +48,7 @@ export function renderReview(toReview, unknownStatuses) {
             <td class="muted">${r.cpf || '—'}</td>
             <td class="muted">${r.phone || '—'}</td>
             <td>${fmtBRL(r.valor)}</td>
-            <td><span class="badge ${r.statusCat === 'pago' ? 'badge-green' : r.statusCat === 'quase pago' ? 'badge-teal' : r.statusCat === 'aprovado' ? 'badge-yellow' : 'badge-gray'}">${r.rawStatus}</span></td>
+            <td>${badgeHTML(r.statusCat, r.rawStatus)}</td>
             <td class="muted">${r.ecorbanOrigem || '—'}</td>
             <td class="muted">${r.origem || '—'}</td>
             <td class="muted" style="max-width:200px;white-space:normal;font-size:11px">${r.reviewReason || '—'}</td>

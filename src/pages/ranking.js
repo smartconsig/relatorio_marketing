@@ -5,6 +5,7 @@ import { filteredData } from '../core/calcKPIs.js';
 import { calcFunilByVendedor, calcFunilByTime, ESTAGIOS } from '../core/calcFunil.js';
 import { normStr } from '../utils/string.js';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
+import { sectionTitle } from '../components/ui.js';
 
 export function renderRanking(entries) {
   const v = state.rankView;
@@ -87,7 +88,7 @@ export function renderRanking(entries) {
   const leadsHead = v === 'seller' ? '<th>Leads</th>' : '';
 
   document.getElementById('ranking-body').innerHTML = `
-    <div class="section-title"><span class="bar"></span>Ranking de Vendas</div>
+    ${sectionTitle('Ranking de Vendas')}
     <div class="table-card">
       <div class="table-header">
         <div class="table-header-title">Ordenado por vendas pagas</div>
@@ -145,7 +146,7 @@ function _renderFunil() {
 
   if (!hasLeads) {
     document.getElementById('ranking-body').innerHTML = `
-      <div class="section-title"><span class="bar"></span>Funil de Conversão</div>
+      ${sectionTitle('Funil de Conversão')}
       <div class="table-card">
         <div class="table-header"><div class="table-header-title">Funil por vendedor</div>${_tabs}</div>
         <div style="padding:48px;text-align:center;color:var(--gray)">

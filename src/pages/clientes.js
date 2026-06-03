@@ -13,6 +13,7 @@ import { logAction } from '../services/action-log.js';
 import { showConfirm } from '../utils/confirm.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
+import { sectionTitle } from '../components/ui.js';
 
 function thSort(label, col, cls = '') {
   const { col: sc, dir } = state.clientesSort;
@@ -122,7 +123,7 @@ export function renderClientes(entries) {
   const f    = state.clientesFilter;
 
   document.getElementById('clientes-body').innerHTML = `
-    <div class="section-title"><span class="bar"></span>Clientes Confirmados</div>
+    ${sectionTitle('Clientes Confirmados')}
     <div class="info-box" style="margin-bottom:16px">
       Todos os clientes que passaram pela sua confirmação no PROCV. Total de <strong>${confirmed.length} confirmados</strong>.
     </div>

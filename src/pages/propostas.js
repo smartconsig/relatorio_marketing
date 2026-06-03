@@ -1,6 +1,7 @@
 import { state }        from '../state.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { fmtBRL, fmtN } from '../utils/currency.js';
+import { sectionTitle } from '../components/ui.js';
 
 const PAGE_SIZE = 12;
 
@@ -257,7 +258,7 @@ export function renderPropostas(entries) {
     padding:8px 12px;border-radius:7px;font-size:13px;font-family:var(--font-b);cursor:pointer;outline:none`;
 
   el.innerHTML = `
-    <div class="section-title"><span class="bar"></span>Propostas de Marketing</div>
+    ${sectionTitle('Propostas de Marketing')}
 
     <div class="propostas-toolbar">
       <div style="position:relative;flex:1;min-width:200px;max-width:320px">

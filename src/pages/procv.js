@@ -7,6 +7,7 @@ import { scheduleSaveSnapshot } from '../services/snapshot.js';
 import { logAction } from '../services/action-log.js';
 import { showConfirm } from '../utils/confirm.js';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
+import { sectionTitle } from '../components/ui.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
@@ -262,7 +263,7 @@ export function renderProcv(entries) {
   const f               = state.procvFilter;
 
   document.getElementById('procv-body').innerHTML = `
-    <div class="section-title"><span class="bar"></span>PROCV — Revisão de Clientes de Marketing</div>
+    ${sectionTitle('PROCV — Revisão de Clientes de Marketing')}
     <div class="info-box" style="margin-bottom:16px">
       Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
     </div>

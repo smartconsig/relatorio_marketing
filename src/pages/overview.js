@@ -6,6 +6,7 @@ import { toast } from '../utils/ui.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { toTitle } from '../utils/string.js';
 import { badgeHTML } from '../components/Badge.jsx';
+import { sectionTitle } from '../components/ui.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -284,24 +285,24 @@ export function renderOverview(k, fd) {
   h += renderDivergencias(fd.entries);
 
   // ── 1. HERO ──────────────────────────────────────────────────────────────
-  h += `<div class="section-title"><span class="bar"></span>Resultados de Marketing</div>
-  <div class="hero-grid">
+  h += sectionTitle('Resultados de Marketing');
+  h += `<div class="hero-grid">
     ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
     ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
     ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
   </div>`;
 
   // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
-  h += `<div class="section-title"><span class="bar"></span>Pipeline Marketing</div>
-  <div class="pipeline-row pipeline-3">
+  h += sectionTitle('Pipeline Marketing');
+  h += `<div class="pipeline-row pipeline-3">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
     ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
   </div>`;
 
   // ── 3. INDICADORES ───────────────────────────────────────────────────────
-  h += `<div class="section-title"><span class="bar"></span>Indicadores de Performance</div>
-  <div class="kpi-grid">
+  h += sectionTitle('Indicadores de Performance');
+  h += `<div class="kpi-grid">
     ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
     ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true, g.cac ? `máx. ${fmtBRL(g.cac)}` : null)}
     ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false, g.roas ? `mín. ${g.roas.toFixed(2)}x` : null)}
@@ -312,7 +313,7 @@ export function renderOverview(k, fd) {
   </div>`;
 
   // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
-  h += `<div class="section-title" style="margin-top:8px"><span class="bar"></span>Todas as Origens</div>
+  h += sectionTitle('Todas as Origens', 'margin-top:8px');
   <div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
     ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
@@ -375,7 +376,7 @@ export function renderOverview(k, fd) {
   }
 
   // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
-  h += `<div class="section-title"><span class="bar"></span>Evolução Diária</div>
+  h += sectionTitle('Evolução Diária');
   <div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
     <canvas id="main-chart" height="75"></canvas>
   </div>`;
@@ -392,7 +393,7 @@ export function renderDiag(diag) {
   const matchColor = matchPct >= 80 ? '#22c55e' : matchPct >= 50 ? '#f59e0b' : '#ef4444';
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div class="section-title" style="margin-bottom:12px"><span class="bar"></span>Diagnóstico do Processamento</div>
+    ${sectionTitle('Diagnóstico do Processamento', 'margin-bottom:12px')}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
       <div class="table-card" style="margin:0">
         <div class="table-header" style="padding:12px 16px"><div class="table-header-title">Sistema Smart</div></div>
