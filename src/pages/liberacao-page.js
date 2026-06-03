@@ -5,6 +5,7 @@ import { toast, handleError } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
 import { showConfirm } from '../utils/confirm.js';
+import { parseBRL } from '../utils/currency.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
@@ -419,11 +420,11 @@ export function libEditarCliente(id) {
     <div class="lib-form-row-2">
       <div>
         <label>Saldo Devedor (R$)</label>
-        <input type="number" id="lib-f-sd" value="${r.saldo_devedor || 0}" min="0" step="0.01" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-sd" value="${r.saldo_devedor || 0}" oninput="libCalcPreview()" />
       </div>
       <div>
         <label>Troco (R$)</label>
-        <input type="number" id="lib-f-troco" value="${r.troco || 0}" min="0" step="0.01" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-troco" value="${r.troco || 0}" oninput="libCalcPreview()" />
       </div>
     </div>
 
@@ -463,8 +464,8 @@ export function libEditarCliente(id) {
 export async function libSalvarEdicao(id) {
   const cpf   = document.getElementById('lib-f-cpf')?.value.trim();
   const nome  = document.getElementById('lib-f-nome')?.value.trim();
-  const sd    = parseFloat(document.getElementById('lib-f-sd')?.value);
-  const troco = parseFloat(document.getElementById('lib-f-troco')?.value) || 0;
+  const sd    = parseBRL(document.getElementById('lib-f-sd')?.value);
+  const troco = parseBRL(document.getElementById('lib-f-troco')?.value) || 0;
   const obs   = document.getElementById('lib-f-obs')?.value.trim() || null;
   const err   = document.getElementById('lib-modal-err');
   const btn   = document.getElementById('lib-btn-save');
@@ -720,11 +721,11 @@ export function libAddCliente() {
     <div class="lib-form-row-2">
       <div>
         <label>Saldo Devedor (R$)</label>
-        <input type="number" id="lib-f-sd" placeholder="0,00" min="0" step="0.01" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-sd" placeholder="0,00" oninput="libCalcPreview()" />
       </div>
       <div>
         <label>Troco (R$)</label>
-        <input type="number" id="lib-f-troco" placeholder="0,00" min="0" step="0.01" value="0" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-troco" placeholder="0,00" value="0" oninput="libCalcPreview()" />
       </div>
     </div>
 
@@ -767,8 +768,8 @@ export function libFecharModal() {
 }
 
 export function libCalcPreview() {
-  const sd    = parseFloat(document.getElementById('lib-f-sd')?.value) || 0;
-  const troco = parseFloat(document.getElementById('lib-f-troco')?.value) || 0;
+  const sd    = parseBRL(document.getElementById('lib-f-sd')?.value) || 0;
+  const troco = parseBRL(document.getElementById('lib-f-troco')?.value) || 0;
   const total = sd + troco;
   const fmt   = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const t = document.getElementById('lib-prev-total');
@@ -780,8 +781,8 @@ export function libCalcPreview() {
 export async function libSalvarCliente() {
   const cpf   = document.getElementById('lib-f-cpf')?.value.trim();
   const nome  = document.getElementById('lib-f-nome')?.value.trim();
-  const sd    = parseFloat(document.getElementById('lib-f-sd')?.value);
-  const troco = parseFloat(document.getElementById('lib-f-troco')?.value) || 0;
+  const sd    = parseBRL(document.getElementById('lib-f-sd')?.value);
+  const troco = parseBRL(document.getElementById('lib-f-troco')?.value) || 0;
   const obs   = document.getElementById('lib-f-obs')?.value.trim() || null;
   const err   = document.getElementById('lib-modal-err');
   const btn   = document.getElementById('lib-btn-save');
