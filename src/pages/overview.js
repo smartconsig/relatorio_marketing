@@ -5,6 +5,7 @@ import { parseExcelDate } from '../utils/date.js';
 import { toast } from '../utils/ui.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { toTitle } from '../utils/string.js';
+import { badgeHTML } from '../components/Badge.jsx';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -192,13 +193,6 @@ export function exportNoDatesCSV() {
   toast(`${fmtN(noDate.length)} entradas exportadas`);
 }
 
-function divStatusBadge(cat) {
-  if (cat === 'pago')       return 'badge-green';
-  if (cat === 'quase pago') return 'badge-teal';
-  if (cat === 'aprovado')   return 'badge-yellow';
-  if (cat === 'reprovado')  return 'badge-red';
-  return 'badge-gray';
-}
 
 function renderDivergencias(entries) {
   const divs = entries.filter(e =>
@@ -364,7 +358,7 @@ export function renderOverview(k, fd) {
                     <td class="muted" style="font-size:11px">${i + 1}</td>
                     <td><strong>${e.cliente || '—'}</strong></td>
                     <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
-                    <td><span class="badge ${e.statusCat === 'reprovado' ? 'badge-red' : e.statusCat === 'pago' ? 'badge-green' : e.statusCat === 'quase pago' ? 'badge-teal' : 'badge-yellow'}">${e.rawStatus || '—'}</span></td>
+                    <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
                     <td class="muted">${e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : '—'}</td>
                     <td class="muted">${e.produto || '—'}</td>
                     <td class="muted">${e.banco || '—'}</td>

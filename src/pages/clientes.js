@@ -11,14 +11,7 @@ import { saveSnapshotToSupabase, checkSnapshotTimestamp } from '../services/snap
 import { saveSnapshotTimestamp } from '../core/storage.js';
 import { logAction } from '../services/action-log.js';
 import { showConfirm } from '../utils/confirm.js';
-
-function statusBadge(cat) {
-  if (cat === 'pago')       return 'badge-green';
-  if (cat === 'quase pago') return 'badge-teal';
-  if (cat === 'aprovado')   return 'badge-yellow';
-  if (cat === 'reprovado')  return 'badge-red';
-  return 'badge-gray';
-}
+import { badgeHTML } from '../components/Badge.jsx';
 
 function thSort(label, col, cls = '') {
   const { col: sc, dir } = state.clientesSort;
@@ -71,7 +64,7 @@ function buildClientesResultsHTML(filtered) {
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
-        <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+        <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
         <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
