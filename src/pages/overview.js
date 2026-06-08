@@ -210,7 +210,7 @@ function renderDivergencias(entries) {
       <td><strong>${e.cliente || '—'}</strong></td>
       <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
       <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
-      <td><span class="badge ${divStatusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
+      <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
       <td class="muted">${fmtBRL(e.valor)}</td>
       <td><span style="color:#f59e0b;font-weight:600">${e.ecorbanOrigem || '—'}</span></td>
       <td class="muted">${e.loja || '—'}</td>

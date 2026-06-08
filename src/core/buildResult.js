@@ -227,14 +227,14 @@ export function buildResult() {
     const o = String(getCol(row, 'Origem', 'origem') || '').trim();
     const a = String(getCol(row, 'Audiencia', 'Audiência', 'audiencia') || '').trim();
     if (getSmartSignal(o, a) !== 'contradiction') {
-      const op = normStr(getCol(row, 'Operador', 'operador') || '');
+      const op = normStr(getCol(row, 'Operador', 'operador', 'Operator') || '');
       const tm = normStr(getCol(row, 'Time', 'time') || '');
       if (op) smartLeadsByOperador[op] = (smartLeadsByOperador[op] || 0) + 1;
       if (tm) smartLeadsByTime[tm]     = (smartLeadsByTime[tm]     || 0) + 1;
     }
 
     // Coleta dados para o funil — todos os Smart rows
-    const op          = normStr(getCol(row, 'Operador', 'operador') || '');
+    const op          = normStr(getCol(row, 'Operador', 'operador', 'Operator') || '');
     const tm          = normStr(getCol(row, 'Time', 'time') || '');
     const estagio     = String(getCol(row, 'Estágio', 'Estagio', 'estagio', 'Estgio') || '').trim();
     const andamento   = String(getCol(row, 'Status', 'status') || '').trim();
