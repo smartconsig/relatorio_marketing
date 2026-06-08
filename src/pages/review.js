@@ -14,7 +14,7 @@ export function renderReview(toReview, unknownStatuses) {
 
   if (unknownStatuses.length > 0) {
     h += sectionTitle('Status Não Mapeados')
-    <div class="info-box">Os status abaixo não estão nas listas de Aprovados, Pagos ou Reprovados. Informe o desenvolvedor para que sejam categorizados.</div>
+    h += `<div class="info-box">Os status abaixo não estão nas listas de Aprovados, Pagos ou Reprovados. Informe o desenvolvedor para que sejam categorizados.</div>
     <div class="table-card" style="margin-bottom:20px">
       <div class="table-wrap"><table>
         <thead><tr><th>Status</th><th>Situação</th></tr></thead>

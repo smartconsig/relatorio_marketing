@@ -314,7 +314,7 @@ export function renderOverview(k, fd) {
 
   // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
   h += sectionTitle('Todas as Origens', 'margin-top:8px');
-  <div class="pipeline-row">
+  h += `<div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
     ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
     ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'todas as origens')}
@@ -377,7 +377,7 @@ export function renderOverview(k, fd) {
 
   // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
   h += sectionTitle('Evolução Diária');
-  <div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
+  h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
     <canvas id="main-chart" height="75"></canvas>
   </div>`;
 
