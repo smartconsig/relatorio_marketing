@@ -75,11 +75,24 @@
   th { background: #f8fafc !important; color: #333 !important; border-bottom: 1px solid #ccc !important; }
   tr:nth-child(even) td { background: #fafafa !important; }
 
+  /* Cabeçalho da tabela repete em cada página */
+  thead { display: table-header-group !important; }
+  tfoot { display: table-footer-group !important; }
+
+  /* Evita cortar linhas no meio */
+  tr { page-break-inside: avoid !important; }
+
+  /* Cabeçalho de impressão só na primeira página */
+  .print-header { page-break-after: avoid; }
+
   /* Preservar cores dos badges de conversão */
   .funil-conv-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .funil-cell       { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  th                { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Quebra de página */
-  .table-card { page-break-inside: avoid; }
-  @page { margin: 1.5cm; size: landscape; }
+  /* Sem quebra dentro do card, mas permite entre páginas */
+  .table-card { page-break-inside: auto; }
+  .table-wrap { overflow: visible !important; }
+
+  @page { margin: 1.2cm; size: landscape; }
 }
