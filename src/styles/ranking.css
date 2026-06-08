@@ -1,0 +1,85 @@
+/* ── Ranking / Funil — estilos de impressão ─────────────────────────────── */
+
+.btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-export-pdf:hover { background: var(--red-hover); }
+
+/* ── Cabeçalho visível apenas no print ─────────────────────────────────── */
+.print-header {
+  display: none;
+}
+
+@media print {
+  /* Ocultar elementos de navegação e UI */
+  .sidebar,
+  .topbar,
+  .table-filters,
+  .funil-toggle-and,
+  .btn-export-pdf,
+  .cache-indicator,
+  #cache-indicator,
+  .filter-bar,
+  .table-header .table-filters,
+  [data-sec]:not(#sec-ranking),
+  .section:not(#sec-ranking) {
+    display: none !important;
+  }
+
+  /* Mostrar cabeçalho de impressão */
+  .print-header {
+    display: block !important;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #940b10;
+  }
+  .print-header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #940b10;
+    margin: 0 0 4px;
+  }
+  .print-header p {
+    font-size: 11px;
+    color: #555;
+    margin: 0;
+  }
+
+  /* Layout */
+  body { background: #fff !important; }
+  .layout, .main-content, #sec-ranking {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .table-card {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Tabela */
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { font-size: 10px !important; padding: 5px 7px !important; }
+  th { background: #f8fafc !important; color: #333 !important; border-bottom: 1px solid #ccc !important; }
+  tr:nth-child(even) td { background: #fafafa !important; }
+
+  /* Preservar cores dos badges de conversão */
+  .funil-conv-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .funil-cell       { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Quebra de página */
+  .table-card { page-break-inside: avoid; }
+  @page { margin: 1.5cm; size: landscape; }
+}

@@ -93,6 +93,8 @@ export function renderRanking(entries) {
     <div class="table-card">
       <div class="table-header">
         <div class="table-header-title">Ordenado por vendas pagas</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn-export-pdf" onclick="exportRankingPDF()">⬇ Exportar PDF</button>
         <div class="table-filters">
           ${filterButtonsHTML([
             { value: 'seller', label: 'Vendedor',   onclick: "setRankView('seller')" },
@@ -101,6 +103,7 @@ export function renderRanking(entries) {
             { value: 'ger',    label: 'Gerente',     onclick: "setRankView('ger')" },
             { value: 'funil',  label: 'Funil',       onclick: "setRankView('funil')" },
           ], v)}
+        </div>
         </div>
       </div>
       <div class="table-wrap"><table>
@@ -199,6 +202,7 @@ function _renderFunil() {
       <div class="table-header">
         <div class="table-header-title">Funil por ${colLabel.toLowerCase()}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn-export-pdf" onclick="exportRankingPDF()">⬇ Exportar PDF</button>
           ${_tabs}
           <div style="display:flex;align-items:center;gap:6px;margin-left:8px;border-left:1px solid var(--border);padding-left:8px">
             <span style="font-size:.78rem;color:var(--gray)">Agrupar:</span>
@@ -224,6 +228,32 @@ function _renderFunil() {
         <tbody>${rowsHtml}</tbody>
       </table></div>
     </div>`;
+}
+
+export function exportRankingPDF() {
+  const { start, end } = state.filterDates;
+  const periodo = (start && end) ? `${start} a ${end}` : 'Período completo';
+  const agora   = new Date().toLocaleString('pt-BR');
+  const view    = state.rankView === 'funil'
+    ? `Funil — ${state.funilView === 'time' ? 'por Time' : 'por Vendedor'}`
+    : state.rankView === 'seller' ? 'Ranking por Vendedor'
+    : state.rankView === 'team'   ? 'Ranking por Time'
+    : state.rankView === 'sup'    ? 'Ranking por Supervisor'
+    : 'Ranking por Gerente';
+
+  // Injeta cabeçalho temporário
+  let header = document.getElementById('print-header-tmp');
+  if (!header) {
+    header = document.createElement('div');
+    header.id = 'print-header-tmp';
+    header.className = 'print-header';
+    document.getElementById('ranking-body').prepend(header);
+  }
+  header.innerHTML = `
+    <h1>Smart RYC — ${view}</h1>
+    <p>Período: ${periodo} &nbsp;|&nbsp; Exportado em: ${agora}</p>
+  `;
+  window.print();
 }
 
 export function setRankView(v) {
