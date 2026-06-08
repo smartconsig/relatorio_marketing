@@ -76,6 +76,7 @@ export function calcFunilByVendedor() {
   for (const e of (state.result?.entries || [])) {
     if (!inRange(e.saleDate, start, end)) continue;
     if (e.statusCat !== 'aprovado' && e.statusCat !== 'quase pago' && e.statusCat !== 'pago') continue;
+    if (!e.isMarketing) continue;
     const op = normStr(e.vendedor || '');
     aprovadosByOp[op] = (aprovadosByOp[op] || 0) + 1;
   }
@@ -111,6 +112,7 @@ export function calcFunilByTime() {
   for (const e of (state.result?.entries || [])) {
     if (!inRange(e.saleDate, start, end)) continue;
     if (e.statusCat !== 'aprovado' && e.statusCat !== 'quase pago' && e.statusCat !== 'pago') continue;
+    if (!e.isMarketing) continue;
     const tm = normStr(e.loja || '');
     aprovadosByTime[tm] = (aprovadosByTime[tm] || 0) + 1;
   }
