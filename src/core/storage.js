@@ -21,12 +21,13 @@ export function saveState() {
       confirmedDivergences: state.confirmedDivergences,
       vendorMappings:       state.vendorMappings || {},
     }));
-    localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates));
-    localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides));
   } catch (e) {
     console.warn('saveState:', e);
     toast('Espaço insuficiente no navegador para salvar os dados', 'err');
   }
+  // Filtro e overrides são pequenos — salvos separadamente mesmo se o blob principal falhar
+  try { localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates)); } catch {}
+  try { localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides)); } catch {}
 }
 
 export function loadState() {
