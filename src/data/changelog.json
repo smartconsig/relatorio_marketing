@@ -1,5 +1,40 @@
 [
   {
+    "version": "2.1",
+    "date": "2026-06-08",
+    "label": "Correções & Manutenção",
+    "items": [
+      { "type": "fix", "text": "Cruzamento Smart: aliases Data e Operator reconhecidos corretamente na planilha exportada" },
+      { "type": "fix", "text": "Parse de valor BRL ao colar em Saldo Devedor e Troco" }
+    ]
+  },
+  {
+    "version": "2.0",
+    "date": "2026-06-02",
+    "label": "Liberação de Margem Master",
+    "items": [
+      { "type": "feat", "text": "Módulo Liberação de Margem com importação de planilha em lote" },
+      { "type": "feat", "text": "Filtros de busca, paginação e datas" },
+      { "type": "feat", "text": "Edição de cliente, botão OK do parceiro e acerto de data" },
+      { "type": "feat", "text": "Exportação XLSX com destaque visual de linhas concluídas" },
+      { "type": "feat", "text": "Filtro por empresa e coluna Troco Líquido restrita ao admin" },
+      { "type": "feat", "text": "Funil de conversão com dados Smart e novo visual por estágio" }
+    ]
+  },
+  {
+    "version": "1.9",
+    "date": "2026-05-27",
+    "label": "Universidade Smart",
+    "items": [
+      { "type": "feat", "text": "Universidade Smart com home Netflix-style e layout imersivo" },
+      { "type": "feat", "text": "Player Bunny.net com progresso real salvo no Supabase" },
+      { "type": "feat", "text": "Painel criador de cursos completo" },
+      { "type": "feat", "text": "Tela de prova para o colaborador e emissão de certificado" },
+      { "type": "feat", "text": "Página de Gamificação" },
+      { "type": "feat", "text": "Permissões da Universidade no gerenciador de grupos" }
+    ]
+  },
+  {
     "version": "1.8",
     "date": "2026-05-26",
     "label": "Segurança & Propostas",
