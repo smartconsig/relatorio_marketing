@@ -183,8 +183,8 @@ export function buildResult() {
     } else {
       // Pega o registro mais antigo do Smart para obter a origem real
       const oldest = smartMatches.slice().sort((a, b) => {
-        const da = parseExcelDate(getCol(a, 'Data de Criação', 'Data Criação', 'DataCriacao'));
-        const db = parseExcelDate(getCol(b, 'Data de Criação', 'Data Criação', 'DataCriacao'));
+        const da = parseExcelDate(getCol(a, 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data'));
+        const db = parseExcelDate(getCol(b, 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data'));
         if (!da && !db) return 0;
         if (!da) return 1;
         if (!db) return -1;
@@ -196,7 +196,7 @@ export function buildResult() {
       entry.origem        = origem;
       entry.audiencia     = audiencia;
       entry.smartPhone    = normPhone(String(getCol(oldest, 'Telefone', 'telefone', 'Fone', 'fone') || ''));
-      entry.smartOperador = normStr(getCol(oldest, 'Operador', 'operador') || '');
+      entry.smartOperador = normStr(getCol(oldest, 'Operador', 'operador', 'Operator') || '');
       entry.smartTime     = normStr(getCol(oldest, 'Time', 'time') || '');
 
       // Sinal Smart só é relevante para registros de marketing ainda não revisados
