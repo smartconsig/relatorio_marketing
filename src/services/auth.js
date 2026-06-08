@@ -130,7 +130,7 @@ export async function onAuthenticated() {
   navigate(lastSection);
 
   // 2. Carrega cache local e preenche os dados
-  const hasLocal = loadState();
+  const hasLocal = loadState() && (state.result?.smartLeads?.length > 0);
   if (hasLocal) {
     setCacheIndicator(true);
     renderAll();
