@@ -151,7 +151,7 @@ export async function onAuthenticated() {
     return;
   }
 
-  if (serverTs === localTs) {
+  if (serverTs === localTs && hasLocal) {
     // Cache local está em dia — não precisa baixar nada
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
