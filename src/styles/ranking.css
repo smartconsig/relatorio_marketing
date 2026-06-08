@@ -31,7 +31,7 @@
   .cache-indicator,
   #cache-indicator,
   .filter-bar,
-  .table-header .table-filters,
+  .table-header,
   [data-sec]:not(#sec-ranking),
   .section:not(#sec-ranking) {
     display: none !important;
@@ -91,8 +91,9 @@
   th                { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   /* Sem quebra dentro do card, mas permite entre páginas */
-  .table-card { page-break-inside: auto; }
-  .table-wrap { overflow: visible !important; }
+  .table-card { page-break-inside: auto; overflow: visible !important; }
+  .table-wrap,
+  .table-wrap > * { overflow: visible !important; max-height: none !important; }
 
   @page { margin: 1.2cm; size: landscape; }
 }
