@@ -236,7 +236,8 @@ export function buildResult() {
     // Coleta dados para o funil — todos os Smart rows
     const op          = normStr(getCol(row, 'Operador', 'operador', 'Operator') || '');
     const tm          = normStr(getCol(row, 'Time', 'time') || '');
-    const estagio     = String(getCol(row, 'Estágio', 'Estagio', 'estagio', 'Estgio') || '').trim();
+    const _est        = String(getCol(row, 'Estagio Atual', 'Estágio', 'Estagio', 'estagio', 'Estgio') || '').trim();
+    const estagio     = { 'Saldo Zerado': 'Desqualificado', 'Negociado': 'Venda' }[_est] || _est;
     const andamento   = String(getCol(row, 'Status', 'status') || '').trim();
     const dataCriacao = parseExcelDate(getCol(row, 'Data', 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data de Criacao'));
     if (op || tm) {
