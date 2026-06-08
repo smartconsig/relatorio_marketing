@@ -84,8 +84,9 @@ export function calcFunilByVendedor() {
     .map(([operador, opLeads]) => {
       const funil     = _calcFunilGroup(opLeads);
       const aprovadas = aprovadosByOp[operador] || 0;
-      const convPct   = funil.totalLeads > 0
-        ? +((aprovadas / funil.totalLeads) * 100).toFixed(1)
+      const ativos    = (funil.estagios['Novo Lead']?.total || 0) + (funil.estagios['Negociação']?.total || 0);
+      const convPct   = ativos > 0
+        ? +((aprovadas / ativos) * 100).toFixed(1)
         : 0;
       return { operador, ...funil, aprovadas, convPct };
     })
@@ -118,8 +119,9 @@ export function calcFunilByTime() {
     .map(([time, tmLeads]) => {
       const funil     = _calcFunilGroup(tmLeads);
       const aprovadas = aprovadosByTime[normStr(time)] || 0;
-      const convPct   = funil.totalLeads > 0
-        ? +((aprovadas / funil.totalLeads) * 100).toFixed(1)
+      const ativos    = (funil.estagios['Novo Lead']?.total || 0) + (funil.estagios['Negociação']?.total || 0);
+      const convPct   = ativos > 0
+        ? +((aprovadas / ativos) * 100).toFixed(1)
         : 0;
       return { operador: time, ...funil, aprovadas, convPct };
     })
