@@ -125,7 +125,7 @@ const FUNIL_COLORS = {
 
 function _convBadge(pct) {
   if (!pct) return '<span style="color:var(--gray)">—</span>';
-  const cls = pct >= 30 ? 'funil-conv-green' : pct >= 15 ? 'funil-conv-yellow' : 'funil-conv-red';
+  const cls = pct >= 20 ? 'funil-conv-green' : pct >= 15 ? 'funil-conv-yellow' : 'funil-conv-red';
   return `<span class="funil-conv-badge ${cls}">${pct}%</span>`;
 }
 
