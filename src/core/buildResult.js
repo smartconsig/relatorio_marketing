@@ -238,7 +238,7 @@ export function buildResult() {
     const tm          = normStr(getCol(row, 'Time', 'time') || '');
     const estagio     = String(getCol(row, 'Estágio', 'Estagio', 'estagio', 'Estgio') || '').trim();
     const andamento   = String(getCol(row, 'Status', 'status') || '').trim();
-    const dataCriacao = parseExcelDate(getCol(row, 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data de Criacao'));
+    const dataCriacao = parseExcelDate(getCol(row, 'Data', 'Data de Criação', 'Data Criação', 'DataCriacao', 'Data de Criacao'));
     if (op || tm) {
       smartLeads.push({ operador: op, time: tm, estagio, andamento, dataCriacao });
     }
