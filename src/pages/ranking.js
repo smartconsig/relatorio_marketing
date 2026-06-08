@@ -33,7 +33,8 @@ export function renderRanking(entries) {
     };
     const e = map[keyName];
     if (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') e.approved++;
-    if (r.statusCat === 'pago') { e.paid++; e.value += r.valor; }
+    if (r.statusCat === 'pago') e.paid++;
+    if (r.statusCat === 'pago' || r.statusCat === 'aprovado' || r.statusCat === 'quase pago') e.value += r.valor;
     if (r.isMarketing && r.statusCat === 'pago') e.mktPaid++;
   }
 
@@ -53,7 +54,7 @@ export function renderRanking(entries) {
     : rows.map((row, i) => {
         const ri     = i + 1;
         const rc     = ri === 1 ? 'r1' : ri === 2 ? 'r2' : ri === 3 ? 'r3' : '';
-        const ticket = row.paid ? row.value / row.paid : 0;
+        const ticket = row.approved ? row.value / row.approved : 0;
 
         // % Marketing = Aprovadas ÷ Leads × 100
         const leads  = leadsByOp[normStr(row.name)] || 0;
