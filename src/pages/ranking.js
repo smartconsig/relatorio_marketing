@@ -241,19 +241,27 @@ export function exportRankingPDF() {
     : state.rankView === 'sup'    ? 'Ranking por Supervisor'
     : 'Ranking por Gerente';
 
-  // Injeta cabeçalho temporário
-  let header = document.getElementById('print-header-tmp');
-  if (!header) {
-    header = document.createElement('div');
-    header.id = 'print-header-tmp';
-    header.className = 'print-header';
-    document.getElementById('ranking-body').prepend(header);
-  }
-  header.innerHTML = `
-    <h1>Smart RYC — ${view}</h1>
-    <p>Período: ${periodo} &nbsp;|&nbsp; Exportado em: ${agora}</p>
+  // Clona apenas a tabela para um div limpo direto no body,
+  // evitando problemas de paginação causados pelo layout flex/overflow dos containers.
+  const tableWrap = document.querySelector('#ranking-body .table-wrap');
+  if (!tableWrap) return;
+
+  const area = document.createElement('div');
+  area.id = 'print-area';
+  area.innerHTML = `
+    <div class="print-header">
+      <h1>Smart RYC — ${view}</h1>
+      <p>Período: ${periodo} &nbsp;|&nbsp; Exportado em: ${agora}</p>
+    </div>
   `;
+  area.appendChild(tableWrap.cloneNode(true));
+  document.body.appendChild(area);
+  document.body.classList.add('printing');
+
   window.print();
+
+  document.body.classList.remove('printing');
+  document.body.removeChild(area);
 }
 
 export function setRankView(v) {

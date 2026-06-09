@@ -22,56 +22,28 @@
 }
 
 @media print {
-  /* Ocultar elementos de navegação e UI */
-  .sidebar,
-  .topbar,
-  .table-filters,
-  .funil-toggle-and,
-  .btn-export-pdf,
-  .cache-indicator,
-  #cache-indicator,
-  .filter-bar,
-  .table-header,
-  [data-sec]:not(#sec-ranking),
-  .section:not(#sec-ranking) {
-    display: none !important;
+  /* Esconde tudo — só o #print-area (injetado pelo JS) é visível */
+  body.printing > *:not(#print-area) { display: none !important; }
+
+  /* Área de impressão limpa, sem containers problemáticos */
+  #print-area {
+    display: block !important;
+    background: #fff;
+    color: #000;
+    padding: 0;
+    margin: 0;
+    width: 100%;
   }
 
-  /* Mostrar cabeçalho de impressão */
+  /* Cabeçalho de impressão */
   .print-header {
     display: block !important;
     margin-bottom: 16px;
     padding-bottom: 12px;
     border-bottom: 2px solid #940b10;
   }
-  .print-header h1 {
-    font-size: 16px;
-    font-weight: 700;
-    color: #940b10;
-    margin: 0 0 4px;
-  }
-  .print-header p {
-    font-size: 11px;
-    color: #555;
-    margin: 0;
-  }
-
-  /* Layout — corrige flex/min-height que causam espaço em branco nas páginas 2+ */
-  body    { display: block !important; background: #fff !important; min-height: 0 !important; }
-  .main   { display: block !important; min-height: 0 !important; height: auto !important; margin-left: 0 !important; }
-  .content { padding: 8px 0 !important; }
-  .layout, .main-content, #sec-ranking {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-  }
-
-  .table-card {
-    box-shadow: none !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 0 !important;
-    height: auto !important;
-  }
+  .print-header h1 { font-size: 16px; font-weight: 700; color: #940b10; margin: 0 0 4px; }
+  .print-header p  { font-size: 11px; color: #555; margin: 0; }
 
   /* Tabela */
   table { width: 100% !important; border-collapse: collapse !important; }
@@ -86,16 +58,10 @@
   /* Evita cortar linhas no meio */
   tr { page-break-inside: avoid !important; }
 
-  /* Cabeçalho de impressão só na primeira página */
-  .print-header { page-break-after: avoid; }
+  /* Preservar cores */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Preservar cores dos badges de conversão */
-  .funil-conv-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .funil-cell       { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  th                { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  /* Sem quebra dentro do card, mas permite entre páginas */
-  .table-card { page-break-inside: auto; overflow: visible !important; }
+  /* Scroll/overflow visíveis */
   .table-wrap,
   .table-wrap > * { overflow: visible !important; max-height: none !important; }
 
