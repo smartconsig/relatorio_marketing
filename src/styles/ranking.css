@@ -56,8 +56,10 @@
     margin: 0;
   }
 
-  /* Layout */
-  body { background: #fff !important; }
+  /* Layout — corrige flex/min-height que causam espaço em branco nas páginas 2+ */
+  body    { display: block !important; background: #fff !important; min-height: 0 !important; }
+  .main   { display: block !important; min-height: 0 !important; height: auto !important; margin-left: 0 !important; }
+  .content { padding: 8px 0 !important; }
   .layout, .main-content, #sec-ranking {
     margin: 0 !important;
     padding: 0 !important;
@@ -67,6 +69,8 @@
   .table-card {
     box-shadow: none !important;
     border: 1px solid #e2e8f0 !important;
+    border-radius: 0 !important;
+    height: auto !important;
   }
 
   /* Tabela */
