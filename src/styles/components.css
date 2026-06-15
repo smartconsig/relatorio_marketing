@@ -274,7 +274,7 @@ body.sidebar-collapsed .main { margin-left: 58px; }
 .kpi-bar.accent { background: var(--red); }
 
 /* ── HERO CARDS ── */
-.hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
 .hero-card {
   background: var(--surface); border: 1px solid var(--border);
