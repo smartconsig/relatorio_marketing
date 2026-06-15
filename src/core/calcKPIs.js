@@ -12,6 +12,7 @@ const _APPROVED    = new Set([...STATUS_APPROVED].map(normStr));
 const _REJECTED    = new Set([...STATUS_REJECTED].map(normStr));
 
 export function classifyStatus(raw) {
+  if (!raw || !raw.trim()) return 'sem status';
   const s = normStr(raw);
   if (_PAID.has(s))        return 'pago';
   if (_ALMOST_PAID.has(s)) return 'quase pago';
@@ -72,13 +73,15 @@ export function calcKPIs(entries, facebook) {
   const inProgMkt      = entries.filter(r => r.isMarketing && r.statusCat === 'aprovado');
   const almostPaidMkt  = entries.filter(r => r.isMarketing && r.statusCat === 'quase pago');
   const paidMkt        = entries.filter(r => r.isMarketing && r.statusCat === 'pago');
+  const semStatusMkt   = entries.filter(r => r.isMarketing && r.statusCat === 'sem status');
   const rejMkt         = entries.filter(r => r.isMarketing && r.statusCat === 'reprovado');
   const valueInProgMkt      = inProgMkt.reduce((s, r)     => s + r.valor, 0);
   const valueAlmostPaidMkt  = almostPaidMkt.reduce((s, r) => s + r.valor, 0);
   const valueMkt            = paidMkt.reduce((s, r)       => s + r.valor, 0);
+  const valueSemStatusMkt   = semStatusMkt.reduce((s, r)  => s + r.valor, 0);
   const valueRejMkt         = rejMkt.reduce((s, r)        => s + r.valor, 0);
-  const valueValidMkt  = valueInProgMkt + valueAlmostPaidMkt + valueMkt;
-  const countValidMkt  = inProgMkt.length + almostPaidMkt.length + paidMkt.length;
+  const valueValidMkt  = valueInProgMkt + valueAlmostPaidMkt + valueMkt + valueSemStatusMkt;
+  const countValidMkt  = inProgMkt.length + almostPaidMkt.length + paidMkt.length + semStatusMkt.length;
   const ticketMkt      = paidMkt.length ? valueMkt / paidMkt.length : 0;
   const cac            = paidMkt.length ? invest / paidMkt.length : 0;
   const roas           = invest ? (valueMkt * 0.21) / invest : 0;

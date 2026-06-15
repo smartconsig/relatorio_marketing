@@ -421,7 +421,8 @@ export function renderDiag(diag) {
             Pago: <strong style="color:#22c55e">${diag.statusDist?.pago || 0}</strong> &nbsp;
             Aprovado: <strong style="color:#f59e0b">${diag.statusDist?.aprovado || 0}</strong> &nbsp;
             Reprovado: <strong style="color:#ef4444">${diag.statusDist?.reprovado || 0}</strong> &nbsp;
-            Desconhecido: <strong style="color:#9ca3af">${diag.statusDist?.desconhecido || 0}</strong>
+            Desconhecido: <strong style="color:#9ca3af">${diag.statusDist?.desconhecido || 0}</strong> &nbsp;
+            Sem Status: <strong style="color:#6b7280">${diag.statusDist?.['sem status'] || 0}</strong>
           </div>
           <div style="color:var(--gray);font-size:11px">Amostra de status brutos:</div>
           <div style="color:var(--gray-light);font-size:11px">${(diag.statusSample || []).map(s => `<span style="background:var(--surface2);padding:1px 6px;border-radius:4px;margin:2px;display:inline-block">${s}</span>`).join('')}</div>

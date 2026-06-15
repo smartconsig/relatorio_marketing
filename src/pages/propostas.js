@@ -200,6 +200,7 @@ export function renderPropostas(entries) {
     { v: 'aprovado',     l: 'Aprovado'        },
     { v: 'reprovado',    l: 'Reprovado'       },
     { v: 'desconhecido', l: 'Desconhecido'    },
+    { v: 'sem status',   l: 'Sem Status'      },
   ].map(o => `<option value="${o.v}" ${status === o.v ? 'selected' : ''}>${o.l}</option>`).join('');
 
   const prodOpts = [
