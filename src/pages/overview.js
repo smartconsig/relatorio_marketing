@@ -285,13 +285,13 @@ export function renderOverview(k, fd) {
   h += renderDivergencias(fd.entries);
 
   // ── 1. HERO ──────────────────────────────────────────────────────────────
-  const cacValidas = k.countValidMkt > 0 ? k.invest / k.countValidMkt : 0;
+  const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
   h += sectionTitle('Resultados de Marketing');
   h += `<div class="hero-grid">
     ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
     ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
     ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
-    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · tráfego pago', '#f59e0b', null, false, 'var(--white)', null)}
+    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', '#f59e0b', null, false, 'var(--white)', null)}
   </div>`;
 
   // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
