@@ -286,15 +286,14 @@ export function renderOverview(k, fd) {
 
   // ── 1. HERO ──────────────────────────────────────────────────────────────
   const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
-  const totalMkt = fd.entries.filter(r => r.isMarketing).length;
-  const convProspeccao = totalMkt > 0 ? (k.countValidMkt / totalMkt) * 100 : 0;
+  const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
   h += sectionTitle('Resultados de Marketing');
   h += `<div class="hero-grid">
     ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
     ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
     ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
     ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', '#f59e0b', null, false, 'var(--white)', null)}
-    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(totalMkt)} prospects · meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
+    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
   </div>`;
 
   // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
