@@ -3,6 +3,7 @@ import { toast } from '../utils/ui.js';
 import { saveState, setCacheIndicator } from '../core/storage.js';
 import { buildResult } from '../core/buildResult.js';
 import { saveSnapshotToSupabase } from '../services/snapshot.js';
+import { syncClassificationsFromSupabase } from '../services/classifications.js';
 import { renderAll } from '../navigation.js';
 import { renderDiag } from './overview.js';
 import { navigate } from '../navigation.js';
@@ -62,6 +63,7 @@ export async function processAll() {
     await new Promise(resolve => setTimeout(resolve, 60));
 
     state.result = buildResult();
+    await syncClassificationsFromSupabase();
     saveState();
     setCacheIndicator(true);
     renderAll();

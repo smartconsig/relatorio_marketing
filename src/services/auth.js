@@ -152,7 +152,9 @@ export async function onAuthenticated() {
   }
 
   if (serverTs === localTs && hasLocal) {
-    // Cache local está em dia — não precisa baixar nada
+    // Cache local está em dia — mas classifications podem ter sido atualizadas em outro computador
+    const synced = await syncClassificationsFromSupabase();
+    if (synced > 0) { saveState(); renderAll(); }
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
     return;
