@@ -4,6 +4,7 @@ import { saveState, setCacheIndicator } from '../core/storage.js';
 import { buildResult } from '../core/buildResult.js';
 import { saveSnapshotToSupabase } from '../services/snapshot.js';
 import { syncClassificationsFromSupabase } from '../services/classifications.js';
+import { normCPF } from '../utils/cpf.js';
 import { renderAll } from '../navigation.js';
 import { renderDiag } from './overview.js';
 import { navigate } from '../navigation.js';
@@ -62,7 +63,28 @@ export async function processAll() {
   try {
     await new Promise(resolve => setTimeout(resolve, 60));
 
+    // Captura classificações manuais do estado atual antes de reconstruir
+    const prevClassifications = {};
+    if (state.result?.entries) {
+      for (const e of state.result.entries) {
+        if (e.reviewReason === 'manual' && e.cpf) {
+          prevClassifications[normCPF(e.cpf)] = e.isMarketing;
+        }
+      }
+    }
+
     state.result = buildResult();
+
+    // Reaplica classificações anteriores nas novas entradas (cobre falha de DB e state.overrides stale)
+    for (const e of state.result.entries) {
+      if (e.reviewReason === 'manual') continue;
+      const norm = normCPF(e.cpf);
+      if (norm && prevClassifications[norm] !== undefined) {
+        e.isMarketing  = prevClassifications[norm];
+        e.reviewReason = 'manual';
+      }
+    }
+
     await syncClassificationsFromSupabase();
     saveState();
     setCacheIndicator(true);
