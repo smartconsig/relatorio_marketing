@@ -22,8 +22,24 @@ export function saveState() {
       vendorMappings:       state.vendorMappings || {},
     }));
   } catch (e) {
-    console.warn('saveState:', e);
-    toast('Espaço insuficiente no navegador para salvar os dados', 'err');
+    console.warn('saveState (primeira tentativa):', e);
+    try {
+      localStorage.removeItem(STORE_RESULT);
+      localStorage.setItem(STORE_RESULT, JSON.stringify({
+        entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
+        facebook:             state.result.facebook,
+        unknownStatuses:      state.result.unknownStatuses,
+        diag:                 state.result.diag,
+        smartLeadsByOperador: state.result.smartLeadsByOperador || {},
+        smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+        smartLeads:           state.result.smartLeads           || [],
+        confirmedDivergences: state.confirmedDivergences,
+        vendorMappings:       state.vendorMappings || {},
+      }));
+    } catch (e2) {
+      console.warn('saveState (retry):', e2);
+      toast('Espaço insuficiente no navegador para salvar os dados', 'err');
+    }
   }
   // Filtro e overrides são pequenos — salvos separadamente mesmo se o blob principal falhar
   try { localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates)); } catch {}
