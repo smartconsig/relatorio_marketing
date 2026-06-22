@@ -884,14 +884,16 @@ async function _submitProva(main, prova, questoes, respostas) {
 
         // Certificado
         let certCodigo = null;
+        let certId     = null;
         if (prova.tem_certificado && _currentDetail?.curso?.id) {
           const { data: cert } = await sb.from('uni_certificados')
             .upsert({ user_id: _userId, curso_id: _currentDetail.curso.id }, { onConflict: 'user_id,curso_id' })
             .select().single();
           certCodigo = cert?.codigo || null;
+          certId     = cert?.id     || null;
         }
 
-        _renderProvaResultado(main, { aprovado: true, nota, acertos, total: questoes.length, prova, primeiraT, xpBase, xpMax, certCodigo });
+        _renderProvaResultado(main, { aprovado: true, nota, acertos, total: questoes.length, prova, primeiraT, xpBase, xpMax, certCodigo, certId });
       } else {
         _renderProvaResultado(main, { aprovado: false, nota, acertos, total: questoes.length, prova });
       }
@@ -902,7 +904,7 @@ async function _submitProva(main, prova, questoes, respostas) {
   }
 }
 
-function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, primeiraT, xpBase = 0, xpMax = 0, certCodigo, erro }) {
+function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, primeiraT, xpBase = 0, xpMax = 0, certCodigo, certId, erro }) {
   const xpTotal = xpBase + xpMax;
 
   main.innerHTML = `
@@ -931,11 +933,15 @@ function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, pr
             </div>
           ` : ''}
 
-          ${aprovado && certCodigo ? `
+          ${aprovado && certId ? `
             <div class="uni-resultado-cert">
-              <div class="uni-resultado-cert-label">🎓 Certificado emitido</div>
+              <div class="uni-resultado-cert-label">🎓 Certificado emitido!</div>
               <div class="uni-resultado-cert-code">Código: <strong>${certCodigo}</strong></div>
             </div>
+            <button class="uni-btn-primary" style="width:100%;background:#4ade80;color:#000"
+                    onclick="uniVerCertificado('${certId}')">
+              🎓 Ver meu certificado
+            </button>
           ` : ''}
 
           ${!aprovado ? `
@@ -945,7 +951,7 @@ function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, pr
             </div>
           ` : ''}
 
-          <button class="uni-btn-primary" style="margin-top:24px;width:100%" onclick="uniGoBack()">
+          <button class="uni-btn-ghost" style="margin-top:8px;width:100%" onclick="uniGoBack()">
             Voltar ao curso
           </button>
         </div>
@@ -954,10 +960,94 @@ function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, pr
   `;
 
   main.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Abre o certificado automaticamente quando aprovada
+  if (aprovado && certId) {
+    setTimeout(() => uniVerCertificado(certId), 800);
+  }
 }
 
-export function uniVerCertificado(certId) {
-  _showToast('Geração de PDF do certificado — em breve!');
+export async function uniVerCertificado(certId) {
+  // Remove modal anterior se existir
+  document.getElementById('uni-cert-modal')?.remove();
+
+  // Cria overlay com spinner enquanto carrega
+  const overlay = document.createElement('div');
+  overlay.id = 'uni-cert-modal';
+  overlay.className = 'uni-cert-overlay';
+  overlay.innerHTML = `<div class="uni-cert-modal">${_spinnerHTML()}</div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  try {
+    const [{ data: cert }, { data: profile }] = await Promise.all([
+      sb.from('uni_certificados')
+        .select('*, uni_cursos(titulo, uni_trilhas(nome, cor))')
+        .eq('id', certId).single(),
+      sb.from('profiles').select('nome').eq('id', _userId).single(),
+    ]);
+
+    if (!cert) { overlay.remove(); _showToast('Certificado não encontrado'); return; }
+
+    const nome       = profile?.nome || 'Colaborador';
+    const curso      = cert.uni_cursos?.titulo || 'Curso';
+    const trilha     = cert.uni_cursos?.uni_trilhas?.nome || '';
+    const trilhaCor  = cert.uni_cursos?.uni_trilhas?.cor || '#E02020';
+    const codigo     = cert.codigo;
+    const emitidoEm  = new Date(cert.emitido_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const qrData     = encodeURIComponent(`Smart Consig - Universidade Smart\nCertificado: ${codigo}\nCurso: ${curso}\nNome: ${nome}`);
+    const qrUrl      = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&bgcolor=ffffff&color=111111&margin=8`;
+
+    overlay.querySelector('.uni-cert-modal').innerHTML = `
+      <button class="uni-cert-close" onclick="document.getElementById('uni-cert-modal').remove()">✕</button>
+
+      <div class="uni-cert-doc" id="uni-cert-print-area">
+        <div class="uni-cert-top-stripe" style="background:${trilhaCor}"></div>
+
+        <div class="uni-cert-header">
+          <div class="uni-cert-logo-wrap">
+            <div class="uni-cert-logo-us">U<em>S</em></div>
+            <div class="uni-cert-logo-text">Universidade <strong>Smart</strong></div>
+          </div>
+          <div class="uni-cert-tipo-label">Certificado de Conclusão</div>
+        </div>
+
+        <div class="uni-cert-body">
+          <div class="uni-cert-certifica-texto">Certificamos que</div>
+          <div class="uni-cert-nome">${nome}</div>
+          <div class="uni-cert-concluiu-texto">concluiu com êxito o curso</div>
+          <div class="uni-cert-curso">${curso}</div>
+          ${trilha ? `<div class="uni-cert-trilha" style="color:${trilhaCor}">${trilha.toUpperCase()}</div>` : ''}
+          <div class="uni-cert-data">Emitido em ${emitidoEm}</div>
+        </div>
+
+        <div class="uni-cert-footer">
+          <div class="uni-cert-assinatura">
+            <div class="uni-cert-assinatura-linha"></div>
+            <div class="uni-cert-assinatura-nome">Smart Consig</div>
+            <div class="uni-cert-assinatura-cargo">Universidade Smart</div>
+          </div>
+          <div class="uni-cert-qr-wrap">
+            <img class="uni-cert-qr-img" src="${qrUrl}" alt="QR Code de verificação" width="140" height="140">
+            <div class="uni-cert-codigo-label">Código de verificação</div>
+            <div class="uni-cert-codigo">${codigo}</div>
+          </div>
+        </div>
+
+        <div class="uni-cert-bottom-stripe" style="background:${trilhaCor}"></div>
+      </div>
+
+      <div class="uni-cert-actions">
+        <button class="uni-cert-btn-ghost" onclick="document.getElementById('uni-cert-modal').remove()">Fechar</button>
+        <button class="uni-cert-btn-download" onclick="window.print()">
+          ⬇ Baixar / Imprimir PDF
+        </button>
+      </div>
+    `;
+  } catch (e) {
+    overlay.remove();
+    _showToast('Erro ao carregar certificado. Tente novamente.');
+  }
 }
 
 // ── Meus Cursos ─────────────────────────────────────────────────────────────

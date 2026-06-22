@@ -709,3 +709,135 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   .uni-player-next     { padding: 16px; }
   .uni-toast           { bottom: 72px; right: 16px; left: 16px; justify-content: center; }
 }
+
+/* ── Certificado Modal ───────────────────────────────── */
+.uni-cert-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(0,0,0,.85);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px; overflow-y: auto;
+  animation: uni-fade-in .25s ease;
+}
+@keyframes uni-fade-in { from { opacity: 0 } to { opacity: 1 } }
+
+.uni-cert-modal {
+  position: relative;
+  width: 100%; max-width: 680px;
+  display: flex; flex-direction: column; gap: 16px;
+  animation: uni-slide-up .3s ease;
+}
+@keyframes uni-slide-up { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+.uni-cert-close {
+  position: absolute; top: -14px; right: -14px; z-index: 2;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #1a1a1a; border: 1px solid #2a2a2a;
+  color: #888; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.uni-cert-close:hover { background: #2a2a2a; color: #fff; }
+
+/* Documento do certificado */
+.uni-cert-doc {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  color: #111;
+}
+
+.uni-cert-top-stripe,
+.uni-cert-bottom-stripe { height: 6px; width: 100%; }
+
+.uni-cert-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 36px 16px;
+  border-bottom: 1px solid #eee;
+}
+.uni-cert-logo-wrap { display: flex; align-items: center; gap: 10px; }
+.uni-cert-logo-us {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: #111; color: #fff;
+  font-family: var(--font-h); font-size: 14px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.uni-cert-logo-us em { color: var(--red); font-style: normal; }
+.uni-cert-logo-text { font-family: var(--font-h); font-size: 14px; color: #333; font-weight: 500; }
+.uni-cert-logo-text strong { font-weight: 800; color: #111; }
+.uni-cert-tipo-label {
+  font-family: var(--font-h); font-size: 11px; font-weight: 700;
+  color: #888; letter-spacing: 1.5px; text-transform: uppercase;
+}
+
+.uni-cert-body {
+  padding: 36px 36px 28px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.uni-cert-certifica-texto,
+.uni-cert-concluiu-texto { font-size: 14px; color: #666; font-family: Georgia, serif; }
+.uni-cert-nome {
+  font-family: 'Georgia', serif;
+  font-size: 34px; font-weight: 700;
+  color: #111; line-height: 1.2;
+  margin: 4px 0;
+}
+.uni-cert-curso {
+  font-family: var(--font-h); font-size: 20px; font-weight: 800;
+  color: #111; margin: 4px 0 0;
+}
+.uni-cert-trilha {
+  font-family: var(--font-h); font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; margin-top: 2px;
+}
+.uni-cert-data {
+  font-size: 12px; color: #999; margin-top: 12px;
+  font-family: var(--font-b);
+}
+
+.uni-cert-footer {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 20px 36px 28px;
+  border-top: 1px solid #eee;
+  gap: 24px;
+}
+.uni-cert-assinatura { display: flex; flex-direction: column; gap: 6px; }
+.uni-cert-assinatura-linha {
+  width: 160px; height: 1px; background: #ccc;
+}
+.uni-cert-assinatura-nome { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; }
+.uni-cert-assinatura-cargo { font-size: 11px; color: #999; }
+
+.uni-cert-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.uni-cert-qr-img { border: 1px solid #eee; border-radius: 6px; display: block; }
+.uni-cert-codigo-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+.uni-cert-codigo { font-family: monospace; font-size: 12px; color: #555; font-weight: 600; }
+
+/* Botões do modal */
+.uni-cert-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.uni-cert-btn-ghost {
+  padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,.12); background: transparent;
+  color: #888; cursor: pointer; font-family: var(--font-h);
+  transition: color .15s;
+}
+.uni-cert-btn-ghost:hover { color: #fff; }
+.uni-cert-btn-download {
+  padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  background: #4ade80; color: #000; border: none; cursor: pointer;
+  font-family: var(--font-h); transition: background .15s;
+}
+.uni-cert-btn-download:hover { background: #22c55e; }
+
+/* Print: mostra só o certificado */
+@media print {
+  body > *:not(#uni-cert-modal) { display: none !important; }
+  .uni-cert-overlay { position: static !important; background: none !important; padding: 0 !important; }
+  .uni-cert-modal   { max-width: 100% !important; gap: 0 !important; }
+  .uni-cert-close, .uni-cert-actions { display: none !important; }
+  .uni-cert-doc     { box-shadow: none !important; border-radius: 0 !important; }
+}
