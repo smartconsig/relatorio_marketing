@@ -379,6 +379,21 @@ export function renderOverview(k, fd) {
     </div>`;
   }
 
+  // ── 6. SMS KOLMEYA ───────────────────────────────────────────────────────
+  if (state.kolmeya) {
+    const km = state.kolmeya;
+    const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : '—';
+    h += sectionTitle('SMS — Kolmeya');
+    h += `<div class="kpi-grid">
+      ${kpiCard('Enviados', fmtN(km.enviados), `período ${km.period}`, null, false)}
+      ${kpiCard('Entregues', fmtN(km.entregues), `taxa ${txEntrega}`, null, false)}
+      ${kpiCard('Não Entregues', fmtN(km.naoEntregues), 'falha na entrega', null, false)}
+      ${kpiCard('Respostas', fmtN(km.respostas), 'respostas dos destinatários', null, false)}
+      ${kpiCard('Acessos no Link', fmtN(km.acessos), 'cliques no encurtador', null, false)}
+      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), 'valor pago no período', null, false)}
+    </div>`;
+  }
+
   // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
   h += sectionTitle('Evolução Diária');
   h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>

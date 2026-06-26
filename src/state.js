@@ -20,4 +20,5 @@ export const state = {
   propostasSort:  { col: 'cliente', dir: 'asc' },
   bsc: null,
   metaAds:   null,      // { invest, leads, daily:[{date,invest,leads}], lastSync }
+  kolmeya:   null,      // { period, jobs:[], enviados, entregues, naoEntregues, respostas, acessos, valorPago, lastSync }
 };

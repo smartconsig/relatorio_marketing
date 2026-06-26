@@ -8,6 +8,7 @@ import { renderClientes } from './pages/clientes.js';
 import { renderPropostas } from './pages/propostas.js';
 import { saveState } from './core/storage.js';
 import { syncMetaAds } from './services/meta-ads.js';
+import { syncKolmeya } from './services/kolmeya.js';
 import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
@@ -233,9 +234,11 @@ export function applyFilter() {
   state.filterDates.end   = document.getElementById('date-end').value   || null;
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
+    state.kolmeya  = null;
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
   }
 }
 
@@ -247,9 +250,11 @@ export function clearFilter() {
   if (btn) btn.textContent = 'Período ▾';
   if (state.result) {
     state.metaAds    = null;
+    state.kolmeya    = null;
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
   }
 }
 
