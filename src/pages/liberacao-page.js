@@ -99,13 +99,22 @@ export async function renderLiberacao() {
 
 // ── Data ──────────────────────────────────────────────────────────────────
 async function _loadData() {
-  const { data, error } = await sb
-    .from('liberacao_margem_master')
-    .select('*')
-    .order('data_quitado', { ascending: false })
-    .order('created_at', { ascending: false });
-  if (error) { handleError('Erro ao carregar dados.', error); _registros = []; return; }
-  _registros = data || [];
+  const all = [];
+  let from = 0;
+  const PAGE = 1000;
+  while (true) {
+    const { data, error } = await sb
+      .from('liberacao_margem_master')
+      .select('*')
+      .order('data_quitado', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) { handleError('Erro ao carregar dados.', error); _registros = []; return; }
+    if (data?.length) all.push(...data);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  _registros = all;
 }
 
 // ── Render shell (once) ───────────────────────────────────────────────────
@@ -136,6 +145,11 @@ function _render(el) {
             Importar Planilha
           </button>
           <input type="file" id="lib-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportFile(this)" />
+          ${admin ? `<button class="lib-btn-import" onclick="libImportarAcerto()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar Acerto
+          </button>
+          <input type="file" id="lib-import-acerto-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportAcertoFile(this)" />` : ''}
           <button class="lib-btn-add" onclick="libAddCliente()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Adicionar Cliente
@@ -849,6 +863,137 @@ export async function libToggleOk(id, atual) {
       badge.textContent = novoValor ? '✓ OK' : 'Pendente';
     }
   }
+}
+
+// ── Importar Acerto ────────────────────────────────────────────────────────
+export function libImportarAcerto() {
+  document.getElementById('lib-import-acerto-input')?.click();
+}
+
+export async function libOnImportAcertoFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = '';
+
+  let wb;
+  try {
+    const buf = await file.arrayBuffer();
+    wb = XLSX.read(buf, { type: 'array' });
+  } catch {
+    handleError('Erro ao ler o arquivo.', null);
+    return;
+  }
+
+  const ws    = wb.Sheets[wb.SheetNames[0]];
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  const hoje  = new Date().toISOString().slice(0, 10);
+
+  const padCpf = v => String(v).replace(/\D/g, '').padStart(11, '0');
+
+  // Coleta CPFs únicos da planilha (pula cabeçalho linha 0)
+  const seenPlan  = new Set();
+  const cpfsList  = [];
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: range.s.c })];
+    if (!cell?.v) continue;
+    const cpf = padCpf(cell.v);
+    if (cpf === '00000000000') continue;
+    if (seenPlan.has(cpf)) continue;
+    seenPlan.add(cpf);
+    cpfsList.push(cpf);
+  }
+
+  if (cpfsList.length === 0) {
+    toast('Nenhum CPF encontrado na planilha.', 'err');
+    return;
+  }
+
+  // Monta índice por CPF a partir dos registros já carregados em memória
+  const byCpf = {};
+  for (const r of _registros) {
+    const c = padCpf(r.cpf || '');
+    (byCpf[c] = byCpf[c] || []).push(r);
+  }
+
+  const toUpdate   = [];
+  const pulados    = [];
+
+  for (const cpf of cpfsList) {
+    const matches = byCpf[cpf] || [];
+    const ok      = matches.filter(m => m.aprovado);
+
+    if (ok.length === 0) {
+      pulados.push({ cpf, motivo: matches.length === 0 ? 'Não encontrado no sistema' : 'Não está OK' });
+      continue;
+    }
+    if (ok.length > 1) {
+      pulados.push({ cpf, motivo: 'Ambíguo (' + ok.length + ' registros OK com mesmo CPF)' });
+      continue;
+    }
+    if (ok[0].acerto) {
+      pulados.push({ cpf, nome: ok[0].nome, motivo: 'Já tinha acerto (' + fmtDate(ok[0].acerto) + ')' });
+      continue;
+    }
+    toUpdate.push(ok[0]);
+  }
+
+  if (toUpdate.length === 0) {
+    toast('Nenhum cliente elegível para atualização de acerto.', 'err');
+    _mostrarResultadoAcerto([], pulados, hoje);
+    return;
+  }
+
+  // Atualiza no Supabase em lote (um por um para segurança)
+  let ok = 0, erros = 0;
+  for (const reg of toUpdate) {
+    const { error } = await sb
+      .from('liberacao_margem_master')
+      .update({ acerto: hoje })
+      .eq('id', reg.id);
+    if (error) { erros++; pulados.push({ cpf: reg.cpf, nome: reg.nome, motivo: 'Erro ao salvar: ' + error.message }); }
+    else { reg.acerto = hoje; ok++; }
+  }
+
+  await _loadData();
+  const el = document.getElementById('sec-liberacao');
+  if (el) _render(el);
+
+  _mostrarResultadoAcerto(toUpdate.slice(0, ok), pulados, hoje);
+}
+
+function _mostrarResultadoAcerto(atualizados, pulados, hoje) {
+  const content = document.getElementById('lib-modal-content');
+  const modal   = document.getElementById('lib-modal');
+  if (!content || !modal) return;
+
+  const fmtCpf = c => String(c).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  const dataFmt = hoje.split('-').reverse().join('/');
+
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Resultado — Importar Acerto</h2>
+    <div style="margin-bottom:16px">
+      <span class="lib-badge-ok" style="font-size:.9rem">✓ ${atualizados.length} atualizado${atualizados.length !== 1 ? 's' : ''} com ${dataFmt}</span>
+      ${pulados.length ? `&nbsp;<span class="lib-badge-pen" style="font-size:.9rem">${pulados.length} pulado${pulados.length !== 1 ? 's' : ''}</span>` : ''}
+    </div>
+    ${pulados.length ? `
+      <div style="margin-bottom:8px;font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Pulados</div>
+      <div style="max-height:260px;overflow-y:auto;font-size:.82rem;border:1px solid var(--border);border-radius:6px">
+        <table style="width:100%;border-collapse:collapse">
+          ${pulados.map(p => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 10px;font-family:monospace">${fmtCpf(p.cpf)}</td>
+              <td style="padding:6px 10px;color:var(--muted)">${p.nome || '—'}</td>
+              <td style="padding:6px 10px;color:var(--muted)">${p.motivo}</td>
+            </tr>`).join('')}
+        </table>
+      </div>` : ''}
+    <div class="lib-modal-actions" style="margin-top:20px">
+      <button class="lib-btn-save" onclick="libFecharModal()">Fechar</button>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.onclick = e => { if (e.target === modal) libFecharModal(); };
 }
 
 // ── Salvar Acerto (admin) ──────────────────────────────────────────────────
