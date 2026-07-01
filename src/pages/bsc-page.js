@@ -3,6 +3,7 @@ import { toast }        from '../utils/ui.js';
 import { fmtBRL }       from '../utils/currency.js';
 import { parseBSC }     from '../core/parseBSC.js';
 import { saveBSC, loadBSC } from '../services/bsc-svc.js';
+import { sb }            from '../services/supabase.js';
 
 const STORAGE_BASE = 'https://gfxfuzmoywdsiyctkrux.supabase.co/storage/v1/object/public';
 const LOGO_URL     = `${STORAGE_BASE}/assets/logo.png`;
@@ -10,19 +11,19 @@ const LOGO_URL     = `${STORAGE_BASE}/assets/logo.png`;
 // ── Brand / team config ────────────────────────────────────────────────────
 
 const TEAM_COLORS = {
-  FENIX:  '#940b10',
-  ZION:   '#eab308',
-  ALFA:   '#6b7280',
-  TITA:   '#7c3aed',
-  THEMIS: '#f97316',
+  FENIX:    '#940b10',
+  ALFA:     '#6b7280',
+  HYDRA:    '#7c3aed',
+  GORILLAZ: '#6b3423',
+  SCORPION: '#f97316',
 };
 
 const TEAM_LABELS = {
-  FENIX:  'Fênix',
-  ZION:   'Zion',
-  ALFA:   'Alfa',
-  TITA:   'Titã',
-  THEMIS: 'Thêmis',
+  FENIX:    'Fênix',
+  ALFA:     'Alfa',
+  HYDRA:    'Hydra',
+  GORILLAZ: 'Gorillaz',
+  SCORPION: 'Scorpion',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -64,15 +65,54 @@ function initials(nome) {
   return (parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2)).toUpperCase();
 }
 
-function avatarHtml(seller, size) {
-  const url = `${STORAGE_BASE}/avatars/${normalizeName(seller.nome)}.jpg`;
-  const tc  = teamColor(seller.equipe);
+const _avatarCacheBust = {};
+
+function avatarHtml(seller, size, editable = false) {
+  const slug = normalizeName(seller.nome);
+  const bust = _avatarCacheBust[slug];
+  const url  = `${STORAGE_BASE}/avatars/${slug}.jpg${bust ? '?t=' + bust : ''}`;
+  const tc   = teamColor(seller.equipe);
   return `
     <div class="bsc-avatar" style="width:${size}px;height:${size}px;border:3px solid ${tc}">
       <img src="${url}" alt="${seller.nome}"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="bsc-avatar-fallback" style="display:none;background:${tc}">${initials(seller.nome)}</div>
+      ${editable ? `<button type="button" class="bsc-avatar-edit" title="Editar foto"
+        onclick="event.stopPropagation();startEditAvatar(${seller.rank})">✎</button>` : ''}
     </div>`;
+}
+
+// ── Avatar edit (upload to Supabase Storage) ───────────────────────────────
+
+let _editingAvatarNome = null;
+
+export function startEditAvatar(rank) {
+  const seller = state.bsc?.sellers?.find(s => s.rank === rank);
+  if (!seller) return;
+  _editingAvatarNome = seller.nome;
+  document.getElementById('bsc-avatar-input').click();
+}
+
+export async function onAvatarFileChange(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !_editingAvatarNome) return;
+  if (!file.type.startsWith('image/')) { toast('Selecione um arquivo de imagem', 'err'); return; }
+
+  const slug = normalizeName(_editingAvatarNome);
+  try {
+    const { error } = await sb.storage.from('avatars').upload(`${slug}.jpg`, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    if (error) throw error;
+    _avatarCacheBust[slug] = Date.now();
+    toast('✅ Foto atualizada');
+    renderBSC();
+  } catch (err) {
+    toast('Erro ao enviar foto: ' + err.message, 'err');
+    console.error(err);
+  }
 }
 
 function medalIcon(rank) {
@@ -183,6 +223,7 @@ function importBar() {
         </div>
         <button class="btn-sm btn-ghost" onclick="importBSCFile()">📥 Importar BSC</button>
         <input type="file" id="bsc-file-input" accept=".xlsx,.xls" style="display:none" onchange="onBSCFileChange(event)">
+        <input type="file" id="bsc-avatar-input" accept="image/*" style="display:none" onchange="onAvatarFileChange(event)">
         ${bsc ? `<button class="btn-sm btn-primary" onclick="enterTVMode()">📺 Modo TV</button>` : ''}
       </div>
     </div>`;
@@ -197,7 +238,7 @@ function podiumCard(seller) {
     <div class="bsc-podium-card ${is1 ? 'bsc-podium-1st' : ''}" style="border-top:4px solid ${tc}">
       <div class="bsc-podium-medal">${medalIcon(seller.rank)}</div>
       <div style="display:flex;justify-content:center;margin:12px 0">
-        ${avatarHtml(seller, is1 ? 88 : 72)}
+        ${avatarHtml(seller, is1 ? 88 : 72, true)}
       </div>
       <div class="bsc-podium-name">${seller.nome}</div>
       <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:8px 0">
@@ -220,7 +261,7 @@ function listCard(seller) {
   return `
     <div class="bsc-list-card" style="border-left:4px solid ${tc}">
       <div class="bsc-list-rank" style="color:${tc}">${seller.rank}</div>
-      ${avatarHtml(seller, 48)}
+      ${avatarHtml(seller, 48, true)}
       <div class="bsc-list-info">
         <div class="bsc-list-name">${seller.nome}</div>
         <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
@@ -249,16 +290,16 @@ export function renderBSC() {
 
   const { sellers } = state.bsc;
   const top3  = sellers.filter(s => s.rank <= 3).sort((a, b) => a.rank - b.rank);
-  const top10 = sellers.filter(s => s.rank >= 4 && s.rank <= 10).sort((a, b) => a.rank - b.rank);
+  const rest  = sellers.filter(s => s.rank >= 4).sort((a, b) => a.rank - b.rank);
   // Podium order: 2nd left, 1st center, 3rd right
   const podium = [top3[1], top3[0], top3[2]].filter(Boolean);
 
   let h = importBar();
   h += `<div class="section-title" style="margin-top:24px"><span class="bar"></span>Top 3 — Destaques</div>
         <div class="bsc-podium">${podium.map(s => podiumCard(s)).join('')}</div>`;
-  if (top10.length) {
-    h += `<div class="section-title" style="margin-top:28px"><span class="bar"></span>Top 4 – 10</div>
-          <div class="bsc-list">${top10.map(s => listCard(s)).join('')}</div>`;
+  if (rest.length) {
+    h += `<div class="section-title" style="margin-top:28px"><span class="bar"></span>Classificação completa</div>
+          <div class="bsc-list">${rest.map(s => listCard(s)).join('')}</div>`;
   }
 
   el.innerHTML = h;

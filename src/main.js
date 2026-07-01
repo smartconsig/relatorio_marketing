@@ -21,7 +21,7 @@ import { undoFromClientes, setClientesFilter, setClientesSearch, askUndo, sortCl
 import { closeConfirm, doConfirm } from './utils/confirm.js';
 import { setRankView, setFunilView, toggleFunilAndamento, exportRankingPDF } from './pages/ranking.js';
 import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput, goalsNavMonth, goalsCopyPrev, goalsLoadPeriodo } from './pages/goals-page.js';
-import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations } from './pages/bsc-page.js';
+import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations, startEditAvatar, onAvatarFileChange } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, setPropostasOrigem, setPropostasAudiencia, openExportModal, closeExportModal, doExportCSV, goToPropostasPage, sortPropostas } from './pages/propostas.js';
 import { clearState } from './core/storage.js';
@@ -126,6 +126,8 @@ window.onBSCFileChange   = onBSCFileChange;
 window.enterTVMode       = enterTVMode;
 window.exitTVMode        = exitTVMode;
 window.saveTVDurations   = saveTVDurations;
+window.startEditAvatar   = startEditAvatar;
+window.onAvatarFileChange = onAvatarFileChange;
 window.openHistoryPanel  = openHistoryPanel;
 window.closeHistoryPanel = closeHistoryPanel;
 window.keepSession        = keepSession;
