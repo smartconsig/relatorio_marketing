@@ -100,14 +100,14 @@ export async function batchClassify(isMkt) {
 /** Conta quantos registros de marketing estão pendentes de revisão manual. */
 export function procvPendingCount(entries) {
   return entries.filter(e =>
-    e.isMarketing === true &&
-    e.smartSignal !== 'confirmed' &&
+    ((e.isMarketing === true && e.smartSignal !== 'confirmed') || e.reverseCandidate === true) &&
     e.reviewReason !== 'manual'
   ).length;
 }
 
 function signalBadge(e) {
   if (e.reviewReason === 'manual')         return `<span class="badge badge-green">✔ Revisado</span>`;
+  if (e.reverseCandidate)                   return `<span class="badge badge-yellow">🟠 Smart confirma / Ecorban: ${e.ecorbanOrigem || 'sem origem'}</span>`;
   if (e.smartSignal === 'confirmed')        return `<span class="badge badge-green">✅ Smart confirma</span>`;
   if (e.smartSignal === 'contradiction')    return `<span class="badge badge-red">🔴 Smart contradiz</span>`;
   if (e.smartSignal === 'not_found')        return `<span class="badge badge-yellow">🔍 Não encontrado</span>`;
@@ -149,15 +149,17 @@ function applySortProcv(arr) {
 /** Aplica filtro de aba + busca por texto e retorna os dados paginados. */
 function applyProcvFilters(entries) {
   // 'reclassified' = proposta enviada de volta ao PROCV pelo usuário — deve reaparecer para revisão
-  const mktEntries = entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
+  // reverseCandidate = Ecorban ≠ MARKETING mas Smart confirma — só aparece na aba "Marketing Perdido"
+  const mktEntries = entries.filter(e => e.isMarketing === true || e.reverseCandidate === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
   const f    = state.procvFilter;
   const here = (e) => e._justConfirmed && e._confirmedInFilter === f;
 
   let filtered = mktEntries;
-  if (f === 'pending')       filtered = mktEntries.filter(e => (e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual') || here(e));
-  if (f === 'doubt')         filtered = mktEntries.filter(e => ((e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual') || here(e));
+  if (f === 'pending')       filtered = mktEntries.filter(e => (!e.reverseCandidate && e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'doubt')         filtered = mktEntries.filter(e => (!e.reverseCandidate && (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual') || here(e));
   if (f === 'contradiction') filtered = mktEntries.filter(e => (e.smartSignal === 'contradiction' && e.reviewReason !== 'manual') || here(e));
-  if (f === 'smart')         filtered = mktEntries.filter(e => (e.smartSignal === 'confirmed' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'smart')         filtered = mktEntries.filter(e => (!e.reverseCandidate && e.smartSignal === 'confirmed' && e.reviewReason !== 'manual') || here(e));
+  if (f === 'reverse')       filtered = mktEntries.filter(e => (e.reverseCandidate === true && e.reviewReason !== 'manual') || here(e));
   if (f === 'manual')        filtered = mktEntries.filter(e => e.reviewReason === 'manual');
 
   const q = state.procvSearch.trim().toLowerCase();
@@ -254,10 +256,11 @@ export function renderProcv(entries) {
   _selected.clear();
   const { mktEntries, total, capped, hasMore } = applyProcvFilters(entries);
 
-  const cPending        = mktEntries.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
-  const cDoubt          = mktEntries.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
+  const cPending        = mktEntries.filter(e => !e.reverseCandidate && e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual').length;
+  const cDoubt          = mktEntries.filter(e => !e.reverseCandidate && (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual').length;
   const cContradition   = mktEntries.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual').length;
-  const cConfirmedSmart = mktEntries.filter(e => e.smartSignal === 'confirmed' && e.reviewReason !== 'manual').length;
+  const cConfirmedSmart = mktEntries.filter(e => !e.reverseCandidate && e.smartSignal === 'confirmed' && e.reviewReason !== 'manual').length;
+  const cReverse        = mktEntries.filter(e => e.reverseCandidate === true && e.reviewReason !== 'manual').length;
   const cManual         = mktEntries.filter(e => e.reviewReason === 'manual').length;
   const cAll            = mktEntries.length;
   const f               = state.procvFilter;
@@ -265,7 +268,7 @@ export function renderProcv(entries) {
   document.getElementById('procv-body').innerHTML = `
     ${sectionTitle('PROCV — Revisão de Clientes de Marketing')}
     <div class="info-box" style="margin-bottom:16px">
-      Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
+      Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>, mais os <strong>🟠 Marketing Perdido</strong> — clientes com outra origem no Ecorban (SMS, WhatsApp, Linha…) mas que o Smart confirma como marketing. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
@@ -287,6 +290,7 @@ export function renderProcv(entries) {
           { value: 'pending',       label: `⏳ Pendentes (${cPending})`,         onclick: "setProcvFilter('pending')",       style: 'color:#f59e0b' },
           { value: 'doubt',         label: `❓ Dúvida (${cDoubt})`,               onclick: "setProcvFilter('doubt')",         style: 'color:#f59e0b' },
           { value: 'contradiction', label: `🔴 Contradição (${cContradition})`,   onclick: "setProcvFilter('contradiction')", style: 'color:#ef4444' },
+          { value: 'reverse',       label: `🟠 Marketing Perdido (${cReverse})`,  onclick: "setProcvFilter('reverse')",       style: 'color:#f97316' },
           { value: 'smart',         label: `✅ Smart confirma (${cConfirmedSmart})`, onclick: "setProcvFilter('smart')",      style: 'color:#22c55e' },
           { value: 'manual',        label: `✔ Revisados (${cManual})`,            onclick: "setProcvFilter('manual')",       style: 'color:#22c55e' },
           { value: 'all',           label: `Todos (${cAll})`,                     onclick: "setProcvFilter('all')" },
@@ -407,11 +411,12 @@ export function askClassify(idx, isMkt) {
 export function exportProcvCSV() {
   const fd = filteredData();
   if (!fd) return;
-  let filtered = fd.entries.filter(e => e.isMarketing === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
-  if (state.procvFilter === 'pending')       filtered = filtered.filter(e => e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
+  let filtered = fd.entries.filter(e => e.isMarketing === true || e.reverseCandidate === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
+  if (state.procvFilter === 'pending')       filtered = filtered.filter(e => !e.reverseCandidate && e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
   if (state.procvFilter === 'doubt')         filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
   if (state.procvFilter === 'contradiction') filtered = filtered.filter(e => e.smartSignal === 'contradiction' && e.reviewReason !== 'manual');
-  if (state.procvFilter === 'smart')         filtered = filtered.filter(e => e.smartSignal === 'confirmed');
+  if (state.procvFilter === 'smart')         filtered = filtered.filter(e => !e.reverseCandidate && e.smartSignal === 'confirmed');
+  if (state.procvFilter === 'reverse')       filtered = filtered.filter(e => e.reverseCandidate === true && e.reviewReason !== 'manual');
   if (state.procvFilter === 'manual')        filtered = filtered.filter(e => e.reviewReason === 'manual');
   const q = state.procvSearch.trim().toLowerCase();
   if (q) filtered = filtered.filter(e =>
@@ -422,7 +427,7 @@ export function exportProcvCSV() {
   const rows   = filtered.map(e => [
     e.cliente || '', e.cpf || '', e.rawStatus || '', e.statusCat || '',
     e.ecorbanOrigem || '', e.smartPhone || '', e.origem || '', e.audiencia || '',
-    e.reviewReason === 'manual' ? 'Revisado' : (e.smartSignal || 'desconhecido'),
+    e.reviewReason === 'manual' ? 'Revisado' : (e.reverseCandidate ? 'Marketing Perdido' : (e.smartSignal || 'desconhecido')),
   ]);
 
   const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');

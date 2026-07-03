@@ -150,6 +150,7 @@ export function buildResult() {
       smartPhone:    null,
       reviewReason:  null,
       smartSignal:   null,   // 'confirmed' | 'doubt' | 'contradiction' | 'not_found'
+      reverseCandidate: false, // Ecorban ≠ MARKETING mas Smart confirma — revisar no PROCV
       // perfil
       nascimento, idade, faixaEtaria: faixaEt,
       estado, bairro, cep, regiao,
@@ -207,6 +208,15 @@ export function buildResult() {
           entry.reviewReason = sig === 'contradiction'
             ? `Smart diz: ${origem}`
             : `Dúvida: ${origem || 'sem origem'} / ${audiencia || 'sem audiência'}`;
+        }
+      } else if (!isMarketingByEcorban && entry.reviewReason !== 'manual') {
+        // Reverso: Ecorban registrou outra origem (SMS, WhatsApp, Linha…) mas o
+        // Smart confirma sinal forte de marketing. Não muda isMarketing — apenas
+        // marca como candidato para revisão manual na aba "Marketing Perdido".
+        if (getSmartSignal(origem, audiencia) === 'confirmed') {
+          entry.smartSignal      = 'confirmed';
+          entry.reverseCandidate = true;
+          entry.reviewReason     = `Ecorban diz: ${ecorbanOrigem || 'sem origem'} / Smart confirma marketing`;
         }
       }
     }
