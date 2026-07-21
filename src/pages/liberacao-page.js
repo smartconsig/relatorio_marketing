@@ -190,6 +190,8 @@ function _render(el) {
               ${admin ? '<th>Empresa</th>' : ''}
               <th>CPF</th>
               <th>Nome</th>
+              <th>Convênio</th>
+              <th>Produto</th>
               <th>Saldo Devedor</th>
               <th>Troco</th>
               ${admin ? '<th>Troco Líquido</th>' : ''}
@@ -217,7 +219,7 @@ function _updateTable() {
   const filtered = _filtered();
   const visible  = filtered.slice(0, _page * PAGE_SIZE);
   const hasMore  = filtered.length > visible.length;
-  const cols     = admin ? 13 : 12;
+  const cols     = admin ? 15 : 14;
 
   // Contagem
   const countEl = document.querySelector('.lib-count');
@@ -314,6 +316,8 @@ function _renderRow(r, admin) {
       ${admin ? `<td><span class="lib-empresa-badge">${_esc(r.empresa_parceira)}</span></td>` : ''}
       <td>${r.cpf || '—'}</td>
       <td>${r.nome || '—'}</td>
+      <td>${_esc(r.convenio || '—')}</td>
+      <td>${_esc(r.produto || '—')}</td>
       <td class="lib-val">${fmtBRL(r.saldo_devedor)}</td>
       <td class="lib-val">${fmtBRL(r.troco)}</td>
       ${admin ? `<td class="lib-val">${fmtBRL(r.troco_liquido)}</td>` : ''}
@@ -381,9 +385,9 @@ export function libExportar() {
   const data = _filtered();
   if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
 
-  const headers = ['CPF','NOME','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS'];
+  const headers = ['CPF','NOME','CONVÊNIO','PRODUTO','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS'];
   const rows = data.map(r => [
-    r.cpf, r.nome, r.empresa_parceira,
+    r.cpf, r.nome, r.convenio || '', r.produto || '', r.empresa_parceira,
     r.saldo_devedor, r.troco, r.saldo_total, r.comissao_6pct, r.troco_liquido,
     r.acerto || '', r.data_quitado || '', r.obs || '',
     r.aprovado ? 'OK' : 'Pendente',
@@ -429,6 +433,17 @@ export function libEditarCliente(id) {
     <div class="lib-form-row">
       <label>Nome Completo</label>
       <input type="text" id="lib-f-nome" value="${_esc(r.nome || '')}" />
+    </div>
+
+    <div class="lib-form-row-2">
+      <div>
+        <label>Convênio</label>
+        <input type="text" id="lib-f-convenio" value="${_esc(r.convenio || '')}" />
+      </div>
+      <div>
+        <label>Produto</label>
+        <input type="text" id="lib-f-produto" value="${_esc(r.produto || '')}" />
+      </div>
     </div>
 
     <div class="lib-form-row-2">
@@ -488,12 +503,17 @@ export async function libSalvarEdicao(id) {
   if (!nome)      { err.textContent = 'Informe o nome.';          err.style.display = ''; return; }
   if (!sd || sd <= 0) { err.textContent = 'Informe o saldo devedor.'; err.style.display = ''; return; }
 
+  const convenio = document.getElementById('lib-f-convenio')?.value.trim();
+  const produto  = document.getElementById('lib-f-produto')?.value.trim();
+  if (!convenio) { err.textContent = 'Informe o convênio.'; err.style.display = ''; return; }
+  if (!produto)  { err.textContent = 'Informe o produto.';  err.style.display = ''; return; }
+
   err.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   const { error } = await sb
     .from('liberacao_margem_master')
-    .update({ cpf, nome, saldo_devedor: sd, troco, obs })
+    .update({ cpf, nome, convenio, produto, saldo_devedor: sd, troco, obs })
     .eq('id', id);
 
   if (error) {
@@ -503,7 +523,7 @@ export async function libSalvarEdicao(id) {
   }
 
   const reg = _registros.find(r => r.id === id);
-  if (reg) { reg.cpf = cpf; reg.nome = nome; reg.saldo_devedor = sd; reg.troco = troco; reg.obs = obs; }
+  if (reg) { reg.cpf = cpf; reg.nome = nome; reg.convenio = convenio; reg.produto = produto; reg.saldo_devedor = sd; reg.troco = troco; reg.obs = obs; }
 
   libFecharModal();
   toast('Cliente atualizado!');
@@ -559,6 +579,32 @@ async function _confirmarDelete(id) {
   toast('Cliente excluído.');
 }
 
+// ── Erro: planilha no modelo antigo (sem Convênio/Produto) ─────────────────
+function _mostrarErroModelo() {
+  const content = document.getElementById('lib-modal-content');
+  const modal   = document.getElementById('lib-modal');
+  if (!content || !modal) return;
+
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Modelo antigo detectado</h2>
+    <p style="font-size:.9rem;line-height:1.5;color:var(--text)">
+      Esta planilha não contém as colunas <strong>CONVÊNIO</strong> e <strong>PRODUTO</strong>,
+      que agora são obrigatórias. A importação foi cancelada.
+    </p>
+    <p style="font-size:.9rem;line-height:1.5;color:var(--muted);margin-top:8px">
+      Baixe o <strong>novo modelo</strong>, preencha o convênio e o produto de todos os clientes
+      e importe novamente.
+    </p>
+    <div class="lib-modal-actions" style="margin-top:20px">
+      <a class="lib-btn-save" href="/template_liberacao.xlsx" download="TEMPLATE_LIBERACAO.xlsx" style="text-decoration:none">Baixar novo modelo</a>
+      <button class="lib-btn-cancel" onclick="libFecharModal()">Fechar</button>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.onclick = e => { if (e.target === modal) libFecharModal(); };
+}
+
 // ── Importar Planilha ─────────────────────────────────────────────────────
 export function libImportarPlanilha() {
   document.getElementById('lib-import-input')?.click();
@@ -612,6 +658,14 @@ export async function libOnImportFile(input) {
   const iAcerto = colIdx('acerto');
   const iDq     = colIdx('data quitado');
   const iObs    = colIdx('obs', 'observacoes', 'observações');
+  const iConvenio = colIdx('convenio', 'convênio');
+  const iProduto  = colIdx('produto');
+
+  // Bloqueia modelo antigo (sem as colunas obrigatórias Convênio/Produto)
+  if (iConvenio < 0 || iProduto < 0) {
+    _mostrarErroModelo();
+    return;
+  }
 
   const getVal = (r, colI) => {
     if (colI < 0) return undefined;
@@ -672,19 +726,21 @@ export async function libOnImportFile(input) {
     const cpf    = padCpf(cpfRaw);
     const sd     = parseMoney(getVal(r, iSd));
     const troco  = parseMoney(getVal(r, iTroco));
-    const obs    = String(getVal(r, iObs) || '').trim() || null;
+    const obs      = String(getVal(r, iObs) || '').trim() || null;
+    const convenio = String(getVal(r, iConvenio) || '').trim();
+    const produto  = String(getVal(r, iProduto)  || '').trim();
     const acerto = parseDate(getVal(r, iAcerto));
     const dq     = parseDate(getVal(r, iDq)) || hoje;
     const aprovado = isGreenRow(r);
     const empresa  = admin ? normalizeEmpresa(getVal(r, iEmp)) : empresaParceiro;
 
-    if (!cpf || cpf === '00000000000' || !nome || sd <= 0) { skipped++; continue; }
+    if (!cpf || cpf === '00000000000' || !nome || sd <= 0 || !convenio || !produto) { skipped++; continue; }
 
     const dupKey = `${cpf}|${sd}`;
     if (seen.has(dupKey)) { skipped++; continue; }
     seen.add(dupKey);
 
-    valid.push({ cpf, nome, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: dq, acerto, obs, aprovado });
+    valid.push({ cpf, nome, convenio, produto, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: dq, acerto, obs, aprovado });
   }
 
   if (valid.length === 0) {
@@ -730,6 +786,17 @@ export function libAddCliente() {
     <div class="lib-form-row">
       <label>Nome Completo</label>
       <input type="text" id="lib-f-nome" placeholder="Nome do cliente" />
+    </div>
+
+    <div class="lib-form-row-2">
+      <div>
+        <label>Convênio</label>
+        <input type="text" id="lib-f-convenio" placeholder="Convênio" />
+      </div>
+      <div>
+        <label>Produto</label>
+        <input type="text" id="lib-f-produto" placeholder="Produto" />
+      </div>
     </div>
 
     <div class="lib-form-row-2">
@@ -805,6 +872,11 @@ export async function libSalvarCliente() {
   if (!nome)      { err.textContent = 'Informe o nome.';          err.style.display = ''; return; }
   if (!sd || sd <= 0) { err.textContent = 'Informe o saldo devedor.'; err.style.display = ''; return; }
 
+  const convenio = document.getElementById('lib-f-convenio')?.value.trim();
+  const produto  = document.getElementById('lib-f-produto')?.value.trim();
+  if (!convenio) { err.textContent = 'Informe o convênio.'; err.style.display = ''; return; }
+  if (!produto)  { err.textContent = 'Informe o produto.';  err.style.display = ''; return; }
+
   err.style.display = 'none';
   btn.disabled = true;
   btn.textContent = 'Salvando…';
@@ -812,6 +884,8 @@ export async function libSalvarCliente() {
   const { error } = await sb.from('liberacao_margem_master').insert({
     cpf,
     nome,
+    convenio,
+    produto,
     empresa_parceira: _empresaParceira(),
     saldo_devedor:    sd,
     troco,
