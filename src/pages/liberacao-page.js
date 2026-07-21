@@ -675,7 +675,9 @@ export async function libOnImportFile(input) {
   const parseMoney = v => {
     if (v == null || v === '') return 0;
     if (typeof v === 'number') return v;
-    return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+    // Remove R$, espaços (incl. NBSP), letras e qualquer símbolo — mantém só dígitos, vírgula, ponto e sinal
+    const s = String(v).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(s) || 0;
   };
 
   const padCpf = v => String(v).replace(/\D/g, '').padStart(11, '0');
