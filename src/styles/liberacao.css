@@ -230,6 +230,7 @@
 }
 .lib-btn-ok:hover { border-color: #20b450; color: #20b450; }
 .lib-btn-ok.ok { border-color: #20b450; background: #20b450; color: #fff; }
+.lib-btn-ok.locked, .lib-btn-ok:disabled { cursor: not-allowed; }
 
 /* Célula de ações (OK + Delete) */
 .lib-td-actions {

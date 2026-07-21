@@ -298,9 +298,10 @@ function _renderRow(r, admin) {
     ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" ${acertoLocked ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onchange="libSalvarAcerto('${r.id}', this.value)"`} />`
     : fmtDate(r.acerto);
 
+  const okLocked = !admin && r.aprovado;   // parceiro: depois de dar OK, não pode remover
   const okBtn = canAct ? `
     <td class="lib-td-actions">
-      <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}" onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}">
+      <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}${okLocked ? ' locked' : ''}" ${okLocked ? 'disabled title="OK confirmado — somente admin pode remover"' : `onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}"`}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
       <button class="lib-btn-edit${!admin && r.acerto ? ' disabled' : ''}" ${!admin && r.acerto ? 'disabled title="Acerto preenchido — edição bloqueada"' : `onclick="libEditarCliente('${r.id}')" title="Editar"`}>
@@ -929,9 +930,17 @@ export async function libToggleOk(id, atual) {
     tr.className = `lib-tr${novoValor ? ' lib-row-ok' : ''}`;
     const btn = tr.querySelector('.lib-btn-ok');
     if (btn) {
-      btn.className = `lib-btn-ok${novoValor ? ' ok' : ''}`;
-      btn.setAttribute('onclick', `libToggleOk('${id}', ${novoValor})`);
-      btn.title = novoValor ? 'Remover OK' : 'Marcar como OK';
+      const lockOk = !isAdmin() && novoValor;   // parceiro: OK confirmado trava
+      btn.className = `lib-btn-ok${novoValor ? ' ok' : ''}${lockOk ? ' locked' : ''}`;
+      if (lockOk) {
+        btn.disabled = true;
+        btn.removeAttribute('onclick');
+        btn.title = 'OK confirmado — somente admin pode remover';
+      } else {
+        btn.disabled = false;
+        btn.setAttribute('onclick', `libToggleOk('${id}', ${novoValor})`);
+        btn.title = novoValor ? 'Remover OK' : 'Marcar como OK';
+      }
     }
     const badge = tr.querySelector('.lib-badge-ok, .lib-badge-pen');
     if (badge) {
