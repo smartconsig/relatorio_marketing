@@ -315,9 +315,9 @@ function _renderRow(r, admin) {
     <tr class="lib-tr${cls}" data-id="${r.id}">
       ${admin ? `<td><span class="lib-empresa-badge">${_esc(r.empresa_parceira)}</span></td>` : ''}
       <td>${r.cpf || '—'}</td>
-      <td>${r.nome || '—'}</td>
-      <td>${_esc(r.convenio || '—')}</td>
-      <td>${_esc(r.produto || '—')}</td>
+      <td class="lib-nome" title="${_esc(r.nome || '')}">${r.nome || '—'}</td>
+      <td class="lib-trunc" title="${_esc(r.convenio || '')}">${_esc(r.convenio || '—')}</td>
+      <td class="lib-trunc" title="${_esc(r.produto || '')}">${_esc(r.produto || '—')}</td>
       <td class="lib-val">${fmtBRL(r.saldo_devedor)}</td>
       <td class="lib-val">${fmtBRL(r.troco)}</td>
       ${admin ? `<td class="lib-val">${fmtBRL(r.troco_liquido)}</td>` : ''}
