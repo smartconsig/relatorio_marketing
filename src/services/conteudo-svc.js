@@ -26,6 +26,7 @@ export const CANAIS = [
   { key: 'tiktok',            label: 'TikTok' },
   { key: 'youtube',           label: 'YouTube' },
   { key: 'linkedin',          label: 'LinkedIn' },
+  { key: 'operacao',          label: 'Operação' },
 ];
 
 const CARD_COLS = 'id,titulo,descricao,coluna,canal,responsavel_id,data_alvo,link_url,em_ajuste,ajuste_motivo,ordem,coluna_desde,arquivado,criado_por,created_at,updated_at';
