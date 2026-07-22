@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { perm } from '../services/permissions.js';
 import { toast } from '../utils/ui.js';
+import { showConfirm } from '../utils/confirm.js';
 import {
   COLUNAS, CANAIS,
   loadCards, loadMembros, createCard, updateCard, moveCard, deleteCard, logEvento,
@@ -510,17 +511,19 @@ async function _carregarAnexos(cardId) {
   });
 
   box.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async e => {
+    btn.addEventListener('click', e => {
       e.stopPropagation();
       const anexo = anexos.find(a => a.id === btn.dataset.del);
-      if (!anexo || !window.confirm(`Remover "${anexo.nome}"?`)) return;
-      try {
-        await deleteAnexo(anexo);
-        await _carregarAnexos(cardId);
-      } catch (err) {
-        console.error('deleteAnexo:', err);
-        toast('Erro ao remover a imagem', 'err');
-      }
+      if (!anexo) return;
+      showConfirm('Remover arte?', anexo.nome, 'Remover', async () => {
+        try {
+          await deleteAnexo(anexo);
+          await _carregarAnexos(cardId);
+        } catch (err) {
+          console.error('deleteAnexo:', err);
+          toast('Erro ao remover a imagem', 'err');
+        }
+      });
     });
   });
 }
@@ -748,21 +751,23 @@ async function _salvar() {
   }
 }
 
-async function _excluir() {
+function _excluir() {
   if (!_editId) return;
-  if (!window.confirm('Excluir este conteúdo? A ação não pode ser desfeita.')) return;
-  try {
-    // as imagens precisam sair do bucket antes: o CASCADE só apaga as linhas
-    await removeArquivosDoCard(_editId);
-    await deleteCard(_editId);
-    _cards = _cards.filter(c => c.id !== _editId);
-    _fecharModal();
-    _renderBoard();
-    toast('Conteúdo excluído');
-  } catch (err) {
-    console.error('excluirCard:', err);
-    toast('Erro ao excluir', 'err');
-  }
+  const id = _editId;
+  showConfirm('Excluir conteúdo?', 'Esta ação não pode ser desfeita.', 'Excluir', async () => {
+    try {
+      // as imagens precisam sair do bucket antes: o CASCADE só apaga as linhas
+      await removeArquivosDoCard(id);
+      await deleteCard(id);
+      _cards = _cards.filter(c => c.id !== id);
+      _fecharModal();
+      _renderBoard();
+      toast('Conteúdo excluído');
+    } catch (err) {
+      console.error('excluirCard:', err);
+      toast('Erro ao excluir', 'err');
+    }
+  });
 }
 
 // ── revalidação ──────────────────────────────────────────────────────────────
