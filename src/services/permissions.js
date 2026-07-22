@@ -41,6 +41,11 @@ export const perm = {
   // Quitações
   quitacoesVisualizar: () => can('quitacoes_visualizar'),
 
+  // Esteira de Conteúdo
+  conteudoVisualizar:  () => can('conteudo_visualizar') || can('admin_usuarios') || can('admin_grupos'),
+  conteudoEditar:      () => can('conteudo_editar')     || can('admin_usuarios') || can('admin_grupos'),
+  conteudoAprovar:     () => can('conteudo_aprovar')    || can('admin_usuarios') || can('admin_grupos'),
+
   // Liberação de Margem Master
   liberacaoMargem:     () => can('liberacao_margem') || can('admin_usuarios') || can('admin_grupos'),
 
@@ -82,6 +87,9 @@ export const DEFAULT_PERMISSIONS = {
   bsc: true,
   perfil_visualizar: false,
   quitacoes_visualizar: false,
+  conteudo_visualizar: false,
+  conteudo_editar: false,
+  conteudo_aprovar: false,
   liberacao_margem: false,
   admin_usuarios: false,
   admin_grupos: false,

@@ -38,6 +38,11 @@ const PERM_TREE = [
   { key: 'bsc',                  label: 'Ranking BSC' },
   { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
   { key: 'quitacoes_visualizar', label: 'Quitações' },
+  { label: 'Esteira de Conteúdo', children: [
+    { key: 'conteudo_visualizar', label: 'Visualizar o board' },
+    { key: 'conteudo_editar',     label: 'Criar e mover cards' },
+    { key: 'conteudo_aprovar',    label: 'Aprovar / pedir ajustes' },
+  ]},
   { key: 'liberacao_margem',    label: 'Liberação de Margem Master' },
   { label: 'Universidade Smart', children: [
     { key: 'universidade_acessar',    label: 'Acessar Universidade' },
@@ -756,6 +761,7 @@ function _summarizePerms(permissoes) {
     { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
     { key: 'quitacoes_visualizar',     label: 'Quitações' },
+    { key: 'conteudo_visualizar',      label: 'Conteúdo' },
     { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'universidade_acessar',     label: 'Universidade' },
     { key: 'universidade_criador',     label: 'Criador' },

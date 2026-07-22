@@ -14,6 +14,7 @@ import { can, canSeeGestao, perm } from './services/permissions.js';
 import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
+import { renderConteudo } from './pages/conteudo-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
 import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './pages/universidade.js';
 import { renderUniAdmin } from './pages/uni-admin.js';
@@ -37,6 +38,7 @@ const TITLES = {
   perfil:       'Perfil de Cliente',
   gestao:       'Gestão de Classificações',
   quitacoes:    'Quitações',
+  conteudo:     'Esteira de Conteúdo',
   propostas:    'Propostas de Marketing',
   goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
@@ -106,6 +108,7 @@ export function navigate(sec) {
   // Renderiza seções sob demanda
   if (sec === 'admin')        renderAdminPage();
   if (sec === 'quitacoes')   renderQuitacoes();
+  if (sec === 'conteudo')    renderConteudo();
   if (sec === 'liberacao')   renderLiberacao();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
@@ -124,6 +127,7 @@ export function applyPermissionsToUI() {
     ranking:   () => can('ranking'),
     gestao:    () => canSeeGestao(),
     quitacoes: () => can('quitacoes_visualizar'),
+    conteudo:  () => perm.conteudoVisualizar(),
     perfil:    () => can('perfil_visualizar'),
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
@@ -352,6 +356,10 @@ const FLOAT_NAV_ITEMS = [
   {
     sec: 'quitacoes', title: 'Quitações', badgeId: null,
     svg: '<path d="M9 14l2 2 4-4"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  },
+  {
+    sec: 'conteudo', title: 'Conteúdo', badgeId: null,
+    svg: '<rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/>',
   },
   {
     group: 'comercial', title: 'Comercial',

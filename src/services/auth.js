@@ -110,9 +110,10 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes','liberacao','universidade']);
+  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes','conteudo','liberacao','universidade']);
   const defaultSec = can('visao_geral')                              ? 'overview'
     : (can('liberacao_margem') || perm.isAdmin())                    ? 'liberacao'
+    : perm.conteudoVisualizar()                                      ? 'conteudo'
     : can('universidade_acessar')                                    ? 'universidade'
     : 'overview';
   // Valida se o usuário tem permissão para acessar a seção
@@ -121,6 +122,7 @@ export async function onAuthenticated() {
     if (sec === 'overview')     return can('visao_geral');
     if (sec === 'universidade') return can('universidade_acessar') || perm.isAdmin();
     if (sec === 'liberacao')    return can('liberacao_margem') || perm.isAdmin();
+    if (sec === 'conteudo')     return perm.conteudoVisualizar();
     return true;
   };
   const hashSec   = window.location.hash.replace('#', '');

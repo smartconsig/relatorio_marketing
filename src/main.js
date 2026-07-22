@@ -6,6 +6,7 @@ import './styles/bsc.css';
 import './styles/propostas.css';
 import './styles/mobile.css';
 import './styles/quitacoes.css';
+import './styles/conteudo.css';
 import './styles/universidade.css';
 import './styles/uni-admin.css';
 import './styles/liberacao.css';
@@ -24,6 +25,7 @@ import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput, goalsNavMonth, goa
 import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations, startEditAvatar, onAvatarFileChange } from './pages/bsc-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, setPropostasOrigem, setPropostasAudiencia, openExportModal, closeExportModal, doExportCSV, goToPropostasPage, sortPropostas } from './pages/propostas.js';
+import { renderConteudo } from './pages/conteudo-page.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
@@ -148,6 +150,7 @@ window.q_onDocSelect      = q_onDocSelect;
 window.q_maskCPF          = q_maskCPF;
 window.q_maskCNPJ         = q_maskCNPJ;
 window.q_maskMoney        = q_maskMoney;
+window.renderConteudo     = renderConteudo;
 
 initNavigation();
 initAuth();
