@@ -14,7 +14,7 @@ import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
 import { syncKolmeya } from './kolmeya.js';
-import { can, DEFAULT_PERMISSIONS } from './permissions.js';
+import { can, perm, DEFAULT_PERMISSIONS } from './permissions.js';
 import { resetUniversidade } from '../pages/universidade.js';
 
 /**
