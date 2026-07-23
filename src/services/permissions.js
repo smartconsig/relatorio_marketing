@@ -46,6 +46,10 @@ export const perm = {
   conteudoEditar:      () => can('conteudo_editar')     || can('admin_usuarios') || can('admin_grupos'),
   conteudoAprovar:     () => can('conteudo_aprovar')    || can('admin_usuarios') || can('admin_grupos'),
 
+  // Central de BMs (números oficiais)
+  bmVisualizar:        () => can('bm_visualizar') || can('admin_usuarios') || can('admin_grupos'),
+  bmEditar:            () => can('bm_editar')     || can('admin_usuarios') || can('admin_grupos'),
+
   // Liberação de Margem Master
   liberacaoMargem:     () => can('liberacao_margem') || can('admin_usuarios') || can('admin_grupos'),
 
@@ -90,6 +94,8 @@ export const DEFAULT_PERMISSIONS = {
   conteudo_visualizar: false,
   conteudo_editar: false,
   conteudo_aprovar: false,
+  bm_visualizar: false,
+  bm_editar: false,
   liberacao_margem: false,
   admin_usuarios: false,
   admin_grupos: false,

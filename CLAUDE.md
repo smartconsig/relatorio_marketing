@@ -91,9 +91,14 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `conteudo_cards` | Cards da Esteira de Conteúdo (kanban de criação) |
 | `conteudo_eventos` | Histórico do card: movimentações, aprovações e comentários |
 | `conteudo_anexos` | Metadados das artes anexadas aos cards |
+| `bm_contas` | Central de BMs: uma linha por Business Manager (toggle ativa + motivo) |
+| `bm_numeros` | Números oficiais de cada BM: status, qualidade (manual), tier |
+| `bm_eventos` | Histórico das BMs/números: criação, banimento, troca de qualidade |
 | tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
 
 **Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). O outro bucket é `quitacoes-docs`.
+
+> ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
 > ⚠️ **Migrations parcialmente incompletas**: `profiles` e `grupos_acesso` (em `001_user_management.sql`), as tabelas `uni_*` e as tabelas `conteudo_*` (em `002_conteudo.sql` e `003_conteudo_anexos.sql`) têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas duas precisam ser criadas à mão.
 
@@ -149,6 +154,7 @@ relatorio_marketing/
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
 │   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
+│   │   ├── bm-svc.js         # Central de BMs: BMs, números oficiais e eventos (sem snapshot)
 │   │   ├── bsc-svc.js        # Balanced Scorecard service
 │   │   ├── action-log.js     # Log de eventos do sistema
 │   │   └── session-timeout.js# Auto-logout por inatividade
@@ -166,6 +172,7 @@ relatorio_marketing/
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── quitacoes-page.js # Gestão de quitações
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
+│   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
 │   │   ├── divergences.js    # Divergências de dados
 │   │   ├── history-panel.js  # Log de alterações
 │   │   ├── admin-page.js     # Gestão de usuários e grupos
@@ -220,6 +227,12 @@ relatorio_marketing/
 - **`conteudo_eventos` é a fonte de tudo**: histórico do card, chat (tipo `comentario`) e as futuras métricas de gargalo saem da mesma tabela, em ordem cronológica.
 - **`coluna_desde`** é reiniciado a cada troca de etapa — é a base do "parado há X dias" e do tempo médio por etapa.
 - **Permissões próprias**: `conteudo_visualizar`, `conteudo_editar` e `conteudo_aprovar`; admin tem as três por padrão.
+
+**Central de BMs**: controle das Business Managers da API oficial da Meta/WhatsApp e dos seus números oficiais — nasceu da dor de banimento. Padrão igual ao da Esteira: grava direto no Supabase (sem snapshot), revalida a cada 30s e ao focar a aba. Pontos de desenho:
+- **Toggle liga/desliga com motivo**: desligar uma BM (`ativa = false`) exige um motivo (`banida` / `desativada` / `em_analise`) — é o que separa "a Meta baniu" de "parei de usar" na análise. Religar é 1 clique.
+- **`bm_eventos` é a fonte do histórico**: criação, banimento e cada troca de status/qualidade de número viram evento — é o que responde "quantos números perdi no mês" e "quanto tempo dura até banir".
+- **Qualidade é manual**: o campo `qualidade` do número é preenchido à mão olhando o painel da Meta; o campo já está pronto para uma futura automação via Edge Function + token WhatsApp Business, sem migração nova.
+- **Permissões próprias**: `bm_visualizar` e `bm_editar`; admin tem as duas. Excluir BM/número é só admin.
 
 **Permissões**: cada grupo tem um JSON de permissões (`grupos_acesso.permissoes`). A função `can('chave')` verifica acesso e o objeto `perm` expõe atalhos semânticos nomeados (`perm.isAdmin()`, `perm.visaoGeral()`, `perm.procvConfirmar()`, …). `navigation.js` esconde/mostra elementos da UI com base nisso.
 

@@ -15,6 +15,7 @@ import { renderAdminPage, initAdminPage } from './pages/admin-page.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { renderConteudo } from './pages/conteudo-page.js';
+import { renderBMs } from './pages/bm-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
 import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './pages/universidade.js';
 import { renderUniAdmin } from './pages/uni-admin.js';
@@ -39,6 +40,7 @@ const TITLES = {
   gestao:       'Gestão de Classificações',
   quitacoes:    'Quitações',
   conteudo:     'Esteira de Conteúdo',
+  bms:          'Central de BMs',
   propostas:    'Propostas de Marketing',
   goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
@@ -109,6 +111,7 @@ export function navigate(sec) {
   if (sec === 'admin')        renderAdminPage();
   if (sec === 'quitacoes')   renderQuitacoes();
   if (sec === 'conteudo')    renderConteudo();
+  if (sec === 'bms')         renderBMs();
   if (sec === 'liberacao')   renderLiberacao();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
@@ -128,6 +131,7 @@ export function applyPermissionsToUI() {
     gestao:    () => canSeeGestao(),
     quitacoes: () => can('quitacoes_visualizar'),
     conteudo:  () => perm.conteudoVisualizar(),
+    bms:       () => perm.bmVisualizar(),
     perfil:    () => can('perfil_visualizar'),
     propostas: () => can('propostas'),
     goals:     () => can('metas_visualizar'),
@@ -360,6 +364,10 @@ const FLOAT_NAV_ITEMS = [
   {
     sec: 'conteudo', title: 'Conteúdo', badgeId: null,
     svg: '<rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/>',
+  },
+  {
+    sec: 'bms', title: 'BMs', badgeId: null,
+    svg: '<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/>',
   },
   {
     group: 'comercial', title: 'Comercial',
