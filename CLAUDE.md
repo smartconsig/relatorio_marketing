@@ -88,9 +88,14 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `quitacoes_clientes` | Registros de quitação/pagamento |
+| `conteudo_cards` | Cards da Esteira de Conteúdo (kanban de criação) |
+| `conteudo_eventos` | Histórico do card: movimentações, aprovações e comentários |
+| `conteudo_anexos` | Metadados das artes anexadas aos cards |
 | tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
 
-> ⚠️ **Migrations incompletas no repo**: só `profiles`, `grupos_acesso` (em `001_user_management.sql`) e as tabelas `uni_*` têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas tabelas precisam ser criadas à mão.
+**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). O outro bucket é `quitacoes-docs`.
+
+> ⚠️ **Migrations parcialmente incompletas**: `profiles` e `grupos_acesso` (em `001_user_management.sql`), as tabelas `uni_*` e as tabelas `conteudo_*` (em `002_conteudo.sql` e `003_conteudo_anexos.sql`) têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas duas precisam ser criadas à mão.
 
 ---
 
@@ -111,6 +116,7 @@ relatorio_marketing/
 ├── supabase/
 │   ├── functions/            # Edge Functions: smart-sync, invite-user, delete-user, kolmeya-reports
 │   ├── migrations/           # SQL de criação de tabelas e RLS
+│   │                         # 002_conteudo.sql, 003_conteudo_anexos.sql (Esteira de Conteúdo)
 │   └── quitacoes_clientes.sql # SQL solto (fora de migrations/) da tabela quitacoes_clientes
 ├── src/
 │   ├── main.js               # Ponto de entrada; expõe funções no window.*
@@ -142,6 +148,7 @@ relatorio_marketing/
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
+│   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
 │   │   ├── bsc-svc.js        # Balanced Scorecard service
 │   │   ├── action-log.js     # Log de eventos do sistema
 │   │   └── session-timeout.js# Auto-logout por inatividade
@@ -158,6 +165,7 @@ relatorio_marketing/
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── quitacoes-page.js # Gestão de quitações
+│   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── divergences.js    # Divergências de dados
 │   │   ├── history-panel.js  # Log de alterações
 │   │   ├── admin-page.js     # Gestão de usuários e grupos
@@ -207,6 +215,12 @@ relatorio_marketing/
 
 **reviewReason / precedência de overrides**: overrides manuais têm prioridade absoluta. `classifications.js` grava `reviewReason` com valores especiais (`'manual'`, `'reclassified'`) que vencem qualquer reclassificação automática ao rebuildar o `state.result`.
 
+**Esteira de Conteúdo**: kanban da produção de conteúdo do time de marketing, em 7 etapas — `ideias`, `planejado`, `producao`, `revisao`, `aprovacao`, `agendado`, `publicado`. Pontos de desenho que não são óbvios lendo o código:
+- **"Ajuste" é um estado, não uma coluna**: card reprovado volta para *Em produção* com `em_ajuste = true` e o motivo em `ajuste_motivo`. A taxa de retrabalho sai do log de eventos, não de uma coluna própria.
+- **`conteudo_eventos` é a fonte de tudo**: histórico do card, chat (tipo `comentario`) e as futuras métricas de gargalo saem da mesma tabela, em ordem cronológica.
+- **`coluna_desde`** é reiniciado a cada troca de etapa — é a base do "parado há X dias" e do tempo médio por etapa.
+- **Permissões próprias**: `conteudo_visualizar`, `conteudo_editar` e `conteudo_aprovar`; admin tem as três por padrão.
+
 **Permissões**: cada grupo tem um JSON de permissões (`grupos_acesso.permissoes`). A função `can('chave')` verifica acesso e o objeto `perm` expõe atalhos semânticos nomeados (`perm.isAdmin()`, `perm.visaoGeral()`, `perm.procvConfirmar()`, …). `navigation.js` esconde/mostra elementos da UI com base nisso.
 
 ---
@@ -250,7 +264,8 @@ O dev server usa polling de arquivos (`usePolling: true`) — necessário no Win
 - **Estado não é reativo**: alterar `state.x` não dispara re-render automaticamente; é necessário chamar a função de render manualmente
 - **Parsing de Excel é frágil**: `buildResult.js` depende de colunas com nomes exatos nas planilhas importadas; mudança de layout quebra o import silenciosamente
 - **Classificações por CPF**: `classifications.js` salva overrides no Supabase e os mescla sobre o estado local — cuidado ao limpar/rebuildar `state.result` sem replicar as classificações
-- **Tema claro/escuro**: controlado por classe `light-theme` no `<body>`; CSS usa variáveis definidas em `theme.css` — ao adicionar novos componentes, sempre usar as variáveis, nunca cores fixas
+- **Tema claro/escuro**: controlado pelo atributo `data-theme="light"` no elemento raiz (`<html>`), gravado em `localStorage` na chave `sc_theme` — **não** por classe no `<body>`. O CSS usa as variáveis de `theme.css`; ao adicionar novos componentes, sempre usar as variáveis, nunca cores fixas
+- **Esteira de Conteúdo não passa pelo snapshot**: grava direto em `conteudo_cards`/`conteudo_eventos`/`conteudo_anexos` a cada ação, e revalida sozinha a cada 30s e ao focar a aba. É o padrão a seguir em features novas — ver a seção do bug recorrente abaixo
 - **Branches**: a branch de trabalho **e** de produção é **`main`** (contém toda a estrutura modular em `src/`). ⚠️ A branch `refactor/modular` **NÃO é ativa** — é um snapshot congelado do app monolítico antigo (só `index.html`, parado em 05/mai) de antes da modularização; `main` descende dela e está ~212 commits à frente. Nunca editar código em `refactor/modular`. Trabalhar sempre no worktree de `main`
 - **Deploy via Vercel**: o app em produção é servido pela Vercel a partir da branch `main`. Commits feitos apenas localmente **não aparecem em produção** — sempre fazer `git push origin main` após o commit para que a Vercel dispare o deploy automaticamente. O source da branch `main` fica no worktree `.claude/worktrees/interesting-burnell-728cd3`; commits nessa pasta precisam ser pushados para o repositório remoto `https://github.com/smartconsig/relatorio_marketing.git`
 - **Hierarquia de lojas desatualizada**: o objeto `HIERARCHY` em `src/config/status.js` contém lojas e supervisores que não refletem a realidade atual — não usar como referência
@@ -270,7 +285,6 @@ Isso aconteceu repetidamente, especialmente na funcionalidade de classificação
 ## O que ainda precisa ser preenchido manualmente
 
 - **Decisões de arquitetura**: o core nasceu em JS vanilla e o Preact foi adotado depois para componentes `.jsx` — qual o plano? Migrar as páginas para Preact aos poucos ou manter o híbrido?
-- **Versionar o CLAUDE.md**: hoje o arquivo está **untracked** (não está commitado nem em `main` nem em `refactor/modular`) — decidir commitá-lo em `main` para não se perder
 - **Permissões mapeadas**: lista completa das chaves de permissão existentes em `grupos_acesso.permissoes` e o que cada uma libera na interface (pode ser extraído do código)
 - **Hierarquia de lojas atualizada**: o objeto `HIERARCHY` em `src/config/status.js` está desatualizado — substituir pela estrutura real de lojas, supervisores e gerentes
 - **Sincronização Meta Ads**: a sincronização é sempre manual (disparada pelo usuário) ou há alguma automação?
