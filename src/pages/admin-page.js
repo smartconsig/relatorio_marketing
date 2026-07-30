@@ -36,6 +36,7 @@ const PERM_TREE = [
     { key: 'metas_editar',     label: 'Editar' },
   ]},
   { key: 'bsc',                  label: 'Ranking BSC' },
+  { key: 'parceiros',            label: 'Ranking Parceiros' },
   { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
   { key: 'quitacoes_visualizar', label: 'Quitações' },
   { label: 'Esteira de Conteúdo', children: [
@@ -764,6 +765,7 @@ function _summarizePerms(permissoes) {
     { key: 'propostas',            label: 'Propostas' },
     { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
+    { key: 'parceiros',            label: 'Parceiros' },
     { key: 'quitacoes_visualizar',     label: 'Quitações' },
     { key: 'conteudo_visualizar',      label: 'Conteúdo' },
     { key: 'bm_visualizar',            label: 'BMs' },

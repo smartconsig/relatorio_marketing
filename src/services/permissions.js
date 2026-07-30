@@ -26,7 +26,7 @@ export const perm = {
   metasVisualizar:     () => can('metas_visualizar'),
   metasEditar:         () => can('metas_editar'),
   bsc:                 () => can('bsc'),
-  parceiros:           () => can('parceiros') || can('bsc'),
+  parceiros:           () => can('parceiros'),
 
   // Gestão
   procvVisualizar:     () => can('gestao_procv_visualizar'),
