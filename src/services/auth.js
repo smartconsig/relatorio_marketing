@@ -10,6 +10,7 @@ import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
 import { initBSC } from '../pages/bsc-page.js';
+import { initParceiros } from '../pages/parceiros-page.js';
 import { renderLastSystemEvent } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
@@ -95,6 +96,9 @@ export function toggleTheme() {
 export async function onAuthenticated() {
   // BSC — carrega em paralelo, não bloqueia o resto
   initBSC();
+
+  // Ranking Parceiros — carrega em paralelo, não bloqueia o resto
+  initParceiros();
 
   // Logs de sistema — carrega em paralelo, não bloqueia
   renderLastSystemEvent('import-last-log', '__import__');

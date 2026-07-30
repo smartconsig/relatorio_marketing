@@ -26,6 +26,7 @@ export const perm = {
   metasVisualizar:     () => can('metas_visualizar'),
   metasEditar:         () => can('metas_editar'),
   bsc:                 () => can('bsc'),
+  parceiros:           () => can('parceiros') || can('bsc'),
 
   // Gestão
   procvVisualizar:     () => can('gestao_procv_visualizar'),
@@ -89,6 +90,7 @@ export const DEFAULT_PERMISSIONS = {
   metas_visualizar: true,
   metas_editar: false,
   bsc: true,
+  parceiros: true,
   perfil_visualizar: false,
   quitacoes_visualizar: false,
   conteudo_visualizar: false,

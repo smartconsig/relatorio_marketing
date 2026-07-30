@@ -1,0 +1,73 @@
+/* ══════════════════════════════════════════════════════
+   PARCEIROS — Ranking Page Styles (espelha bsc.css)
+   Reaproveita .bsc-import-bar / .bsc-import-period / .bsc-import-info
+   ══════════════════════════════════════════════════════ */
+
+/* ── Logo (quadrado arredondado, estilo empresa) ─────── */
+.parc-logo {
+  border-radius: 14px; overflow: hidden; flex-shrink: 0;
+  position: relative; background: var(--surface2);
+  border: 3px solid var(--border);
+}
+.parc-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.parc-logo-fallback {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-weight: 700; color: #fff; font-size: 22px;
+}
+.parc-logo-edit {
+  position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--red); border: 2px solid var(--surface);
+  color: #fff; font-size: 11px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  transition: transform 0.15s;
+}
+.parc-logo-edit:hover { transform: scale(1.12); }
+
+/* ── Pódio (Top 3) ───────────────────────────────────── */
+.parc-podium {
+  display: grid; grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: end; gap: 14px; margin-bottom: 8px;
+}
+.parc-podium-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 16px 16px; text-align: center;
+  transition: transform 0.2s;
+}
+.parc-podium-card:hover { transform: translateY(-3px); }
+.parc-podium-1st { padding-top: 28px; box-shadow: 0 0 28px rgba(245,158,11,.22); }
+.parc-podium-medal { font-size: 32px; line-height: 1; }
+.parc-podium-rank  { font-family: var(--font-h); font-size: 12px; font-weight: 700; margin-top: 8px; letter-spacing: .3px; }
+.parc-podium-name {
+  font-family: var(--font-h); font-size: 15px; font-weight: 700;
+  color: var(--white); margin: 4px 0 0; line-height: 1.3;
+}
+.parc-podium-1st .parc-podium-name { font-size: 17px; }
+
+/* ── Bloco de valores (uso interno, aparece no toggle) ─ */
+.parc-metrics {
+  border-top: 1px solid var(--border); padding-top: 10px; margin-top: 12px;
+  display: flex; flex-direction: column; gap: 4px; text-align: left;
+}
+.parc-metrics > div { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; }
+.parc-metrics span  { color: var(--gray); }
+.parc-metrics strong { color: var(--white); font-family: var(--font-h); white-space: nowrap; }
+/* Variante horizontal usada nos cards da lista */
+.parc-metrics-row { flex-direction: row; flex-wrap: wrap; gap: 4px 18px; border-top: none; padding-top: 6px; margin-top: 6px; }
+.parc-metrics-row > div { justify-content: flex-start; gap: 6px; }
+
+/* ── Lista (classificação completa) ──────────────────── */
+.parc-list { display: flex; flex-direction: column; gap: 8px; }
+.parc-list-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; transition: transform 0.15s;
+}
+.parc-list-card:hover { transform: translateX(3px); }
+.parc-list-rank { font-family: var(--font-h); font-size: 22px; font-weight: 900; width: 32px; flex-shrink: 0; text-align: center; }
+.parc-list-info { flex: 1; min-width: 0; }
+.parc-list-name { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); }
+
+/* ── Responsivo ──────────────────────────────────────── */
+@media (max-width: 720px) {
+  .parc-podium { grid-template-columns: 1fr; }
+}
