@@ -6,6 +6,7 @@ import { saveParceiros, loadParceiros } from '../services/parceiros-svc.js';
 import { sb }                from '../services/supabase.js';
 
 const STORAGE_BASE = 'https://gfxfuzmoywdsiyctkrux.supabase.co/storage/v1/object/public';
+const LOGO_URL     = `${STORAGE_BASE}/assets/logo.png`;
 
 // Modo "mostrar valores" — desligado por padrão (tela limpa para print). Uso interno.
 let _showValues = false;
@@ -187,6 +188,7 @@ function importBar() {
         <div class="bsc-import-info">${updatedStr}</div>
       </div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        ${hasData ? `<button class="btn-sm btn-ghost" onclick="enterParceirosTop()">🏆 Top Parceiros</button>` : ''}
         ${hasData ? `<button class="btn-sm btn-ghost" onclick="toggleParceirosValues()">${_showValues ? '🙈 Esconder valores' : '👁 Mostrar valores'}</button>` : ''}
         <button class="btn-sm btn-ghost" onclick="importParceirosFile()">📥 Importar planilha</button>
         <input type="file" id="parc-file-input" accept=".csv" style="display:none" onchange="onParceirosFileChange(event)">
@@ -255,4 +257,100 @@ export function renderParceiros() {
   }
 
   el.innerHTML = h;
+}
+
+// ── Top Parceiros (overlay tela cheia, estilo modo TV) ──────────────────────
+
+const PARC_TOP_OPTIONS = [10, 25, 50];
+let _topN      = 10;
+let _parcClock = null;
+
+export function enterParceirosTop() {
+  if (!state.parceiros?.partners?.length) { toast('Importe o ranking antes de abrir o Top Parceiros', 'err'); return; }
+  _topN = 10;
+  document.getElementById('parc-tv-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  _renderParcTop();
+  updateParcClock();
+  _parcClock = setInterval(updateParcClock, 1000);
+  document.addEventListener('keydown', _parcEscHandler);
+}
+
+export function exitParceirosTop() {
+  document.getElementById('parc-tv-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+  clearInterval(_parcClock);
+  document.removeEventListener('keydown', _parcEscHandler);
+}
+
+export function setParceirosTopN(n) {
+  _topN = n;
+  _renderParcTop();
+}
+
+function _parcEscHandler(e) {
+  if (e.key === 'Escape') exitParceirosTop();
+}
+
+function updateParcClock() {
+  const el = document.getElementById('parc-tv-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function parcTopPodiumCard(p) {
+  if (!p) return '<div></div>';
+  const rc  = rankColor(p.rank);
+  const is1 = p.rank === 1;
+  return `
+    <div class="parc-tv-podium-card ${is1 ? 'parc-tv-podium-1st' : ''}" style="border-top:5px solid ${rc}">
+      <div class="parc-tv-medal">${medalIcon(p.rank)}</div>
+      <div style="display:flex;justify-content:center;margin:10px 0">
+        ${logoHtml(p, is1 ? 120 : 96, false)}
+      </div>
+      <div class="parc-tv-podium-rank" style="color:${rc}">${p.rank}º lugar</div>
+      <div class="parc-tv-podium-name">${p.nome}</div>
+    </div>`;
+}
+
+function parcTopListCard(p) {
+  const rc = rankColor(p.rank);
+  return `
+    <div class="parc-tv-list-card" style="border-top:3px solid ${rc}">
+      <div class="parc-tv-list-rank" style="color:${rc}">${p.rank || '–'}</div>
+      ${logoHtml(p, 56, false)}
+      <div class="parc-tv-list-name">${p.nome}</div>
+    </div>`;
+}
+
+function _renderParcTop() {
+  const all = (state.parceiros?.partners || [])
+    .slice()
+    .sort((a, b) => (a.rank - b.rank) || (b.integrado - a.integrado));
+  const shown = all.slice(0, _topN);
+
+  const top3   = shown.filter(p => p.rank >= 1 && p.rank <= 3).sort((a, b) => a.rank - b.rank);
+  const rest   = shown.filter(p => !(p.rank >= 1 && p.rank <= 3));
+  const podium = [top3[1], top3[0], top3[2]]; // 2º-1º-3º (mantém posições vazias)
+
+  const buttons = PARC_TOP_OPTIONS.map(n => {
+    const disabled = all.length < n && n !== PARC_TOP_OPTIONS[0];
+    return `<button class="parc-tv-qbtn ${n === _topN ? 'parc-tv-qbtn-on' : ''}"
+      ${disabled ? 'disabled' : ''} onclick="setParceirosTopN(${n})">Top ${n}</button>`;
+  }).join('');
+
+  document.getElementById('parc-tv-body').innerHTML = `
+    <div class="parc-tv-header">
+      <img src="${LOGO_URL}" class="parc-tv-logo" onerror="this.style.display='none'" alt="Smart Consig">
+      <div class="parc-tv-title">🏆 TOP PARCEIROS</div>
+      <div id="parc-tv-clock" class="parc-tv-clock"></div>
+    </div>
+    <div class="parc-tv-qbar">${buttons}</div>
+    <div class="parc-tv-content">
+      <div class="parc-tv-podium">${podium.map(parcTopPodiumCard).join('')}</div>
+      ${rest.length ? `
+        <div class="parc-tv-strip-title">Top 4 – ${shown[shown.length - 1]?.rank || _topN}</div>
+        <div class="parc-tv-grid">${rest.map(parcTopListCard).join('')}</div>` : ''}
+    </div>
+    <button class="parc-tv-exit-btn" onclick="exitParceirosTop()" title="Sair (Esc)">✕</button>
+  `;
 }

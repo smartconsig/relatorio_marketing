@@ -88,6 +88,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `quitacoes_clientes` | Registros de quitação/pagamento |
+| `parceiros_data` | Ranking de Parceiros: uma única linha com o ranking inteiro em JSON (mesmo padrão de `bsc_data`) |
 | `conteudo_cards` | Cards da Esteira de Conteúdo (kanban de criação) |
 | `conteudo_eventos` | Histórico do card: movimentações, aprovações e comentários |
 | `conteudo_anexos` | Metadados das artes anexadas aos cards |
@@ -96,7 +97,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `bm_eventos` | Histórico das BMs/números: criação, banimento, troca de qualidade |
 | tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
 
-**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). O outro bucket é `quitacoes-docs`.
+**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs` e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
@@ -142,6 +143,7 @@ relatorio_marketing/
 │   │   ├── calcFunil.js      # Análise de funil de vendas
 │   │   ├── calcPerfil.js     # Clusterização de perfil de cliente
 │   │   ├── parseBSC.js       # Parse do Balanced Scorecard
+│   │   ├── parseParceiros.js # Parse do CSV "Relatório de produção - Parceiros"
 │   │   └── storage.js        # Persistência em localStorage
 │   ├── services/
 │   │   ├── auth.js           # Login, logout, sessão, loadUserProfile
@@ -153,6 +155,7 @@ relatorio_marketing/
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
+│   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
 │   │   ├── bm-svc.js         # Central de BMs: BMs, números oficiais e eventos (sem snapshot)
 │   │   ├── bsc-svc.js        # Balanced Scorecard service
@@ -171,6 +174,7 @@ relatorio_marketing/
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── quitacoes-page.js # Gestão de quitações
+│   │   ├── parceiros-page.js # Ranking de Parceiros (pódio + lista + overlay "Top Parceiros")
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
 │   │   ├── divergences.js    # Divergências de dados
@@ -233,6 +237,13 @@ relatorio_marketing/
 - **`bm_eventos` é a fonte do histórico**: criação, banimento e cada troca de status/qualidade de número viram evento — é o que responde "quantos números perdi no mês" e "quanto tempo dura até banir".
 - **Qualidade é manual**: o campo `qualidade` do número é preenchido à mão olhando o painel da Meta; o campo já está pronto para uma futura automação via Edge Function + token WhatsApp Business, sem migração nova.
 - **Permissões próprias**: `bm_visualizar` e `bm_editar`; admin tem as duas. Excluir BM/número é só admin.
+
+**Ranking de Parceiros**: ranking das produções por parceiro, alimentado por um **CSV** próprio ("Relatório de produção - Parceiros", separador `;`, codificação windows-1252) importado na tela — **não** vem do fluxo de Excel/Ecorban do resto do sistema. Pontos de desenho:
+- **Parser dedicado** (`parseParceiros.js`): colunas de valores em R$ (`reprovado`, `clienteDesistiu`, `pendencia`, `riscoPerda`, `emAndamento`, `integrado`, `projecao`) + `rank` (coluna RANKING da planilha, já ordenada por INTEGRADO). Rodapé "TOTAL" e linhas "STATUS" são ignorados.
+- **Persistência estilo `bsc_data`**: o ranking inteiro é serializado em JSON numa única linha da tabela `parceiros_data` (`parceiros-svc.js`), além de um cache em `localStorage` (`sc_parceiros_v1`). Ao abrir, mostra o local na hora e depois substitui pelo do Supabase se for mais novo (compara `importedAt`).
+- **Sem "nota"**: diferente do BSC, parceiro não tem score — o ranking é por posição/valor Integrado. Logos ficam no bucket público `avatars/parceiros/<slug>.jpg` (editáveis pela UI) com fallback de iniciais.
+- **"Mostrar valores"** (`_showValues`, padrão desligado): a tela nasce limpa para print/TV; o toggle revela as métricas em R$.
+- **Overlay "Top Parceiros"**: tela cheia estilo "modo TV" do BSC (fundo branco fixo, cabeçalho + relógio, pódio 2º-1º-3º + grid dos demais, **só posição, sem R$**), com botões de quantidade **Top 10 / 25 / 50** (desabilita a opção maior que o total). Só exibição — não persiste nada. Sai no `✕` ou `Esc`.
 
 **Permissões**: cada grupo tem um JSON de permissões (`grupos_acesso.permissoes`). A função `can('chave')` verifica acesso e o objeto `perm` expõe atalhos semânticos nomeados (`perm.isAdmin()`, `perm.visaoGeral()`, `perm.procvConfirmar()`, …). `navigation.js` esconde/mostra elementos da UI com base nisso.
 

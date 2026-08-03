@@ -67,7 +67,77 @@
 .parc-list-info { flex: 1; min-width: 0; }
 .parc-list-name { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); }
 
+/* ══════════════════════════════════════════════════════
+   TOP PARCEIROS — Overlay tela cheia (espelha o modo TV do BSC)
+   Fundo branco fixo de propósito: modo limpo para print/TV.
+   ══════════════════════════════════════════════════════ */
+#parc-tv-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: none; flex-direction: column;
+  background: #ffffff;
+  overflow: hidden; padding: 24px 32px 20px;
+  font-family: var(--font-b);
+}
+#parc-tv-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* ── Cabeçalho ───────────────────────────────────────── */
+.parc-tv-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; flex-shrink: 0;
+}
+.parc-tv-logo  { height: 44px; object-fit: contain; }
+.parc-tv-title { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
+.parc-tv-clock { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: #555; min-width: 110px; text-align: right; }
+
+/* ── Barra de quantidade (Top 10 / 25 / 50) ──────────── */
+.parc-tv-qbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
+.parc-tv-qbtn {
+  font-family: var(--font-h); font-size: 14px; font-weight: 700;
+  padding: 8px 20px; border-radius: 999px; cursor: pointer;
+  background: #f4f4f5; color: #555; border: 1px solid #e4e4e7;
+  transition: all 0.15s;
+}
+.parc-tv-qbtn:hover:not(:disabled) { background: #e4e4e7; color: #111; }
+.parc-tv-qbtn-on { background: #111; color: #fff; border-color: #111; }
+.parc-tv-qbtn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Conteúdo (centraliza pódio + faixa) ─────────────── */
+.parc-tv-content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0; min-height: 0; overflow-y: auto; }
+
+/* ── Pódio Top 3 ─────────────────────────────────────── */
+.parc-tv-podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: end; gap: 16px; }
+.parc-tv-podium-card {
+  background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 16px;
+  padding: 22px 20px 20px; text-align: center;
+}
+.parc-tv-podium-1st { padding-top: 30px; box-shadow: 0 0 32px rgba(245,158,11,.22); }
+.parc-tv-medal { font-size: 40px; line-height: 1; }
+.parc-tv-podium-rank { font-family: var(--font-h); font-size: 13px; font-weight: 700; margin-top: 8px; letter-spacing: .3px; }
+.parc-tv-podium-name { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: #111; margin-top: 4px; line-height: 1.3; }
+.parc-tv-podium-1st .parc-tv-podium-name { font-size: 21px; }
+
+/* ── Faixa Top 4 – N (grid que quebra em linhas) ─────── */
+.parc-tv-strip-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin: 22px 0 12px; }
+.parc-tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.parc-tv-list-card {
+  background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 12px;
+  padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.parc-tv-list-rank { font-family: var(--font-h); font-size: 20px; font-weight: 900; }
+.parc-tv-list-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; text-align: center; line-height: 1.25; }
+
+/* ── Botão sair ──────────────────────────────────────── */
+.parc-tv-exit-btn {
+  position: fixed; top: 16px; right: 16px;
+  background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);
+  color: #555; border-radius: 6px; padding: 6px 12px; font-size: 12px;
+  cursor: pointer; font-family: var(--font-h); transition: all 0.15s;
+}
+.parc-tv-exit-btn:hover { background: rgba(0,0,0,.12); color: #111; }
+
 /* ── Responsivo ──────────────────────────────────────── */
 @media (max-width: 720px) {
   .parc-podium { grid-template-columns: 1fr; }
+  .parc-tv-podium { grid-template-columns: 1fr; }
+  .parc-tv-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
