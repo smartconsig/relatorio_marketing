@@ -118,8 +118,9 @@
 
 /* ── Faixa Top 4 – N (grid que quebra em linhas) ─────── */
 .parc-tv-strip-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin: 22px 0 12px; }
-.parc-tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.parc-tv-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .parc-tv-list-card {
+  flex: 0 0 150px;
   background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 12px;
   padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
@@ -139,5 +140,5 @@
 @media (max-width: 720px) {
   .parc-podium { grid-template-columns: 1fr; }
   .parc-tv-podium { grid-template-columns: 1fr; }
-  .parc-tv-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .parc-tv-list-card { flex-basis: 120px; }
 }
