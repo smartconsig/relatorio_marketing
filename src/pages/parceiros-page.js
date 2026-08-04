@@ -55,21 +55,34 @@ function logoHtml(p, size, editable = false) {
     </div>`;
 }
 
-function metricsHtml(p, compact = false) {
-  const rows = compact
-    ? [['Integrado', p.integrado], ['Em andamento', p.emAndamento], ['Projeção', p.projecao]]
-    : [
-        ['Reprovado', p.reprovado],
-        ['Cliente desistiu', p.clienteDesistiu],
-        ['Pendência', p.pendencia],
-        ['Risco de perda', p.riscoPerda],
-        ['Em andamento', p.emAndamento],
-        ['Integrado', p.integrado],
-        ['Projeção', p.projecao],
-      ];
-  const cls = compact ? 'parc-metrics parc-metrics-row' : 'parc-metrics';
-  return `<div class="${cls}">${rows.map(([l, v]) =>
-    `<div><span>${l}</span><strong>${fmtBRL(v)}</strong></div>`).join('')}</div>`;
+// Anota em cada parceiro a diferença de INTEGRADO para o parceiro imediatamente
+// acima no ranking (`_gapAbove`) e o rank desse parceiro de cima (`_aboveRank`).
+// O líder fica com `_gapAbove = null`. Deve receber a lista completa.
+function annotateGaps(partners) {
+  const sorted = partners.slice()
+    .sort((a, b) => (a.rank - b.rank) || (b.integrado - a.integrado));
+  sorted.forEach((p, idx) => {
+    if (idx === 0) {
+      p._gapAbove = null;
+      p._aboveRank = null;
+    } else {
+      const above = sorted[idx - 1];
+      p._gapAbove = above.integrado - p.integrado;
+      p._aboveRank = above.rank;
+    }
+  });
+}
+
+// Número único em destaque: diferença de produção (Integrado) para o de cima.
+function gapHtml(p, compact = false) {
+  const cls = 'parc-gap' + (compact ? ' parc-gap-compact' : '');
+  if (p._gapAbove == null) {
+    return `<div class="${cls} parc-gap-leader">🏆 Líder</div>`;
+  }
+  return `<div class="${cls}">
+    <span class="parc-gap-caption">atrás do ${p._aboveRank}º</span>
+    <strong class="parc-gap-value">− ${fmtBRL(p._gapAbove)}</strong>
+  </div>`;
 }
 
 // ── Logo edit (upload to Supabase Storage) ─────────────────────────────────
@@ -208,7 +221,7 @@ function podiumCard(p) {
       </div>
       <div class="parc-podium-rank" style="color:${rc}">${p.rank}º lugar</div>
       <div class="parc-podium-name">${p.nome}</div>
-      ${_showValues ? metricsHtml(p) : ''}
+      ${_showValues ? gapHtml(p) : ''}
     </div>`;
 }
 
@@ -220,8 +233,8 @@ function listCard(p) {
       ${logoHtml(p, 46, true)}
       <div class="parc-list-info">
         <div class="parc-list-name">${p.nome}</div>
-        ${_showValues ? metricsHtml(p, true) : ''}
       </div>
+      ${_showValues ? gapHtml(p, true) : ''}
     </div>`;
 }
 
@@ -241,6 +254,7 @@ export function renderParceiros() {
 
   const partners = state.parceiros.partners;
   partners.forEach((p, i) => { p._i = i; });
+  annotateGaps(partners);
 
   const top3 = partners.filter(p => p.rank >= 1 && p.rank <= 3).sort((a, b) => a.rank - b.rank);
   const rest = partners.filter(p => !(p.rank >= 1 && p.rank <= 3))
@@ -262,8 +276,9 @@ export function renderParceiros() {
 // ── Top Parceiros (overlay tela cheia, estilo modo TV) ──────────────────────
 
 const PARC_TOP_OPTIONS = [10, 25, 50];
-let _topN      = 10;
-let _parcClock = null;
+let _topN          = 10;
+let _topShowValues = false; // valores ocultos por padrão (tela limpa para print)
+let _parcClock     = null;
 
 export function enterParceirosTop() {
   if (!state.parceiros?.partners?.length) { toast('Importe o ranking antes de abrir o Top Parceiros', 'err'); return; }
@@ -288,6 +303,11 @@ export function setParceirosTopN(n) {
   _renderParcTop();
 }
 
+export function toggleParceirosTopValues() {
+  _topShowValues = !_topShowValues;
+  _renderParcTop();
+}
+
 function _parcEscHandler(e) {
   if (e.key === 'Escape') exitParceirosTop();
 }
@@ -309,7 +329,18 @@ function parcTopPodiumCard(p) {
       </div>
       <div class="parc-tv-podium-rank" style="color:${rc}">${p.rank}º lugar</div>
       <div class="parc-tv-podium-name">${p.nome}</div>
+      ${_topShowValues ? tvGapHtml(p) : ''}
     </div>`;
+}
+
+function tvGapHtml(p) {
+  if (p._gapAbove == null) {
+    return `<div class="parc-tv-gap parc-tv-gap-leader">🏆 Líder</div>`;
+  }
+  return `<div class="parc-tv-gap">
+    <span class="parc-tv-gap-caption">atrás do ${p._aboveRank}º</span>
+    <strong class="parc-tv-gap-value">− ${fmtBRL(p._gapAbove)}</strong>
+  </div>`;
 }
 
 function parcTopListCard(p) {
@@ -319,6 +350,7 @@ function parcTopListCard(p) {
       <div class="parc-tv-list-rank" style="color:${rc}">${p.rank || '–'}</div>
       ${logoHtml(p, 56, false)}
       <div class="parc-tv-list-name">${p.nome}</div>
+      ${_topShowValues ? tvGapHtml(p) : ''}
     </div>`;
 }
 
@@ -326,6 +358,7 @@ function _renderParcTop() {
   const all = (state.parceiros?.partners || [])
     .slice()
     .sort((a, b) => (a.rank - b.rank) || (b.integrado - a.integrado));
+  annotateGaps(all);
   const shown = all.slice(0, _topN);
 
   const top3   = shown.filter(p => p.rank >= 1 && p.rank <= 3).sort((a, b) => a.rank - b.rank);
@@ -344,7 +377,11 @@ function _renderParcTop() {
       <div class="parc-tv-title">🏆 TOP PARCEIROS</div>
       <div id="parc-tv-clock" class="parc-tv-clock"></div>
     </div>
-    <div class="parc-tv-qbar">${buttons}</div>
+    <div class="parc-tv-qbar">
+      ${buttons}
+      <button class="parc-tv-qbtn ${_topShowValues ? 'parc-tv-qbtn-on' : ''}"
+        onclick="toggleParceirosTopValues()">${_topShowValues ? '🙈 Ocultar valores' : '👁 Valores'}</button>
+    </div>
     <div class="parc-tv-content">
       <div class="parc-tv-podium">${podium.map(parcTopPodiumCard).join('')}</div>
       ${rest.length ? `
