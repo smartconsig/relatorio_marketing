@@ -107,6 +107,22 @@
 }
 .bm-switch.on .bm-switch-knob { transform: translateX(18px); }
 
+/* ── Card do perfil (nível 1) ── */
+.bm-perfil { border-left-width: 4px; }
+.bm-perfil-nome { font-size: 15px; font-weight: 700; }
+
+.bm-perfil-body {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0 14px 14px 39px;
+}
+.bm-perfil-body > .bm-card { background: var(--surface2); }
+.bm-perfil-body > .bm-vazio-td { padding: 10px 0; }
+
+/* BM cujo perfil está fora do ar: indisponível, mas com estado preservado */
+.bm-card.perfil-off { opacity: .55; }
+
+.bm-add-bm { margin-top: 2px; }
+
 /* ── Corpo expandido: números ── */
 .bm-card-body { padding: 0 14px 14px 39px; }
 
@@ -193,6 +209,7 @@
 @media (max-width: 720px) {
   .bm-search { width: 100%; }
   .bm-row { grid-template-columns: 1fr; }
+  .bm-perfil-body { padding-left: 14px; }
   .bm-card-body { padding-left: 14px; overflow-x: auto; }
   .bm-table { min-width: 620px; }
 }

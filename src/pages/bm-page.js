@@ -2,31 +2,39 @@ import { perm } from '../services/permissions.js';
 import { toast } from '../utils/ui.js';
 import { showConfirm } from '../utils/confirm.js';
 import {
-  MOTIVOS_INATIVA, STATUS_NUMERO, QUALIDADES, TIERS,
+  MOTIVOS_INATIVA, MOTIVOS_PERFIL, STATUS_NUMERO, QUALIDADES, TIERS,
+  loadPerfis, createPerfil, updatePerfil, setPerfilAtivo, deletePerfil,
   loadBMs, createBM, updateBM, setBMAtiva, deleteBM,
   loadNumeros, createNumero, updateNumero, deleteNumero,
-  logEvento, loadEventos,
+  logEvento, loadEventos, loadEventosPerfil,
 } from '../services/bm-svc.js';
 
 /**
- * Central de BMs — controle das Business Managers e dos números oficiais.
+ * Central de BMs — hierarquia Perfil (Facebook) → BMs → números oficiais.
+ * Toda BM pertence a um perfil; perfil fora do ar deixa as BMs dele
+ * indisponíveis sem apagar o estado individual de cada uma.
  * Cada ação grava direto no Supabase (sem snapshot); a lista revalida
  * a cada 30s e ao voltar o foco para a aba.
  */
 
+let _perfis   = [];
 let _bms      = [];
 let _numeros  = [];
 let _busca    = '';
-let _filtro   = 'todas';          // todas | ativas | inativas
+let _filtro   = 'todos';          // todos | ativos | inativos (nível do perfil)
+let _abertosP = new Set();        // ids dos perfis expandidos
 let _abertas  = new Set();        // ids das BMs expandidas
+let _editPerfilId = null;         // perfil aberto no modal (null = novo)
 let _editBmId  = null;            // BM aberta no modal (null = nova)
+let _bmPerfilPre = null;          // perfil pré-selecionado ao criar BM
 let _editNumId = null;            // número aberto no modal (null = novo)
 let _numBmId   = null;            // BM dona do número em edição
-let _motivoBm  = null;            // BM aguardando o motivo da desativação
+let _motivoAlvo = null;           // { tipo: 'bm'|'perfil', obj } aguardando motivo
 let _built     = false;
 let _pollTimer = null;
 
-const MOTIVO_LABEL = Object.fromEntries(MOTIVOS_INATIVA.map(m => [m.key, m.label]));
+const MOTIVO_LABEL   = Object.fromEntries(MOTIVOS_INATIVA.map(m => [m.key, m.label]));
+const MOTIVO_P_LABEL = Object.fromEntries(MOTIVOS_PERFIL.map(m => [m.key, m.label]));
 const STATUS_LABEL = Object.fromEntries(STATUS_NUMERO.map(s => [s.key, s.label]));
 const QUAL_LABEL   = Object.fromEntries(QUALIDADES.map(q => [q.key, q.label]));
 const TIER_LABEL   = Object.fromEntries(TIERS.map(t => [t.key, t.label]));
@@ -64,18 +72,33 @@ function _numerosDa(bmId) {
   return _numeros.filter(n => n.bm_id === bmId);
 }
 
+function _bmsDo(perfilId) {
+  return _bms.filter(b => b.perfil_id === perfilId);
+}
+
+function _bmMatch(bm) {
+  const alvo = [bm.nome, bm.bm_id_meta, ..._numerosDa(bm.id).flatMap(n => [n.numero, n.nome_exibicao])]
+    .filter(Boolean).join(' ').toLowerCase();
+  return alvo.includes(_busca);
+}
+
 function _labelEvento(ev) {
   switch (ev.tipo) {
-    case 'bm_criada':        return `BM criada`;
-    case 'bm_desativada':    return `Desativada — ${MOTIVO_LABEL[ev.para] || ev.para || '—'}`;
-    case 'bm_reativada':     return `Reativada`;
-    case 'bm_editada':       return `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`;
-    case 'numero_add':       return `Número adicionado — ${ev.texto || ''}`;
-    case 'numero_status':    return `${ev.texto || 'Número'}: status ${STATUS_LABEL[ev.de] || ev.de} → ${STATUS_LABEL[ev.para] || ev.para}`;
-    case 'numero_qualidade': return `${ev.texto || 'Número'}: qualidade ${QUAL_LABEL[ev.de] || ev.de} → ${QUAL_LABEL[ev.para] || ev.para}`;
-    case 'numero_editado':   return `${ev.texto || 'Número'} editado`;
-    case 'numero_removido':  return `Número removido — ${ev.texto || ''}`;
-    default:                 return ev.texto || ev.tipo;
+    case 'perfil_criado':      return `Perfil criado`;
+    case 'perfil_desativado':  return `Perfil desativado — ${MOTIVO_P_LABEL[ev.para] || ev.para || '—'}`;
+    case 'perfil_reativado':   return `Perfil reativado`;
+    case 'perfil_editado':     return `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`;
+    case 'bm_criada':          return `BM criada`;
+    case 'bm_desativada':      return `Desativada — ${MOTIVO_LABEL[ev.para] || ev.para || '—'}`;
+    case 'bm_reativada':       return `Reativada`;
+    case 'bm_editada':         return `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`;
+    case 'bm_movida':          return `BM movida de perfil${ev.texto ? ` — ${ev.texto}` : ''}`;
+    case 'numero_add':         return `Número adicionado — ${ev.texto || ''}`;
+    case 'numero_status':      return `${ev.texto || 'Número'}: status ${STATUS_LABEL[ev.de] || ev.de} → ${STATUS_LABEL[ev.para] || ev.para}`;
+    case 'numero_qualidade':   return `${ev.texto || 'Número'}: qualidade ${QUAL_LABEL[ev.de] || ev.de} → ${QUAL_LABEL[ev.para] || ev.para}`;
+    case 'numero_editado':     return `${ev.texto || 'Número'} editado`;
+    case 'numero_removido':    return `Número removido — ${ev.texto || ''}`;
+    default:                   return ev.texto || ev.tipo;
   }
 }
 
@@ -85,18 +108,48 @@ function _shell() {
   <div class="bm-wrap">
     <div class="bm-toolbar">
       <div class="bm-toolbar-left">
-        <button class="btn btn-primary" id="bm-nova">+ Nova BM</button>
+        <button class="btn btn-primary" id="bm-novo-perfil">+ Novo Perfil</button>
         <div class="bm-seg">
-          <button class="bm-seg-btn active" data-filtro="todas">Todas</button>
-          <button class="bm-seg-btn" data-filtro="ativas">Ativas</button>
-          <button class="bm-seg-btn" data-filtro="inativas">Inativas</button>
+          <button class="bm-seg-btn active" data-filtro="todos">Todos</button>
+          <button class="bm-seg-btn" data-filtro="ativos">Ativos</button>
+          <button class="bm-seg-btn" data-filtro="inativos">Inativos</button>
         </div>
-        <input class="bm-input bm-search" id="bm-busca" placeholder="Buscar BM ou número…">
+        <input class="bm-input bm-search" id="bm-busca" placeholder="Buscar perfil, BM ou número…">
       </div>
     </div>
 
     <div class="bm-resumo" id="bm-resumo"></div>
     <div class="bm-lista" id="bm-lista"></div>
+  </div>
+
+  <!-- Modal: criar/editar perfil -->
+  <div class="bm-modal-bg" id="bm-perfil-modal" style="display:none">
+    <div class="bm-modal">
+      <div class="bm-modal-head">
+        <h3 id="bm-p-title">Novo Perfil</h3>
+        <button class="bm-x" id="bm-p-x">&times;</button>
+      </div>
+      <div class="bm-modal-body">
+        <label class="bm-label">Nome do perfil</label>
+        <input class="bm-input" id="bm-p-nome" placeholder="Ex.: Perfil João" maxlength="120">
+
+        <label class="bm-label">Observação</label>
+        <textarea class="bm-input bm-textarea" id="bm-p-obs" rows="3"
+                  placeholder="Ex.: perfil aquecido desde março, usado só para BMs de servidor"></textarea>
+
+        <div class="bm-hist-wrap" id="bm-p-hist-wrap" style="display:none">
+          <div class="bm-hist-head">Histórico</div>
+          <div class="bm-hist" id="bm-p-hist"></div>
+        </div>
+      </div>
+      <div class="bm-modal-foot">
+        <button class="btn btn-ghost bm-del" id="bm-p-excluir">Excluir</button>
+        <div class="bm-foot-right">
+          <button class="btn btn-ghost" id="bm-p-cancelar">Cancelar</button>
+          <button class="btn btn-primary" id="bm-p-salvar">Salvar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: criar/editar BM -->
@@ -109,6 +162,9 @@ function _shell() {
       <div class="bm-modal-body">
         <label class="bm-label">Nome da BM</label>
         <input class="bm-input" id="bm-f-nome" placeholder="Ex.: BM-07 Smart Vendas" maxlength="120">
+
+        <label class="bm-label">Perfil</label>
+        <select class="bm-input" id="bm-f-perfil"></select>
 
         <div class="bm-row">
           <div>
@@ -195,19 +251,19 @@ function _shell() {
     </div>
   </div>
 
-  <!-- Modal: motivo da desativação -->
+  <!-- Modal: motivo da desativação (BM ou perfil) -->
   <div class="bm-modal-bg" id="bm-motivo-modal" style="display:none">
     <div class="bm-modal bm-modal-sm">
       <div class="bm-modal-head">
-        <h3>Desativar BM</h3>
+        <h3 id="bm-motivo-title">Desativar</h3>
         <button class="bm-x" id="bm-motivo-x">&times;</button>
       </div>
       <div class="bm-modal-body">
         <p class="bm-hint" style="margin-bottom:10px">
           O motivo fica registrado no histórico — é ele que separa banimento de desativação por opção.
         </p>
-        <label class="bm-label">Por que ela saiu do ar?</label>
-        <select class="bm-input" id="bm-motivo-sel">${_opts(MOTIVOS_INATIVA, 'banida')}</select>
+        <label class="bm-label">Por que saiu do ar?</label>
+        <select class="bm-input" id="bm-motivo-sel"></select>
         <label class="bm-label">Detalhe (opcional)</label>
         <textarea class="bm-input bm-textarea" id="bm-motivo-txt" rows="2"
                   placeholder="Ex.: banimento por política de mensagens"></textarea>
@@ -223,7 +279,12 @@ function _shell() {
 }
 
 function _bindShell() {
-  document.getElementById('bm-nova').addEventListener('click', () => _abrirModalBM(null));
+  document.getElementById('bm-novo-perfil').addEventListener('click', () => _abrirModalPerfil(null));
+  document.getElementById('bm-p-x').addEventListener('click', _fecharModalPerfil);
+  document.getElementById('bm-p-cancelar').addEventListener('click', _fecharModalPerfil);
+  document.getElementById('bm-p-salvar').addEventListener('click', _salvarPerfil);
+  document.getElementById('bm-p-excluir').addEventListener('click', _excluirPerfil);
+
   document.getElementById('bm-fechar').addEventListener('click', _fecharModalBM);
   document.getElementById('bm-cancelar').addEventListener('click', _fecharModalBM);
   document.getElementById('bm-salvar').addEventListener('click', _salvarBM);
@@ -263,28 +324,27 @@ export async function renderBMs() {
     _bindShell();
   }
 
-  document.getElementById('bm-nova').style.display = perm.bmEditar() ? '' : 'none';
+  document.getElementById('bm-novo-perfil').style.display = perm.bmEditar() ? '' : 'none';
 
   await _reload();
   _startPolling();
 }
 
 async function _reload() {
-  const [bms, nums] = await Promise.all([loadBMs(), loadNumeros()]);
-  if (bms === null || nums === null) return;   // erro já reportado no serviço
+  const [perfis, bms, nums] = await Promise.all([loadPerfis(), loadBMs(), loadNumeros()]);
+  if (perfis === null || bms === null || nums === null) return;   // erro já reportado no serviço
+  _perfis  = perfis;
   _bms     = bms;
   _numeros = nums;
   _renderLista();
 }
 
-function _visiveis() {
-  return _bms.filter(bm => {
-    if (_filtro === 'ativas'   && !bm.ativa) return false;
-    if (_filtro === 'inativas' &&  bm.ativa) return false;
+function _perfisVisiveis() {
+  return _perfis.filter(p => {
+    if (_filtro === 'ativos'   && !p.ativa) return false;
+    if (_filtro === 'inativos' &&  p.ativa) return false;
     if (!_busca) return true;
-    const alvo = [bm.nome, bm.bm_id_meta, ..._numerosDa(bm.id).flatMap(n => [n.numero, n.nome_exibicao])]
-      .filter(Boolean).join(' ').toLowerCase();
-    return alvo.includes(_busca);
+    return p.nome.toLowerCase().includes(_busca) || _bmsDo(p.id).some(bm => _bmMatch(bm));
   });
 }
 
@@ -292,29 +352,36 @@ function _renderLista() {
   const lista = document.getElementById('bm-lista');
   if (!lista) return;
 
-  const bms = _visiveis();
-  lista.innerHTML = bms.length
-    ? bms.map(_bmCardHTML).join('')
-    : `<div class="bm-vazio">${_bms.length ? 'Nenhuma BM encontrada com esse filtro.' : 'Nenhuma BM cadastrada ainda.'}</div>`;
+  const perfis = _perfisVisiveis();
+  lista.innerHTML = perfis.length
+    ? perfis.map(_perfilCardHTML).join('')
+    : `<div class="bm-vazio">${_perfis.length ? 'Nenhum perfil encontrado com esse filtro.' : 'Nenhum perfil cadastrado ainda.'}</div>`;
 
   _bindLista();
   _renderResumo();
 }
 
 function _renderResumo() {
-  const ativas   = _bms.filter(b => b.ativa).length;
-  const inativas = _bms.length - ativas;
-  const banidas  = _bms.filter(b => !b.ativa && b.motivo_inativa === 'banida').length;
+  const perfilOk = Object.fromEntries(_perfis.map(p => [p.id, p.ativa]));
+  const perfisAtivos   = _perfis.filter(p => p.ativa).length;
+  const perfisInativos = _perfis.length - perfisAtivos;
+
+  // BM só conta como ativa se ela E o perfil dela estiverem no ar
+  const bmsAtivas = _bms.filter(b => b.ativa && perfilOk[b.perfil_id]).length;
+  const bmsFora   = _bms.length - bmsAtivas;
+  const banidas   = _bms.filter(b => !b.ativa && b.motivo_inativa === 'banida').length;
+
   const numAtivos  = _numeros.filter(n => n.status === 'ativo').length;
   const numBanidos = _numeros.filter(n => n.status === 'banido').length;
   const qualBaixa  = _numeros.filter(n => n.status === 'ativo' && n.qualidade === 'baixa').length;
 
   const cards = [
-    { label: 'BMs ativas',        valor: ativas,     sub: inativas ? `${inativas} fora do ar` : '' },
-    { label: 'BMs banidas',       valor: banidas,    sub: '', tom: banidas ? 'ruim' : '' },
-    { label: 'Números ativos',    valor: numAtivos,  sub: `${_numeros.length} no total` },
-    { label: 'Números banidos',   valor: numBanidos, sub: '', tom: numBanidos ? 'ruim' : '' },
-    { label: 'Qualidade baixa',   valor: qualBaixa,  sub: 'entre os ativos', tom: qualBaixa ? 'alerta' : '' },
+    { label: 'Perfis ativos',     valor: perfisAtivos, sub: perfisInativos ? `${perfisInativos} fora do ar` : '' },
+    { label: 'BMs ativas',        valor: bmsAtivas,    sub: bmsFora ? `${bmsFora} fora do ar` : '' },
+    { label: 'BMs banidas',       valor: banidas,      sub: '', tom: banidas ? 'ruim' : '' },
+    { label: 'Números ativos',    valor: numAtivos,    sub: `${_numeros.length} no total` },
+    { label: 'Números banidos',   valor: numBanidos,   sub: '', tom: numBanidos ? 'ruim' : '' },
+    { label: 'Qualidade baixa',   valor: qualBaixa,    sub: 'entre os ativos', tom: qualBaixa ? 'alerta' : '' },
   ];
 
   document.getElementById('bm-resumo').innerHTML = cards.map(c => `
@@ -325,7 +392,64 @@ function _renderResumo() {
     </div>`).join('');
 }
 
-function _bmCardHTML(bm) {
+// ── card do perfil (nível 1) ─────────────────────────────────────────────────
+function _perfilCardHTML(p) {
+  const bms  = _bmsDo(p.id);
+  const nums = bms.flatMap(b => _numerosDa(b.id));
+  const bmsBanidas = bms.filter(b => !b.ativa && b.motivo_inativa === 'banida').length;
+  const numBanidos = nums.filter(n => n.status === 'banido').length;
+  // busca ativa expande o perfil para mostrar onde bateu o resultado
+  const aberta = _abertosP.has(p.id) || (!!_busca && bms.some(bm => _bmMatch(bm)));
+  const podeEditar = perm.bmEditar();
+
+  const statusBadge = p.ativa
+    ? '<span class="bm-badge ok">Ativo</span>'
+    : `<span class="bm-badge ${p.motivo_inativa === 'banido' ? 'ruim' : 'off'}">${_esc(MOTIVO_P_LABEL[p.motivo_inativa] || 'Inativo')}</span>`;
+
+  const resumo = [
+    `${bms.length} BM${bms.length === 1 ? '' : 's'}`,
+    `${nums.length} número${nums.length === 1 ? '' : 's'}`,
+    bmsBanidas ? `<span class="bm-ruim-txt">${bmsBanidas} BM${bmsBanidas === 1 ? '' : 's'} banida${bmsBanidas === 1 ? '' : 's'}</span>` : null,
+    numBanidos ? `<span class="bm-ruim-txt">${numBanidos} número${numBanidos === 1 ? '' : 's'} banido${numBanidos === 1 ? '' : 's'}</span>` : null,
+  ].filter(Boolean).join(' · ');
+
+  return `
+    <div class="bm-card bm-perfil${p.ativa ? '' : ' off'}${aberta ? ' aberta' : ''}" data-perfil="${p.id}">
+      <div class="bm-card-head" data-expandir-perfil="${p.id}">
+        <svg class="bm-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <div class="bm-card-info">
+          <div class="bm-card-nome bm-perfil-nome">
+            ${_esc(p.nome)}
+            ${statusBadge}
+          </div>
+          <div class="bm-card-sub">${resumo}</div>
+        </div>
+        <div class="bm-card-acoes">
+          ${podeEditar ? `<button class="bm-link" data-editar-perfil="${p.id}">Editar</button>` : ''}
+          <button class="bm-switch${p.ativa ? ' on' : ''}" data-toggle-perfil="${p.id}"
+                  ${podeEditar ? '' : 'disabled'}
+                  title="${p.ativa ? 'Desativar perfil' : 'Reativar perfil'}"
+                  aria-pressed="${p.ativa}"><span class="bm-switch-knob"></span></button>
+        </div>
+      </div>
+      ${aberta ? _perfilBodyHTML(p, bms, podeEditar) : ''}
+    </div>`;
+}
+
+function _perfilBodyHTML(p, bms, podeEditar) {
+  const cards = bms.length
+    ? bms.map(bm => _bmCardHTML(bm, p)).join('')
+    : '<div class="bm-vazio-td">Nenhuma BM neste perfil ainda.</div>';
+
+  return `
+    <div class="bm-perfil-body">
+      ${cards}
+      ${podeEditar ? `<button class="bm-add-num bm-add-bm" data-add-bm="${p.id}">+ Adicionar BM</button>` : ''}
+    </div>`;
+}
+
+// ── card da BM (nível 2) ─────────────────────────────────────────────────────
+function _bmCardHTML(bm, perfil) {
   const nums     = _numerosDa(bm.id);
   const ativos   = nums.filter(n => n.status === 'ativo').length;
   const banidos  = nums.filter(n => n.status === 'banido').length;
@@ -343,13 +467,14 @@ function _bmCardHTML(bm) {
   ].filter(Boolean).join(' · ');
 
   return `
-    <div class="bm-card${bm.ativa ? '' : ' off'}${aberta ? ' aberta' : ''}" data-bm="${bm.id}">
+    <div class="bm-card${bm.ativa ? '' : ' off'}${aberta ? ' aberta' : ''}${perfil.ativa ? '' : ' perfil-off'}" data-bm="${bm.id}">
       <div class="bm-card-head" data-expandir="${bm.id}">
         <svg class="bm-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         <div class="bm-card-info">
           <div class="bm-card-nome">
             ${_esc(bm.nome)}
             ${statusBadge}
+            ${perfil.ativa ? '' : '<span class="bm-badge off">Perfil fora do ar</span>'}
             ${bm.bm_id_meta ? `<span class="bm-idmeta">ID ${_esc(bm.bm_id_meta)}</span>` : ''}
           </div>
           <div class="bm-card-sub">${resumo}</div>
@@ -397,9 +522,28 @@ function _numerosHTML(bm, nums, podeEditar) {
 }
 
 function _bindLista() {
-  document.querySelectorAll('#bm-lista [data-expandir]').forEach(el => {
+  document.querySelectorAll('#bm-lista [data-expandir-perfil]').forEach(el => {
     el.addEventListener('click', e => {
       if (e.target.closest('.bm-card-acoes')) return;   // botões têm ação própria
+      const id = el.dataset.expandirPerfil;
+      if (_abertosP.has(id)) _abertosP.delete(id); else _abertosP.add(id);
+      _renderLista();
+    });
+  });
+
+  document.querySelectorAll('#bm-lista [data-editar-perfil]').forEach(btn =>
+    btn.addEventListener('click', e => { e.stopPropagation(); _abrirModalPerfil(btn.dataset.editarPerfil); })
+  );
+  document.querySelectorAll('#bm-lista [data-toggle-perfil]').forEach(btn =>
+    btn.addEventListener('click', e => { e.stopPropagation(); _togglePerfil(btn.dataset.togglePerfil); })
+  );
+  document.querySelectorAll('#bm-lista [data-add-bm]').forEach(btn =>
+    btn.addEventListener('click', () => _abrirModalBM(null, btn.dataset.addBm))
+  );
+
+  document.querySelectorAll('#bm-lista [data-expandir]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('.bm-card-acoes')) return;
       const id = el.dataset.expandir;
       if (_abertas.has(id)) _abertas.delete(id); else _abertas.add(id);
       _renderLista();
@@ -407,7 +551,7 @@ function _bindLista() {
   });
 
   document.querySelectorAll('#bm-lista [data-editar]').forEach(btn =>
-    btn.addEventListener('click', e => { e.stopPropagation(); _abrirModalBM(btn.dataset.editar); })
+    btn.addEventListener('click', e => { e.stopPropagation(); _abrirModalBM(btn.dataset.editar, null); })
   );
   document.querySelectorAll('#bm-lista [data-toggle]').forEach(btn =>
     btn.addEventListener('click', e => { e.stopPropagation(); _toggleBM(btn.dataset.toggle); })
@@ -423,33 +567,65 @@ function _bindLista() {
   );
 }
 
-// ── liga/desliga ─────────────────────────────────────────────────────────────
+// ── liga/desliga (BM e perfil compartilham o modal de motivo) ────────────────
+function _togglePerfil(id) {
+  const p = _perfis.find(x => x.id === id);
+  if (!p || !perm.bmEditar()) return;
+
+  if (p.ativa) {                        // desligar exige motivo
+    _abrirMotivo('perfil', p);
+    return;
+  }
+  _aplicarTogglePerfil(p, true, null, null);   // religar é direto
+}
+
 function _toggleBM(id) {
   const bm = _bms.find(b => b.id === id);
   if (!bm || !perm.bmEditar()) return;
 
   if (bm.ativa) {                       // desligar exige motivo
-    _motivoBm = bm;
-    document.getElementById('bm-motivo-sel').value = 'banida';
-    document.getElementById('bm-motivo-txt').value = '';
-    document.getElementById('bm-motivo-modal').style.display = 'flex';
+    _abrirMotivo('bm', bm);
     return;
   }
   _aplicarToggle(bm, true, null, null);  // religar é direto
 }
 
+function _abrirMotivo(tipo, obj) {
+  _motivoAlvo = { tipo, obj };
+  const ehPerfil = tipo === 'perfil';
+  document.getElementById('bm-motivo-title').textContent = ehPerfil ? 'Desativar perfil' : 'Desativar BM';
+  document.getElementById('bm-motivo-sel').innerHTML =
+    _opts(ehPerfil ? MOTIVOS_PERFIL : MOTIVOS_INATIVA, ehPerfil ? 'banido' : 'banida');
+  document.getElementById('bm-motivo-txt').value = '';
+  document.getElementById('bm-motivo-modal').style.display = 'flex';
+}
+
 function _fecharMotivo() {
-  _motivoBm = null;
+  _motivoAlvo = null;
   document.getElementById('bm-motivo-modal').style.display = 'none';
 }
 
 function _confirmarMotivo() {
-  const bm = _motivoBm;
-  if (!bm) return;
+  const alvo = _motivoAlvo;
+  if (!alvo) return;
   const motivo = document.getElementById('bm-motivo-sel').value;
   const nota   = document.getElementById('bm-motivo-txt').value.trim();
   _fecharMotivo();
-  _aplicarToggle(bm, false, motivo, nota);
+  if (alvo.tipo === 'perfil') _aplicarTogglePerfil(alvo.obj, false, motivo, nota);
+  else                        _aplicarToggle(alvo.obj, false, motivo, nota);
+}
+
+async function _aplicarTogglePerfil(p, ativa, motivo, nota) {
+  try {
+    const novo = await setPerfilAtivo(p, ativa, motivo);
+    if (nota) await logEvento({ perfil_id: p.id, tipo: 'nota', texto: nota });
+    Object.assign(p, novo);
+    _renderLista();
+    toast(ativa ? 'Perfil reativado' : 'Perfil desativado');
+  } catch (err) {
+    console.error('togglePerfil:', err);
+    toast('Erro ao alterar o perfil', 'err');
+  }
 }
 
 async function _aplicarToggle(bm, ativa, motivo, nota) {
@@ -465,11 +641,114 @@ async function _aplicarToggle(bm, ativa, motivo, nota) {
   }
 }
 
-// ── modal: BM ────────────────────────────────────────────────────────────────
-async function _abrirModalBM(id) {
+// ── modal: perfil ────────────────────────────────────────────────────────────
+async function _abrirModalPerfil(id) {
   if (!perm.bmEditar()) return;
-  _editBmId = id;
+  _editPerfilId = id;
+  const p = id ? _perfis.find(x => x.id === id) : null;
+
+  document.getElementById('bm-p-title').textContent = p ? 'Editar Perfil' : 'Novo Perfil';
+  document.getElementById('bm-p-nome').value = p?.nome || '';
+  document.getElementById('bm-p-obs').value  = p?.observacao || '';
+  document.getElementById('bm-p-excluir').style.display = p && perm.isAdmin() ? '' : 'none';
+
+  const histWrap = document.getElementById('bm-p-hist-wrap');
+  histWrap.style.display = p ? '' : 'none';
+  document.getElementById('bm-perfil-modal').style.display = 'flex';
+  document.getElementById('bm-p-nome').focus();
+
+  if (p) {
+    document.getElementById('bm-p-hist').innerHTML = '<div class="bm-hint">Carregando…</div>';
+    const eventos = await loadEventosPerfil(p.id);
+    if (_editPerfilId !== p.id) return;                 // usuário já trocou de modal
+    document.getElementById('bm-p-hist').innerHTML = eventos.length
+      ? eventos.map(ev => `
+          <div class="bm-hist-item">
+            <span class="bm-hist-txt">${_esc(_labelEvento(ev))}</span>
+            <span class="bm-hist-meta">${_esc(ev.autor_nome || '')} · ${_fmtDataHora(ev.created_at)}</span>
+          </div>`).join('')
+      : '<div class="bm-hint">Sem histórico ainda.</div>';
+  }
+}
+
+function _fecharModalPerfil() {
+  _editPerfilId = null;
+  document.getElementById('bm-perfil-modal').style.display = 'none';
+}
+
+async function _salvarPerfil() {
+  const nome = document.getElementById('bm-p-nome').value.trim();
+  if (!nome) { toast('Dê um nome para o perfil', 'err'); return; }
+
+  const payload = {
+    nome,
+    observacao: document.getElementById('bm-p-obs').value.trim() || null,
+  };
+
+  try {
+    if (_editPerfilId) {
+      const p = _perfis.find(x => x.id === _editPerfilId);
+      const novo = await updatePerfil(_editPerfilId, payload);
+      const mudou = Object.keys(payload).filter(k => (p[k] || '') !== (payload[k] || ''));
+      if (mudou.length) await logEvento({ perfil_id: _editPerfilId, tipo: 'perfil_editado', texto: mudou.join(', ') });
+      Object.assign(p, novo);
+      toast('Perfil atualizado');
+    } else {
+      const novo = await createPerfil(payload);
+      _perfis.push(novo);
+      _perfis.sort((a, b) => a.nome.localeCompare(b.nome));
+      _abertosP.add(novo.id);           // já abre para cadastrar as BMs
+      toast('Perfil criado');
+    }
+    _fecharModalPerfil();
+    _renderLista();
+  } catch (err) {
+    console.error('salvarPerfil:', err);
+    toast('Erro ao salvar o perfil', 'err');
+  }
+}
+
+function _excluirPerfil() {
+  if (!_editPerfilId) return;
+  const id   = _editPerfilId;
+  const p    = _perfis.find(x => x.id === id);
+  const bms  = _bmsDo(id);
+  const nums = bms.reduce((tot, bm) => tot + _numerosDa(bm.id).length, 0);
+  showConfirm(
+    'Excluir perfil?',
+    `As ${bms.length} BM(s), os ${nums} número(s) e todo o histórico dele também serão apagados. Esta ação não pode ser desfeita.`,
+    'Excluir',
+    async () => {
+      try {
+        await deletePerfil(id);
+        const bmIds = new Set(bms.map(b => b.id));
+        _perfis  = _perfis.filter(x => x.id !== id);
+        _bms     = _bms.filter(b => b.perfil_id !== id);
+        _numeros = _numeros.filter(n => !bmIds.has(n.bm_id));
+        _abertosP.delete(id);
+        bmIds.forEach(bmId => _abertas.delete(bmId));
+        _fecharModalPerfil();
+        _renderLista();
+        toast(`Perfil "${p?.nome || ''}" excluído`);
+      } catch (err) {
+        console.error('excluirPerfil:', err);
+        toast('Erro ao excluir o perfil', 'err');
+      }
+    },
+  );
+}
+
+// ── modal: BM ────────────────────────────────────────────────────────────────
+async function _abrirModalBM(id, perfilPre) {
+  if (!perm.bmEditar()) return;
+  _editBmId    = id;
+  _bmPerfilPre = perfilPre || null;
   const bm = id ? _bms.find(b => b.id === id) : null;
+
+  const perfilSel = bm?.perfil_id || _bmPerfilPre || _perfis[0]?.id || '';
+  document.getElementById('bm-f-perfil').innerHTML = _perfis
+    .map(p => `<option value="${p.id}"${p.id === perfilSel ? ' selected' : ''}>${_esc(p.nome)}${p.ativa ? '' : ' (fora do ar)'}</option>`)
+    .join('');
 
   document.getElementById('bm-modal-title').textContent = bm ? 'Editar BM' : 'Nova BM';
   document.getElementById('bm-f-nome').value   = bm?.nome || '';
@@ -498,7 +777,8 @@ async function _abrirModalBM(id) {
 }
 
 function _fecharModalBM() {
-  _editBmId = null;
+  _editBmId    = null;
+  _bmPerfilPre = null;
   document.getElementById('bm-modal').style.display = 'none';
 }
 
@@ -506,8 +786,12 @@ async function _salvarBM() {
   const nome = document.getElementById('bm-f-nome').value.trim();
   if (!nome) { toast('Dê um nome para a BM', 'err'); return; }
 
+  const perfilId = document.getElementById('bm-f-perfil').value;
+  if (!perfilId) { toast('Cadastre um perfil antes de criar a BM', 'err'); return; }
+
   const payload = {
     nome,
+    perfil_id:       perfilId,
     bm_id_meta:      document.getElementById('bm-f-idmeta').value.trim() || null,
     data_criacao_bm: document.getElementById('bm-f-data').value || null,
     observacao:      document.getElementById('bm-f-obs').value.trim() || null,
@@ -516,15 +800,26 @@ async function _salvarBM() {
   try {
     if (_editBmId) {
       const bm = _bms.find(b => b.id === _editBmId);
+      const mudouPerfil = payload.perfil_id !== bm.perfil_id;
+      const perfilAntigo = bm.perfil_id;
       const novo = await updateBM(_editBmId, payload);
-      const mudou = Object.keys(payload).filter(k => (bm[k] || '') !== (payload[k] || ''));
+      const mudou = Object.keys(payload)
+        .filter(k => k !== 'perfil_id')
+        .filter(k => (bm[k] || '') !== (payload[k] || ''));
       if (mudou.length) await logEvento({ bm_id: _editBmId, tipo: 'bm_editada', texto: mudou.join(', ') });
+      if (mudouPerfil) {
+        const de   = _perfis.find(p => p.id === perfilAntigo)?.nome || '—';
+        const para = _perfis.find(p => p.id === payload.perfil_id)?.nome || '—';
+        await logEvento({ bm_id: _editBmId, perfil_id: payload.perfil_id, tipo: 'bm_movida', texto: `${de} → ${para}` });
+        _abertosP.add(payload.perfil_id);   // mostra para onde a BM foi
+      }
       Object.assign(bm, novo);
       toast('BM atualizada');
     } else {
       const novo = await createBM(payload);
       _bms.push(novo);
       _bms.sort((a, b) => a.nome.localeCompare(b.nome));
+      _abertosP.add(novo.perfil_id);
       _abertas.add(novo.id);            // já abre para cadastrar os números
       toast('BM criada');
     }

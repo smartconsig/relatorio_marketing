@@ -14,6 +14,12 @@ export const MOTIVOS_INATIVA = [
   { key: 'em_analise',  label: 'Em análise / restrita' },
 ];
 
+export const MOTIVOS_PERFIL = [
+  { key: 'banido',     label: 'Banido pela Meta' },
+  { key: 'desativado', label: 'Desativado por nós' },
+  { key: 'em_analise', label: 'Em análise / restrito' },
+];
+
 export const STATUS_NUMERO = [
   { key: 'ativo',        label: 'Ativo' },
   { key: 'restrito',     label: 'Restrito' },
@@ -37,7 +43,8 @@ export const TIERS = [
   { key: 'ilimitado', label: 'Ilimitado' },
 ];
 
-const BM_COLS  = 'id,nome,bm_id_meta,ativa,motivo_inativa,observacao,data_criacao_bm,arquivada,criado_por,created_at,updated_at';
+const PERFIL_COLS = 'id,nome,ativa,motivo_inativa,observacao,arquivada,criado_por,created_at,updated_at';
+const BM_COLS  = 'id,perfil_id,nome,bm_id_meta,ativa,motivo_inativa,observacao,data_criacao_bm,arquivada,criado_por,created_at,updated_at';
 const NUM_COLS = 'id,bm_id,numero,nome_exibicao,status,qualidade,tier,data_ativacao,observacao,created_at,updated_at';
 
 function _autor() {
@@ -45,6 +52,66 @@ function _autor() {
     autor_id:   state.currentUser?.id || null,
     autor_nome: state.currentUser?.nomeDisplay || state.currentUser?.email || null,
   };
+}
+
+// ── Perfis (conjunto de perfil de Facebook) ──────────────────────────────────
+export async function loadPerfis() {
+  const { data, error } = await sb
+    .from('bm_perfis')
+    .select(PERFIL_COLS)
+    .eq('arquivada', false)
+    .order('nome');
+  if (error) {
+    console.error('loadPerfis:', error);
+    toast('Erro ao carregar os perfis', 'err');
+    return null;
+  }
+  return data || [];
+}
+
+export async function createPerfil(payload) {
+  const { data, error } = await sb
+    .from('bm_perfis')
+    .insert({ ...payload, criado_por: state.currentUser?.id || null })
+    .select(PERFIL_COLS)
+    .single();
+  if (error) throw error;
+  await logEvento({ perfil_id: data.id, tipo: 'perfil_criado', texto: data.nome });
+  return data;
+}
+
+export async function updatePerfil(id, patch) {
+  const { data, error } = await sb
+    .from('bm_perfis')
+    .update(patch)
+    .eq('id', id)
+    .select(PERFIL_COLS)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Liga/desliga o perfil. Desligar exige motivo — perfil fora do ar significa
+ * que as BMs dele ficam inutilizáveis, mesmo mantendo o estado individual.
+ */
+export async function setPerfilAtivo(perfil, ativa, motivo = null) {
+  const data = await updatePerfil(perfil.id, {
+    ativa,
+    motivo_inativa: ativa ? null : motivo,
+  });
+  await logEvento({
+    perfil_id: perfil.id,
+    tipo:  ativa ? 'perfil_reativado' : 'perfil_desativado',
+    de:    perfil.ativa ? 'ativo' : (perfil.motivo_inativa || 'inativo'),
+    para:  ativa ? 'ativo' : motivo,
+  });
+  return data;
+}
+
+export async function deletePerfil(id) {
+  const { error } = await sb.from('bm_perfis').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // ── BMs ──────────────────────────────────────────────────────────────────────
@@ -172,9 +239,9 @@ export async function deleteNumero(numero) {
 }
 
 // ── Eventos ──────────────────────────────────────────────────────────────────
-export async function logEvento({ bm_id, numero_id = null, tipo, de = null, para = null, texto = null }) {
+export async function logEvento({ bm_id = null, perfil_id = null, numero_id = null, tipo, de = null, para = null, texto = null }) {
   const { error } = await sb.from('bm_eventos').insert({
-    bm_id, numero_id, tipo, de, para, texto, ..._autor(),
+    bm_id, perfil_id, numero_id, tipo, de, para, texto, ..._autor(),
   });
   // Histórico é telemetria: falhar aqui não pode derrubar a ação do usuário
   if (error) console.error('logEvento(bm):', error);
@@ -189,6 +256,20 @@ export async function loadEventos(bmId) {
     .limit(100);
   if (error) {
     console.error('loadEventos(bm):', error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function loadEventosPerfil(perfilId) {
+  const { data, error } = await sb
+    .from('bm_eventos')
+    .select('*')
+    .eq('perfil_id', perfilId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) {
+    console.error('loadEventosPerfil:', error);
     return [];
   }
   return data || [];
