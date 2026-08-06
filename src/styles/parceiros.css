@@ -54,7 +54,7 @@
 }
 .parc-gap-value {
   font-family: var(--font-h); font-weight: 900; font-size: 26px;
-  color: var(--red); line-height: 1.1; white-space: nowrap;
+  color: var(--white); line-height: 1.1; white-space: nowrap;
 }
 .parc-podium-1st .parc-gap-value { font-size: 30px; }
 .parc-gap-leader {
@@ -133,7 +133,7 @@
 /* ── Diferença de produção no modo TV (fundo branco) ─── */
 .parc-tv-gap { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 10px; }
 .parc-tv-gap-caption { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #999; font-weight: 600; }
-.parc-tv-gap-value { font-family: var(--font-h); font-weight: 900; font-size: 24px; color: #dc2626; line-height: 1.1; white-space: nowrap; }
+.parc-tv-gap-value { font-family: var(--font-h); font-weight: 900; font-size: 24px; color: #111827; line-height: 1.1; white-space: nowrap; }
 .parc-tv-podium-1st .parc-tv-gap-value { font-size: 28px; }
 .parc-tv-gap-leader { font-family: var(--font-h); font-weight: 900; font-size: 18px; color: #f59e0b; }
 .parc-tv-list-card .parc-tv-gap { margin-top: 4px; }

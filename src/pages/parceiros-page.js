@@ -1,7 +1,8 @@
 import { state }             from '../state.js';
 import { toast }             from '../utils/ui.js';
 import { fmtBRL }            from '../utils/currency.js';
-import { parseParceiros }    from '../core/parseParceiros.js';
+import * as XLSX             from 'xlsx';
+import { parseParceiros, parseParceirosRows } from '../core/parseParceiros.js';
 import { saveParceiros, loadParceiros } from '../services/parceiros-svc.js';
 import { sb }                from '../services/supabase.js';
 
@@ -81,7 +82,7 @@ function gapHtml(p, compact = false) {
   }
   return `<div class="${cls}">
     <span class="parc-gap-caption">atrás do ${p._aboveRank}º</span>
-    <strong class="parc-gap-value">− ${fmtBRL(p._gapAbove)}</strong>
+    <strong class="parc-gap-value">${fmtBRL(p._gapAbove)}</strong>
   </div>`;
 }
 
@@ -131,13 +132,23 @@ export async function onParceirosFileChange(e) {
   r.onload = async ev => {
     try {
       const buf = ev.target.result;
-      // Tenta UTF-8; se vier caractere de substituição (acentos quebrados),
-      // reinterpreta como windows-1252 (é como o Excel exporta esse CSV).
-      let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
-      if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
-      text = text.replace(/^﻿/, ''); // remove BOM
-
-      const result = parseParceiros(text);
+      const bytes = new Uint8Array(buf);
+      let result;
+      if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+        // Assinatura "PK" → arquivo .xlsx. O ranking fica na aba "Resumo";
+        // valores brutos das células (raw) evitam problemas de formato de moeda.
+        const wb    = XLSX.read(buf, { type: 'array' });
+        const sheet = wb.SheetNames.find(n => n.trim().toLowerCase() === 'resumo') || wb.SheetNames[0];
+        const rows  = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { header: 1, raw: true, defval: null });
+        result = parseParceirosRows(rows);
+      } else {
+        // CSV: tenta UTF-8; se vier caractere de substituição (acentos quebrados),
+        // reinterpreta como windows-1252 (é como o Excel exporta esse CSV).
+        let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+        if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+        text = text.replace(/^﻿/, ''); // remove BOM
+        result = parseParceiros(text);
+      }
       if (!result.partners.length) { toast('Nenhum parceiro encontrado no arquivo', 'err'); return; }
 
       state.parceiros = { ...result, importedAt: new Date().toISOString(), importedBy: state.currentUser?.email || '' };
@@ -204,7 +215,7 @@ function importBar() {
         ${hasData ? `<button class="btn-sm btn-ghost" onclick="enterParceirosTop()">🏆 Top Parceiros</button>` : ''}
         ${hasData ? `<button class="btn-sm btn-ghost" onclick="toggleParceirosValues()">${_showValues ? '🙈 Esconder valores' : '👁 Mostrar valores'}</button>` : ''}
         <button class="btn-sm btn-ghost" onclick="importParceirosFile()">📥 Importar planilha</button>
-        <input type="file" id="parc-file-input" accept=".csv" style="display:none" onchange="onParceirosFileChange(event)">
+        <input type="file" id="parc-file-input" accept=".csv,.xlsx" style="display:none" onchange="onParceirosFileChange(event)">
         <input type="file" id="parc-logo-input" accept="image/*" style="display:none" onchange="onParceiroLogoChange(event)">
       </div>
     </div>`;
@@ -339,7 +350,7 @@ function tvGapHtml(p) {
   }
   return `<div class="parc-tv-gap">
     <span class="parc-tv-gap-caption">atrás do ${p._aboveRank}º</span>
-    <strong class="parc-tv-gap-value">− ${fmtBRL(p._gapAbove)}</strong>
+    <strong class="parc-tv-gap-value">${fmtBRL(p._gapAbove)}</strong>
   </div>`;
 }
 
