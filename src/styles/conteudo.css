@@ -92,6 +92,19 @@
 .cont-date.late  { color: var(--danger); font-weight: 700; }
 .cont-age        { margin-left: auto; }
 
+/* status de produção no rodapé do card (Roteiro/Gravação/Edição) */
+.cont-status-sel {
+  background: var(--surface3); color: var(--gray-light);
+  border: 1px solid var(--border); border-radius: 10px;
+  font: 600 10px var(--font-b); padding: 2px 4px;
+  cursor: pointer; outline: none; max-width: 82px;
+}
+.cont-status-sel:hover, .cont-status-sel:focus { border-color: var(--red); color: var(--white); }
+.cont-status-chip {
+  background: var(--surface3); color: var(--gray-light);
+  font: 600 10px var(--font-b); padding: 2px 7px; border-radius: 10px;
+}
+
 .cont-card-acoes { display: flex; gap: 6px; margin-top: 9px; }
 .cont-btn-ok, .cont-btn-back {
   flex: 1; border: 1px solid var(--border); border-radius: 6px;
@@ -224,6 +237,10 @@
 [data-theme="light"] .cont-col       { background: #f8fafc; }
 [data-theme="light"] .cont-col-count { background: #e2e8f0; color: #475569; }
 [data-theme="light"] .cont-chip      { background: #e2e8f0; color: #475569; }
+[data-theme="light"] .cont-status-sel,
+[data-theme="light"] .cont-status-chip { background: #e2e8f0; color: #475569; }
+[data-theme="light"] .cont-status-sel:hover,
+[data-theme="light"] .cont-status-sel:focus { color: #111; }
 [data-theme="light"] .cont-btn-ok,
 [data-theme="light"] .cont-btn-back  { background: #f1f5f9; color: #475569; }
 [data-theme="light"] .cont-seg-btn.active { color: #fff; }

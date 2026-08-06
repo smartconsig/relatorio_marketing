@@ -29,7 +29,24 @@ export const CANAIS = [
   { key: 'operacao',          label: 'Operação' },
 ];
 
-const CARD_COLS = 'id,titulo,descricao,coluna,canal,responsavel_id,data_alvo,link_url,em_ajuste,ajuste_motivo,ordem,coluna_desde,arquivado,criado_por,created_at,updated_at';
+export const TIPOS = [
+  { key: 'estatico', label: 'Post estático' },
+  { key: 'video',    label: 'Vídeo' },
+];
+
+/** Etapas de produção; 'gravacao' só existe para vídeo. */
+export const STATUS_PROD = [
+  { key: 'roteiro',  label: 'Roteiro',  tipos: ['estatico', 'video'] },
+  { key: 'gravacao', label: 'Gravação', tipos: ['video'] },
+  { key: 'edicao',   label: 'Edição',   tipos: ['estatico', 'video'] },
+];
+
+/** Status válidos para um tipo de conteúdo. */
+export function statusDoTipo(tipo) {
+  return STATUS_PROD.filter(s => s.tipos.includes(tipo));
+}
+
+const CARD_COLS = 'id,titulo,descricao,coluna,canal,tipo,producao_status,responsavel_id,data_alvo,link_url,em_ajuste,ajuste_motivo,ordem,coluna_desde,arquivado,criado_por,created_at,updated_at';
 
 function _autor() {
   return {

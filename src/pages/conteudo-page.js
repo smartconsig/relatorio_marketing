@@ -3,7 +3,7 @@ import { perm } from '../services/permissions.js';
 import { toast } from '../utils/ui.js';
 import { showConfirm } from '../utils/confirm.js';
 import {
-  COLUNAS, CANAIS,
+  COLUNAS, CANAIS, TIPOS, STATUS_PROD, statusDoTipo,
   loadCards, loadMembros, createCard, updateCard, moveCard, deleteCard, logEvento,
   comentar, loadEventos,
   loadAnexos, signedUrls, uploadAnexo, deleteAnexo, removeArquivosDoCard, ANEXO_MAX_BYTES,
@@ -25,7 +25,8 @@ let _dragId     = null;
 let _built      = false;
 let _pollTimer  = null;
 
-const CANAL_LABEL = Object.fromEntries(CANAIS.map(c => [c.key, c.label]));
+const CANAL_LABEL  = Object.fromEntries(CANAIS.map(c => [c.key, c.label]));
+const STATUS_LABEL = Object.fromEntries(STATUS_PROD.map(s => [s.key, s.label]));
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function _esc(s) {
@@ -122,6 +123,20 @@ function _shell() {
 
         <div class="cont-row">
           <div>
+            <label class="cont-label">Tipo</label>
+            <select class="cont-input" id="cont-f-tipo">
+              <option value="">—</option>
+              ${TIPOS.map(t => `<option value="${t.key}">${t.label}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="cont-label">Status de produção</label>
+            <select class="cont-input" id="cont-f-status"></select>
+          </div>
+        </div>
+
+        <div class="cont-row">
+          <div>
             <label class="cont-label">Data alvo</label>
             <input class="cont-input" id="cont-f-data" type="date">
           </div>
@@ -195,6 +210,24 @@ function _shell() {
   </div>`;
 }
 
+/**
+ * Preenche o select de status do modal conforme o tipo escolhido.
+ * Sem tipo, o campo fica vazio e desabilitado — status só existe com tipo.
+ */
+function _popularStatusModal(tipo, atual) {
+  const sel = document.getElementById('cont-f-status');
+  if (!tipo) {
+    sel.innerHTML = '<option value="">—</option>';
+    sel.value = '';
+    sel.disabled = true;
+    return;
+  }
+  const validos = statusDoTipo(tipo);
+  sel.innerHTML = validos.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+  sel.value = validos.some(s => s.key === atual) ? atual : 'roteiro';
+  sel.disabled = false;
+}
+
 function _bindShell() {
   document.getElementById('cont-novo').addEventListener('click', () => _abrirModal(null));
   document.getElementById('cont-fechar').addEventListener('click', _fecharModal);
@@ -213,6 +246,11 @@ function _bindShell() {
   document.getElementById('cont-filtro-canal').addEventListener('change', e => {
     _filtroCanal = e.target.value;
     _renderBoard();
+  });
+
+  // trocar o tipo no modal reajusta as opções de status (vídeo tem Gravação)
+  document.getElementById('cont-f-tipo').addEventListener('change', e => {
+    _popularStatusModal(e.target.value, document.getElementById('cont-f-status').value);
   });
 
   document.getElementById('cont-chat-send').addEventListener('click', _enviarComentario);
@@ -333,6 +371,19 @@ function _cardHTML(c, hoje) {
        </div>`
     : '';
 
+  // status de produção: select direto no card (sem abrir o modal);
+  // cards antigos sem tipo não mostram nada
+  let statusHTML = '';
+  if (c.tipo) {
+    const atual = c.producao_status || 'roteiro';
+    statusHTML = podeEditar
+      ? `<select class="cont-status-sel" data-status="${c.id}" title="Status de produção">
+           ${statusDoTipo(c.tipo).map(s =>
+             `<option value="${s.key}"${s.key === atual ? ' selected' : ''}>${s.label}</option>`).join('')}
+         </select>`
+      : `<span class="cont-status-chip">${_esc(STATUS_LABEL[atual] || atual)}</span>`;
+  }
+
   return `
     <div class="cont-card${atrasado ? ' late' : ''}" data-id="${c.id}" draggable="${podeEditar}">
       ${chips.length ? `<div class="cont-card-chips">${chips.join('')}</div>` : ''}
@@ -341,6 +392,7 @@ function _cardHTML(c, hoje) {
       <div class="cont-card-foot">
         ${nome ? `<span class="cont-avatar" title="${_esc(nome)}">${_esc(_iniciais(nome))}</span>` : '<span class="cont-avatar cont-avatar-off" title="Sem responsável">·</span>'}
         ${c.data_alvo ? `<span class="cont-date${atrasado ? ' late' : ''}">${_fmtDataCurta(c.data_alvo)}</span>` : ''}
+        ${statusHTML}
         <span class="cont-age" title="Tempo parado nesta etapa">${dias}d</span>
       </div>
       ${acoes}
@@ -354,11 +406,18 @@ function _bindBoard() {
   document.querySelectorAll('#cont-board .cont-card').forEach(el => {
     el.addEventListener('click', e => {
       if (e.target.closest('.cont-card-acoes')) return;   // botões têm ação própria
+      if (e.target.closest('.cont-status-sel')) return;   // select de status idem
       _abrirModal(el.dataset.id);
     });
     if (!podeEditar) return;
     el.addEventListener('dragstart', () => { _dragId = el.dataset.id; el.classList.add('dragging'); });
     el.addEventListener('dragend',   () => { _dragId = null; el.classList.remove('dragging'); });
+  });
+
+  document.querySelectorAll('#cont-board [data-status]').forEach(sel => {
+    // mousedown não pode virar dragstart do card (o pai é draggable)
+    sel.addEventListener('mousedown', e => e.stopPropagation());
+    sel.addEventListener('change', () => _trocarStatus(sel.dataset.status, sel.value));
   });
 
   document.querySelectorAll('#cont-board [data-aprovar]').forEach(btn =>
@@ -429,6 +488,22 @@ async function _soltar(body, y) {
     console.error('moveCard:', err);
     toast('Não foi possível mover o card', 'err');
     _reload();
+  }
+}
+
+// ── status de produção (troca direto no card) ────────────────────────────────
+async function _trocarStatus(id, valor) {
+  const card = _cards.find(c => c.id === id);
+  if (!card || card.producao_status === valor) return;
+  try {
+    const novo = await updateCard(id, { producao_status: valor });
+    Object.assign(card, novo);
+    await logEvento(id, 'editado', { texto: `status de produção para ${STATUS_LABEL[valor] || valor}` });
+    _renderBoard();
+  } catch (err) {
+    console.error('trocarStatus:', err);
+    toast('Não foi possível trocar o status', 'err');
+    _reload();      // desfaz o select para o valor real do banco
   }
 }
 
@@ -649,6 +724,7 @@ async function _enviarComentario() {
 /** Lista legível dos campos alterados — alimenta a linha "alterou …". */
 const CAMPO_LABEL = {
   titulo: 'título', descricao: 'descrição', canal: 'canal',
+  tipo: 'tipo', producao_status: 'status de produção',
   responsavel_id: 'responsável', data_alvo: 'data alvo', link_url: 'link',
 };
 
@@ -674,6 +750,7 @@ function _abrirModal(id) {
 
   document.getElementById('cont-f-titulo').value = card?.titulo    || '';
   document.getElementById('cont-f-canal').value  = card?.canal     || '';
+  document.getElementById('cont-f-tipo').value   = card?.tipo      || '';
   respSel.value                                  = card?.responsavel_id || '';
   document.getElementById('cont-f-data').value   = card?.data_alvo || '';
   document.getElementById('cont-f-coluna').value = card?.coluna    || 'ideias';
@@ -682,6 +759,9 @@ function _abrirModal(id) {
 
   // Sem permissão de edição, o modal vira leitura
   document.querySelectorAll('#cont-modal .cont-input').forEach(el => { el.disabled = !podeEditar; });
+  // depois do loop: o select de status tem regra própria (precisa de tipo)
+  _popularStatusModal(card?.tipo || '', card?.producao_status || '');
+  if (!podeEditar) document.getElementById('cont-f-status').disabled = true;
   document.getElementById('cont-salvar').style.display  = podeEditar ? '' : 'none';
   document.getElementById('cont-excluir').style.display = (card && podeEditar) ? '' : 'none';
 
@@ -710,9 +790,22 @@ async function _salvar() {
   if (!titulo) { toast('Dê um título ao conteúdo', 'err'); return; }
 
   const coluna = document.getElementById('cont-f-coluna').value;
+
+  // status só existe com tipo; se o status atual não vale para o tipo
+  // (ex.: vídeo em Gravação virou estático), volta para Roteiro
+  const tipo = document.getElementById('cont-f-tipo').value || null;
+  let producaoStatus = document.getElementById('cont-f-status').value || null;
+  if (tipo) {
+    if (!statusDoTipo(tipo).some(s => s.key === producaoStatus)) producaoStatus = 'roteiro';
+  } else {
+    producaoStatus = null;
+  }
+
   const payload = {
     titulo,
     canal:          document.getElementById('cont-f-canal').value || null,
+    tipo,
+    producao_status: producaoStatus,
     responsavel_id: document.getElementById('cont-f-resp').value  || null,
     data_alvo:      document.getElementById('cont-f-data').value  || null,
     link_url:       document.getElementById('cont-f-link').value.trim() || null,
