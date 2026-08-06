@@ -376,12 +376,13 @@ function _cardHTML(c, hoje) {
   let statusHTML = '';
   if (c.tipo) {
     const atual = c.producao_status || 'roteiro';
+    const cor   = ` cont-status-${atual}`;    // roteiro=azul, gravacao=roxo, edicao=verde
     statusHTML = podeEditar
-      ? `<select class="cont-status-sel" data-status="${c.id}" title="Status de produção">
+      ? `<select class="cont-status-sel${cor}" data-status="${c.id}" title="Status de produção">
            ${statusDoTipo(c.tipo).map(s =>
              `<option value="${s.key}"${s.key === atual ? ' selected' : ''}>${s.label}</option>`).join('')}
          </select>`
-      : `<span class="cont-status-chip">${_esc(STATUS_LABEL[atual] || atual)}</span>`;
+      : `<span class="cont-status-chip${cor}">${_esc(STATUS_LABEL[atual] || atual)}</span>`;
   }
 
   return `

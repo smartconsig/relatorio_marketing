@@ -99,11 +99,16 @@
   font: 600 10px var(--font-b); padding: 2px 4px;
   cursor: pointer; outline: none; max-width: 82px;
 }
-.cont-status-sel:hover, .cont-status-sel:focus { border-color: var(--red); color: var(--white); }
+.cont-status-sel:hover, .cont-status-sel:focus { border-color: currentColor; }
 .cont-status-chip {
   background: var(--surface3); color: var(--gray-light);
   font: 600 10px var(--font-b); padding: 2px 7px; border-radius: 10px;
 }
+
+/* cor por status: Roteiro azul, Gravação roxo, Edição verde */
+.cont-status-roteiro  { background: rgba(59,130,246,.16);  color: var(--blue);   border-color: rgba(59,130,246,.35); }
+.cont-status-gravacao { background: rgba(168,85,247,.16);  color: var(--purple); border-color: rgba(168,85,247,.35); }
+.cont-status-edicao   { background: rgba(34,197,94,.16);   color: var(--green);  border-color: rgba(34,197,94,.35); }
 
 .cont-card-acoes { display: flex; gap: 6px; margin-top: 9px; }
 .cont-btn-ok, .cont-btn-back {
@@ -241,6 +246,16 @@
 [data-theme="light"] .cont-status-chip { background: #e2e8f0; color: #475569; }
 [data-theme="light"] .cont-status-sel:hover,
 [data-theme="light"] .cont-status-sel:focus { color: #111; }
+/* cores por status no claro: tons mais escuros para leitura (padrão dos badges) */
+[data-theme="light"] .cont-status-roteiro  { background: rgba(59,130,246,.12); color: #2563eb; }
+[data-theme="light"] .cont-status-gravacao { background: rgba(168,85,247,.12); color: #9333ea; }
+[data-theme="light"] .cont-status-edicao   { background: rgba(34,197,94,.12);  color: #16a34a; }
+[data-theme="light"] .cont-status-sel.cont-status-roteiro:hover,
+[data-theme="light"] .cont-status-sel.cont-status-roteiro:focus  { color: #1d4ed8; }
+[data-theme="light"] .cont-status-sel.cont-status-gravacao:hover,
+[data-theme="light"] .cont-status-sel.cont-status-gravacao:focus { color: #7e22ce; }
+[data-theme="light"] .cont-status-sel.cont-status-edicao:hover,
+[data-theme="light"] .cont-status-sel.cont-status-edicao:focus   { color: #15803d; }
 [data-theme="light"] .cont-btn-ok,
 [data-theme="light"] .cont-btn-back  { background: #f1f5f9; color: #475569; }
 [data-theme="light"] .cont-seg-btn.active { color: #fff; }
