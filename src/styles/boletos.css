@@ -28,6 +28,21 @@
   box-shadow: 0 20px 60px rgba(0,0,0,.4);
 }
 
+/* Select com o mesmo visual dos inputs do formulário */
+#bol-modal-content select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color .15s;
+  cursor: pointer;
+}
+#bol-modal-content select:focus { outline: none; border-color: var(--red); }
+
 /* ── Chips de status (contadores/filtros no topo) ───────────────────────── */
 .bol-status-chips {
   display: flex;

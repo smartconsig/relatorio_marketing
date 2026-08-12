@@ -32,6 +32,21 @@ const STATUS_META = {
 };
 const STATUS_ORDER = ['solicitar_boleto','boleto_solicitado','boleto_enviado','boleto_quitado','boleto_reprovado'];
 
+// ── Produtos oficiais ──────────────────────────────────────────────────────
+// Lista fechada — o cadastro manual usa dropdown e a importação traduz
+// apelidos para o nome oficial (espelho da função boleto_canon_produto no banco).
+const PRODUTOS = ['CARTÃO BENEFÍCIO', 'CARTÃO CONSIGNADO'];
+
+function canonProduto(v) {
+  let n = String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  n = n.replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const CB = ['CB', 'C BENEFICIO', 'CART BENEFICIO', 'CARTAO BENEFICIO', 'CARTAO DE BENEFICIO', 'BENEFICIO'];
+  const CC = ['CC', 'C CONSIGNADO', 'CART CONSIGNADO', 'CARTAO CONSIGNADO', 'CARTAO DE CONSIGNADO', 'CONSIGNADO'];
+  if (CB.includes(n)) return 'CARTÃO BENEFÍCIO';
+  if (CC.includes(n)) return 'CARTÃO CONSIGNADO';
+  return null;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 const isAdmin = () => perm.isAdmin();
 
@@ -64,7 +79,8 @@ function _msgErroBanco(error) {
     return emp ? `CPF já cadastrado pela empresa ${emp}.` : 'CPF já cadastrado por outra empresa.';
   }
   if (m.includes('BOLETO_CPF_MESMO_PRODUTO'))  return 'CPF já cadastrado neste produto pela sua empresa.';
-  if (m.includes('BOLETO_CPF_JA_LIBERACAO'))   return 'CPF já está na Liberação de Margem.';
+  if (m.includes('BOLETO_CPF_JA_LIBERACAO'))   return 'CPF já está na Liberação de Margem neste produto.';
+  if (m.includes('BOLETO_PRODUTO_INVALIDO'))   return 'Produto não reconhecido. Use Cartão Benefício ou Cartão Consignado.';
   if (m.includes('BOLETO_CPF_INVALIDO'))       return 'CPF inválido.';
   if (m.includes('BOLETO_MOTIVO_OBRIGATORIO')) return 'Informe o motivo da reprovação.';
   if (m.includes('BOLETO_TRANSICAO_INVALIDA')) return 'Mudança de status não permitida nesta fase.';
@@ -698,8 +714,9 @@ export async function bolOnImportFile(input) {
     const parcela  = parseMoney(getVal(r, iParcela));
     const saldo    = parseMoney(getVal(r, iSaldo));
     const troco    = parseMoney(getVal(r, iTroco));
-    const convenio = cleanTxt(getVal(r, iConvenio));
-    const produto  = cleanTxt(getVal(r, iProduto));
+    const convenio    = cleanTxt(getVal(r, iConvenio));
+    const produtoRaw  = cleanTxt(getVal(r, iProduto));
+    const produto     = canonProduto(produtoRaw);
     const obs      = cleanTxt(getVal(r, iObs)) || null;
     const empresa  = admin ? (cleanTxt(getVal(r, iEmp)) || 'Smart Consig') : empresaParceiro;
 
@@ -708,13 +725,13 @@ export async function bolOnImportFile(input) {
     else if (!nome)                    motivo = 'Sem nome';
     else if (saldo <= 0)               motivo = 'Sem saldo devedor';
     else if (!convenio)                motivo = 'Sem convênio';
-    else if (!produto)                 motivo = 'Sem produto';
+    else if (!produtoRaw)              motivo = 'Sem produto';
+    else if (!produto)                 motivo = `Produto não reconhecido: "${produtoRaw}"`;
 
     if (motivo) { invalidos.push({ cpf: cpfRaw || '—', nome: nome || '—', motivo }); continue; }
 
     // Mesma regra do banco: CPF repetido no mesmo produto não entra
-    const prodNorm = produto.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
-    const dupKey = `${cpf}|${prodNorm}`;
+    const dupKey = `${cpf}|${produto}`;
     if (seen.has(dupKey)) { invalidos.push({ cpf, nome, motivo: 'CPF duplicado no mesmo produto na planilha' }); continue; }
     seen.add(dupKey);
 
@@ -847,7 +864,10 @@ function _modalForm({ titulo, r, onSaveFn }) {
       </div>
       <div>
         <label>Produto</label>
-        <input type="text" id="bol-f-produto" value="${_esc(r?.produto || '')}" placeholder="Ex.: CARTÃO BENEFÍCIO" />
+        <select id="bol-f-produto">
+          <option value="">Selecione…</option>
+          ${PRODUTOS.map(p => `<option value="${p}"${canonProduto(r?.produto) === p ? ' selected' : ''}>${p}</option>`).join('')}
+        </select>
       </div>
     </div>
 
@@ -899,7 +919,7 @@ function _lerFormulario() {
   const contrato = document.getElementById('bol-f-contrato')?.value.trim() || null;
   const email    = document.getElementById('bol-f-email')?.value.trim() || null;
   const convenio = document.getElementById('bol-f-convenio')?.value.trim();
-  const produto  = document.getElementById('bol-f-produto')?.value.trim();
+  const produto  = document.getElementById('bol-f-produto')?.value || '';
   const saldo    = parseBRL(document.getElementById('bol-f-saldo')?.value);
   const troco    = parseBRL(document.getElementById('bol-f-troco')?.value) || 0;
   const parcela  = parseBRL(document.getElementById('bol-f-parcela')?.value) || 0;
@@ -909,7 +929,7 @@ function _lerFormulario() {
   if (!nome)                     { show('Informe o nome.');           return null; }
   if (!saldo || saldo <= 0)      { show('Informe o saldo devedor.');  return null; }
   if (!convenio)                 { show('Informe o convênio.');       return null; }
-  if (!produto)                  { show('Informe o produto.');        return null; }
+  if (!produto)                  { show('Selecione o produto.');      return null; }
 
   if (err) err.style.display = 'none';
   return { cpf, nome, contrato, email, convenio, produto, saldo_devedor: saldo, troco, valor_parcela: parcela, obs };

@@ -83,6 +83,25 @@ RETURNS text AS $$
     '\s+', ' ', 'g')));
 $$ LANGUAGE sql IMMUTABLE;
 
+-- ── Produto canônico: traduz apelidos/variações para o nome oficial ──────
+-- Retorna NULL se o produto não for reconhecido (e aí o cadastro é recusado).
+-- Para adicionar um produto novo no futuro: incluir aqui e no dropdown da tela.
+CREATE OR REPLACE FUNCTION boleto_canon_produto(p text)
+RETURNS text AS $$
+DECLARE
+  n text;
+BEGIN
+  n := boleto_norm_produto(p);
+  n := btrim(regexp_replace(regexp_replace(n, '[^A-Z0-9 ]', ' ', 'g'), '\s+', ' ', 'g'));
+  IF n IN ('CB', 'C BENEFICIO', 'CART BENEFICIO', 'CARTAO BENEFICIO', 'CARTAO DE BENEFICIO', 'BENEFICIO') THEN
+    RETURN 'CARTÃO BENEFÍCIO';
+  ELSIF n IN ('CC', 'C CONSIGNADO', 'CART CONSIGNADO', 'CARTAO CONSIGNADO', 'CARTAO DE CONSIGNADO', 'CONSIGNADO') THEN
+    RETURN 'CARTÃO CONSIGNADO';
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
 -- ── INSERT: normaliza CPF, força status inicial e bloqueia CPF de terceiros ─
 -- SECURITY DEFINER: precisa enxergar registros de TODAS as empresas (e da
 -- Liberação de Margem) para validar, mesmo quando quem insere é parceiro.
@@ -95,6 +114,12 @@ BEGIN
   NEW.cpf := lpad(regexp_replace(coalesce(NEW.cpf, ''), '\D', '', 'g'), 11, '0');
   IF NEW.cpf !~ '^[0-9]{11}$' OR NEW.cpf = '00000000000' THEN
     RAISE EXCEPTION 'BOLETO_CPF_INVALIDO';
+  END IF;
+
+  -- Produto sempre gravado no nome oficial; desconhecido é recusado
+  NEW.produto := boleto_canon_produto(NEW.produto);
+  IF NEW.produto IS NULL THEN
+    RAISE EXCEPTION 'BOLETO_PRODUTO_INVALIDO';
   END IF;
 
   -- Todo registro nasce na fase inicial, sem histórico de fases
@@ -115,7 +140,7 @@ BEGIN
   SELECT empresa_parceira INTO v_dona
   FROM quitacao_boletos
   WHERE cpf = NEW.cpf
-    AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
+    AND boleto_canon_produto(produto) = NEW.produto
   LIMIT 1;
   IF FOUND THEN
     IF v_dona <> NEW.empresa_parceira THEN
@@ -129,9 +154,11 @@ BEGIN
     END IF;
   END IF;
 
-  -- CPF já presente na Liberação de Margem → recusa para todos
+  -- CPF já na Liberação de Margem NO MESMO PRODUTO → recusa para todos.
+  -- Produto diferente pode entrar (novo ciclo de boleto de outro produto).
   PERFORM 1 FROM liberacao_margem_master
   WHERE lpad(regexp_replace(coalesce(cpf, ''), '\D', '', 'g'), 11, '0') = NEW.cpf
+    AND boleto_canon_produto(produto) = NEW.produto
   LIMIT 1;
   IF FOUND THEN
     RAISE EXCEPTION 'BOLETO_CPF_JA_LIBERACAO';
@@ -173,11 +200,17 @@ BEGIN
       RAISE EXCEPTION 'BOLETO_CPF_INVALIDO';
     END IF;
 
+    -- Produto sempre no nome oficial também em edição
+    NEW.produto := boleto_canon_produto(NEW.produto);
+    IF NEW.produto IS NULL THEN
+      RAISE EXCEPTION 'BOLETO_PRODUTO_INVALIDO';
+    END IF;
+
     -- Edição não pode criar duplicidade CPF+produto (própria ou de outra empresa)
-    IF NEW.cpf IS DISTINCT FROM OLD.cpf OR boleto_norm_produto(NEW.produto) IS DISTINCT FROM boleto_norm_produto(OLD.produto) THEN
+    IF NEW.cpf IS DISTINCT FROM OLD.cpf OR NEW.produto IS DISTINCT FROM boleto_canon_produto(OLD.produto) THEN
       PERFORM 1 FROM quitacao_boletos
       WHERE cpf = NEW.cpf
-        AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
+        AND boleto_canon_produto(produto) = NEW.produto
         AND id <> NEW.id
       LIMIT 1;
       IF FOUND THEN
