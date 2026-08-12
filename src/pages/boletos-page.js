@@ -463,12 +463,16 @@ export function bolVerMais() {
 
 // ── Mudança de status (via RPC — o banco valida papel e transição) ────────
 export async function bolMudarStatus(id, novo, motivo = null) {
-  const { error } = await sb.rpc('boleto_mudar_status', { p_id: id, p_novo: novo, p_motivo: motivo });
+  const { data, error } = await sb.rpc('boleto_mudar_status', { p_id: id, p_novo: novo, p_motivo: motivo });
   if (error) { toast(_msgErroBanco(error), 'err'); return false; }
 
   await _loadData();
   _updateTable();
-  toast(`Status atualizado: ${STATUS_META[novo]?.label || novo}.`);
+  if (data?.transferido) {
+    toast('Boleto quitado! Cliente transferido para a Liberação de Margem.');
+  } else {
+    toast(`Status atualizado: ${STATUS_META[novo]?.label || novo}.`);
+  }
   return true;
 }
 
@@ -477,7 +481,7 @@ export function bolMarcarQuitado(id) {
   if (!r) return;
   showConfirm(
     'Marcar como Boleto Quitado',
-    `Confirma que o boleto de "${r.nome}" foi quitado? Essa é a fase final do processo.`,
+    `Confirma que o boleto de "${r.nome}" foi quitado? O cliente será transferido automaticamente para a Liberação de Margem Master com a data de hoje.`,
     'Confirmar quitação',
     () => bolMudarStatus(id, 'boleto_quitado')
   );
