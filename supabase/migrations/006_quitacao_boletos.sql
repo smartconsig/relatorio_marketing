@@ -73,6 +73,16 @@ CREATE TRIGGER quitacao_boletos_touch
   BEFORE UPDATE ON quitacao_boletos
   FOR EACH ROW EXECUTE FUNCTION boleto_touch_updated_at();
 
+-- ── Normalização de produto p/ comparação (maiúsculas, sem acento/espaços extras)
+CREATE OR REPLACE FUNCTION boleto_norm_produto(p text)
+RETURNS text AS $$
+  SELECT upper(btrim(regexp_replace(
+    translate(coalesce(p, ''),
+      'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ',
+      'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'),
+    '\s+', ' ', 'g')));
+$$ LANGUAGE sql IMMUTABLE;
+
 -- ── INSERT: normaliza CPF, força status inicial e bloqueia CPF de terceiros ─
 -- SECURITY DEFINER: precisa enxergar registros de TODAS as empresas (e da
 -- Liberação de Margem) para validar, mesmo quando quem insere é parceiro.
@@ -110,6 +120,17 @@ BEGIN
     ELSE
       RAISE EXCEPTION 'BOLETO_CPF_OUTRA_EMPRESA';
     END IF;
+  END IF;
+
+  -- Mesma empresa: CPF repetido no MESMO produto → recusa (evita duplicidade
+  -- e reimportação acidental). Produto diferente pode (2ª proposta do cliente).
+  PERFORM 1 FROM quitacao_boletos
+  WHERE cpf = NEW.cpf
+    AND empresa_parceira = NEW.empresa_parceira
+    AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
+  LIMIT 1;
+  IF FOUND THEN
+    RAISE EXCEPTION 'BOLETO_CPF_MESMO_PRODUTO';
   END IF;
 
   -- CPF já presente na Liberação de Margem → recusa para todos
@@ -154,6 +175,19 @@ BEGIN
     NEW.cpf := lpad(regexp_replace(coalesce(NEW.cpf, ''), '\D', '', 'g'), 11, '0');
     IF NEW.cpf !~ '^[0-9]{11}$' OR NEW.cpf = '00000000000' THEN
       RAISE EXCEPTION 'BOLETO_CPF_INVALIDO';
+    END IF;
+
+    -- Edição não pode criar duplicidade CPF+produto na mesma empresa
+    IF NEW.cpf IS DISTINCT FROM OLD.cpf OR boleto_norm_produto(NEW.produto) IS DISTINCT FROM boleto_norm_produto(OLD.produto) THEN
+      PERFORM 1 FROM quitacao_boletos
+      WHERE cpf = NEW.cpf
+        AND empresa_parceira = NEW.empresa_parceira
+        AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
+        AND id <> NEW.id
+      LIMIT 1;
+      IF FOUND THEN
+        RAISE EXCEPTION 'BOLETO_CPF_MESMO_PRODUTO';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;

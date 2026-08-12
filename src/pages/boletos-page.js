@@ -63,6 +63,7 @@ function _msgErroBanco(error) {
     const emp = m.split('BOLETO_CPF_OUTRA_EMPRESA:')[1]?.split(/[\n"]/)[0]?.trim();
     return emp ? `CPF já cadastrado pela empresa ${emp}.` : 'CPF já cadastrado por outra empresa.';
   }
+  if (m.includes('BOLETO_CPF_MESMO_PRODUTO'))  return 'CPF já cadastrado neste produto pela sua empresa.';
   if (m.includes('BOLETO_CPF_JA_LIBERACAO'))   return 'CPF já está na Liberação de Margem.';
   if (m.includes('BOLETO_CPF_INVALIDO'))       return 'CPF inválido.';
   if (m.includes('BOLETO_MOTIVO_OBRIGATORIO')) return 'Informe o motivo da reprovação.';
@@ -711,8 +712,10 @@ export async function bolOnImportFile(input) {
 
     if (motivo) { invalidos.push({ cpf: cpfRaw || '—', nome: nome || '—', motivo }); continue; }
 
-    const dupKey = `${cpf}|${contrato}|${produto}|${saldo}`;
-    if (seen.has(dupKey)) { invalidos.push({ cpf, nome, motivo: 'Linha duplicada na planilha' }); continue; }
+    // Mesma regra do banco: CPF repetido no mesmo produto não entra
+    const prodNorm = produto.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    const dupKey = `${cpf}|${prodNorm}`;
+    if (seen.has(dupKey)) { invalidos.push({ cpf, nome, motivo: 'CPF duplicado no mesmo produto na planilha' }); continue; }
     seen.add(dupKey);
 
     valid.push({
