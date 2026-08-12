@@ -109,28 +109,24 @@ BEGIN
   -- Lock por CPF: duas importações simultâneas do mesmo CPF entram em fila
   PERFORM pg_advisory_xact_lock(hashtext('quitacao_boletos_cpf_' || NEW.cpf));
 
-  -- CPF já cadastrado por OUTRA empresa → recusa
+  -- A regra é por CPF + PRODUTO: o mesmo CPF no mesmo produto não entra,
+  -- seja da própria empresa (duplicidade) ou de outra (proposta concorrente).
+  -- Produto diferente pode, inclusive entre empresas diferentes.
   SELECT empresa_parceira INTO v_dona
   FROM quitacao_boletos
-  WHERE cpf = NEW.cpf AND empresa_parceira <> NEW.empresa_parceira
-  LIMIT 1;
-  IF FOUND THEN
-    IF is_admin_user() THEN
-      RAISE EXCEPTION 'BOLETO_CPF_OUTRA_EMPRESA:%', v_dona;
-    ELSE
-      RAISE EXCEPTION 'BOLETO_CPF_OUTRA_EMPRESA';
-    END IF;
-  END IF;
-
-  -- Mesma empresa: CPF repetido no MESMO produto → recusa (evita duplicidade
-  -- e reimportação acidental). Produto diferente pode (2ª proposta do cliente).
-  PERFORM 1 FROM quitacao_boletos
   WHERE cpf = NEW.cpf
-    AND empresa_parceira = NEW.empresa_parceira
     AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
   LIMIT 1;
   IF FOUND THEN
-    RAISE EXCEPTION 'BOLETO_CPF_MESMO_PRODUTO';
+    IF v_dona <> NEW.empresa_parceira THEN
+      IF is_admin_user() THEN
+        RAISE EXCEPTION 'BOLETO_CPF_OUTRA_EMPRESA:%', v_dona;
+      ELSE
+        RAISE EXCEPTION 'BOLETO_CPF_OUTRA_EMPRESA';
+      END IF;
+    ELSE
+      RAISE EXCEPTION 'BOLETO_CPF_MESMO_PRODUTO';
+    END IF;
   END IF;
 
   -- CPF já presente na Liberação de Margem → recusa para todos
@@ -177,11 +173,10 @@ BEGIN
       RAISE EXCEPTION 'BOLETO_CPF_INVALIDO';
     END IF;
 
-    -- Edição não pode criar duplicidade CPF+produto na mesma empresa
+    -- Edição não pode criar duplicidade CPF+produto (própria ou de outra empresa)
     IF NEW.cpf IS DISTINCT FROM OLD.cpf OR boleto_norm_produto(NEW.produto) IS DISTINCT FROM boleto_norm_produto(OLD.produto) THEN
       PERFORM 1 FROM quitacao_boletos
       WHERE cpf = NEW.cpf
-        AND empresa_parceira = NEW.empresa_parceira
         AND boleto_norm_produto(produto) = boleto_norm_produto(NEW.produto)
         AND id <> NEW.id
       LIMIT 1;
