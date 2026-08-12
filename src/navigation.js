@@ -21,6 +21,7 @@ import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayA
 import { renderUniAdmin } from './pages/uni-admin.js';
 import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 import { renderLiberacao } from './pages/liberacao-page.js';
+import { renderBoletos } from './pages/boletos-page.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -47,6 +48,7 @@ const TITLES = {
   bsc:          'Ranking BSC',
   parceiros:    'Ranking Parceiros',
   liberacao:    'Liberação de Margem Master',
+  boletos:      'Quitação de Boleto',
   universidade: 'Universidade Smart',
   'uni-admin':       'Criador de Cursos',
   'uni-gamificacao': 'Gamificação',
@@ -75,7 +77,7 @@ export function navigate(sec) {
   }
   // Oculta o filtro de data global na tela de Lib. Margem
   const dateFilter = document.querySelector('.date-filter');
-  if (dateFilter) dateFilter.style.display = sec === 'liberacao' ? 'none' : '';
+  if (dateFilter) dateFilter.style.display = (sec === 'liberacao' || sec === 'boletos') ? 'none' : '';
 
   localStorage.setItem('sc_last_section', sec);
   // Atualiza o hash da URL sem recarregar — sobrevive ao F5
@@ -115,6 +117,7 @@ export function navigate(sec) {
   if (sec === 'conteudo')    renderConteudo();
   if (sec === 'bms')         renderBMs();
   if (sec === 'liberacao')   renderLiberacao();
+  if (sec === 'boletos')     renderBoletos();
   if (sec === 'goals')       initGoalsPage();
   if (sec === 'universidade') renderUniversidade();
   if (sec === 'uni-admin')        renderUniAdmin();
@@ -140,6 +143,7 @@ export function applyPermissionsToUI() {
     bsc:          () => can('bsc'),
     parceiros:    () => perm.parceiros(),
     liberacao:    () => can('liberacao_margem') || perm.isAdmin(),
+    boletos:      () => can('quitacao_boleto') || perm.isAdmin(),
     universidade: () => can('universidade_acessar') || perm.isAdmin(),
     'uni-admin':       () => perm.isAdmin(),
     'uni-gamificacao': () => perm.isAdmin(),
