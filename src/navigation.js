@@ -390,6 +390,10 @@ const FLOAT_NAV_ITEMS = [
     svg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   },
   {
+    sec: 'boletos', title: 'Quit. Boleto', badgeId: null,
+    svg: '<rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="17" y1="9" x2="17" y2="15"/>',
+  },
+  {
     sec: 'universidade', title: 'Universidade', badgeId: null,
     svg: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M12 15v7"/><path d="M6 11.8v5.5c3.3 2.8 8.7 2.8 12 0v-5.5"/>',
   },
