@@ -641,14 +641,18 @@ async function openInviteModal() {
     btn.textContent = 'Enviar Convite'; btn.disabled = false;
 
     if (error || data?.error) {
-      // supabase-js v2 CDN: quando a função retorna não-2xx, error.message
-      // pode ser o próprio body JSON serializado como string
+      // supabase-js v2: quando a função retorna não-2xx, o body real fica na
+      // Response em error.context — error.message é só o texto genérico
       let msg = data?.error || 'Erro ao enviar convite';
       if (!data?.error) {
-        try {
-          const parsed = JSON.parse(error?.message || '');
-          msg = parsed.error || error?.message || msg;
-        } catch {
+        if (error?.context && typeof error.context.json === 'function') {
+          try {
+            const body = await error.context.json();
+            msg = body?.error || body?.message || error?.message || msg;
+          } catch {
+            msg = error?.message || msg;
+          }
+        } else {
           msg = error?.message || msg;
         }
       }
