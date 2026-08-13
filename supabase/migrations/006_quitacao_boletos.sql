@@ -270,19 +270,10 @@ BEGIN
     RAISE EXCEPTION 'BOLETO_MOTIVO_OBRIGATORIO';
   END IF;
 
-  -- Boleto quitado = transferência automática para a Liberação de Margem.
-  -- Tudo na mesma transação: insere lá e remove daqui — ou completa, ou nada.
-  -- data_quitado da Liberação = dia em que foi marcado como quitado.
-  IF p_novo = 'boleto_quitado' THEN
-    INSERT INTO liberacao_margem_master
-      (cpf, nome, convenio, produto, empresa_parceira, saldo_devedor, troco, data_quitado, obs, aprovado)
-    VALUES
-      (r.cpf, r.nome, r.convenio, r.produto, r.empresa_parceira, r.saldo_devedor, r.troco, v_hoje, r.obs, false);
-
-    DELETE FROM quitacao_boletos WHERE id = p_id;
-
-    RETURN json_build_object('ok', true, 'status', p_novo, 'transferido', true);
-  END IF;
+  -- NOTA: a transferência automática para a Liberação de Margem ao quitar
+  -- foi DESATIVADA por decisão de negócio (13/08/2026). O cliente quitado
+  -- permanece nesta tela com a data gravada. Para reativar, ver commit
+  -- f1840972 (bloco "boleto_quitado" com INSERT em liberacao_margem_master).
 
   -- Libera a alteração de status para o trigger de proteção (só nesta transação)
   PERFORM set_config('app.boleto_rpc', '1', true);
@@ -291,6 +282,7 @@ BEGIN
     status            = p_novo,
     data_solicitado   = CASE WHEN p_novo = 'boleto_solicitado' THEN v_hoje ELSE data_solicitado END,
     data_enviado      = CASE WHEN p_novo = 'boleto_enviado'    THEN v_hoje ELSE data_enviado    END,
+    data_quitado      = CASE WHEN p_novo = 'boleto_quitado'    THEN v_hoje ELSE data_quitado    END,
     data_reprovado    = CASE WHEN p_novo = 'boleto_reprovado'  THEN v_hoje ELSE data_reprovado  END,
     motivo_reprovacao = CASE WHEN p_novo = 'boleto_reprovado'  THEN btrim(p_motivo) ELSE motivo_reprovacao END
   WHERE id = p_id;
