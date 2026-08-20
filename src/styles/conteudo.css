@@ -141,7 +141,8 @@
 .cont-modal-body { padding: 16px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
 .cont-modal-body .cont-input { width: 100%; margin-bottom: 10px; }
 .cont-label { font: 600 11px var(--font-b); color: var(--gray-light); margin-bottom: 4px; display: block; }
-.cont-textarea { resize: vertical; font-family: var(--font-b); }
+.cont-textarea { resize: vertical; font-family: var(--font-b); flex-shrink: 0; }
+#cont-f-desc { min-height: 72px; }
 .cont-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .cont-modal-foot {
