@@ -47,9 +47,12 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 ## Serviços e integrações
 
 ### Supabase
-- **Auth**: login por e-mail/senha; convites via Edge Function `invite-user`
+- **Auth**: login por e-mail/senha. Criação de usuários pelo admin (modal "Novo Usuário" em `admin-page.js`) via Edge Function `invite-user`, em **dois modos**:
+  - **Senha direta** (padrão desde ago/2026): o admin define a senha inicial na hora; a função usa `auth.admin.createUser` com `email_confirm: true` e o usuário entra direto, sem e-mail. A resposta traz o marcador `mode: 'password'` — o frontend só confirma sucesso se ele vier (blindagem contra função desatualizada no painel).
+  - **Convite por e-mail** (fluxo legado, mantido como opção): `inviteUserByEmail` → usuário recebe link → tela "definir senha" em `auth.js`. Se o e-mail já existir, envia link de redefinição.
 - **Database**: tabelas abaixo; RLS habilitado
 - **Edge Functions** (em `supabase/functions/`): `smart-sync` (busca leads da API Smart Consig), `invite-user`, `delete-user`, `kolmeya-reports` (relatórios de SMS Kolmeya). A função `meta-ads` é invocada pelo código (`sb.functions.invoke('meta-ads')`) mas **não está versionada no repo** — vive apenas no painel do Supabase
+- ⚠️ **Deploy de Edge Function é manual**: o push na `main` só publica o frontend (Vercel). Qualquer mudança em `supabase/functions/*` precisa ser reimplantada à mão no painel do Supabase (Edge Functions → função → Code → colar → Deploy) ou via `supabase functions deploy <nome>` — senão produção continua rodando a versão antiga
 - **Snapshots**: o estado completo da aplicação é serializado em JSON e salvo na tabela `snapshots` a cada 2 segundos (debounced) após qualquer classificação ou alteração
 - Credenciais do cliente (anon key) estão **hardcoded** em `src/services/supabase.js` — não colocar em `.env`
 - Secrets das Edge Functions (SMART_USERNAME, SMART_PASSWORD, SERVICE_ROLE_KEY, KOLMEYA_TOKEN, entre outros) ficam no painel do Supabase
