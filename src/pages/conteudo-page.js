@@ -17,7 +17,7 @@ import {
 
 let _cards      = [];
 let _membros    = [];
-let _filtroMeus = false;
+let _filtroResp = '';        // '' = todos | 'meus' | 'sem' | id do responsável
 let _filtroCanal = '';
 let _editId     = null;      // id do card aberto no modal (null = novo)
 let _motivoCard = null;      // card aguardando o motivo do ajuste
@@ -79,10 +79,9 @@ function _shell() {
     <div class="cont-toolbar">
       <div class="cont-toolbar-left">
         <button class="btn btn-primary" id="cont-novo">+ Novo conteúdo</button>
-        <div class="cont-seg">
-          <button class="cont-seg-btn active" data-meus="0">Todos</button>
-          <button class="cont-seg-btn" data-meus="1">Só os meus</button>
-        </div>
+        <select class="cont-select" id="cont-filtro-resp">
+          <option value="">Todos os responsáveis</option>
+        </select>
         <select class="cont-select" id="cont-filtro-canal">
           <option value="">Todos os canais</option>
           ${canalOpts}
@@ -235,12 +234,9 @@ function _bindShell() {
   document.getElementById('cont-salvar').addEventListener('click', _salvar);
   document.getElementById('cont-excluir').addEventListener('click', _excluir);
 
-  document.querySelectorAll('.cont-seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _filtroMeus = btn.dataset.meus === '1';
-      document.querySelectorAll('.cont-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
-      _renderBoard();
-    });
+  document.getElementById('cont-filtro-resp').addEventListener('change', e => {
+    _filtroResp = e.target.value;
+    _renderBoard();
   });
 
   document.getElementById('cont-filtro-canal').addEventListener('change', e => {
@@ -313,16 +309,41 @@ async function _reload() {
 function _visiveis() {
   const meuId = state.currentUser?.id;
   return _cards.filter(c => {
-    if (_filtroMeus && c.responsavel_id !== meuId) return false;
+    if (_filtroResp === 'meus')     { if (c.responsavel_id !== meuId) return false; }
+    else if (_filtroResp === 'sem') { if (c.responsavel_id) return false; }
+    else if (_filtroResp)           { if (c.responsavel_id !== _filtroResp) return false; }
     if (_filtroCanal && c.canal !== _filtroCanal) return false;
     return true;
   });
+}
+
+/** Opções do filtro de responsável: só quem tem card no quadro. */
+function _popularFiltroResp() {
+  const sel = document.getElementById('cont-filtro-resp');
+  if (!sel) return;
+
+  const ids = [...new Set(_cards.map(c => c.responsavel_id).filter(Boolean))];
+  const nomes = ids
+    .map(id => ({ id, nome: _nomeMembro(id) || '(sem nome)' }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const temSemResp = _cards.some(c => !c.responsavel_id);
+
+  sel.innerHTML =
+    '<option value="">Todos os responsáveis</option>' +
+    '<option value="meus">Só os meus</option>' +
+    nomes.map(m => `<option value="${m.id}">${_esc(m.nome)}</option>`).join('') +
+    (temSemResp ? '<option value="sem">Sem responsável</option>' : '');
+
+  // seleção pode ter sumido do quadro (card excluído/reatribuído) — volta p/ todos
+  if (![...sel.options].some(o => o.value === _filtroResp)) _filtroResp = '';
+  sel.value = _filtroResp;
 }
 
 function _renderBoard() {
   const board = document.getElementById('cont-board');
   if (!board) return;
 
+  _popularFiltroResp();
   const cards = _visiveis();
   const hoje  = _hojeYMD();
 

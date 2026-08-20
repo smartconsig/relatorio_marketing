@@ -11,17 +11,6 @@
 }
 .cont-toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-.cont-seg {
-  display: inline-flex; background: var(--surface2);
-  border: 1px solid var(--border); border-radius: 8px; padding: 2px;
-}
-.cont-seg-btn {
-  background: none; border: 0; color: var(--gray-light);
-  font: 600 12px var(--font-b); padding: 6px 12px;
-  border-radius: 6px; cursor: pointer;
-}
-.cont-seg-btn.active { background: var(--red); color: #fff; }
-
 .cont-select, .cont-input {
   background: var(--surface2); border: 1px solid var(--border);
   color: var(--white); font: 400 13px var(--font-b);
@@ -259,4 +248,3 @@
 [data-theme="light"] .cont-status-sel.cont-status-edicao:focus   { color: #15803d; }
 [data-theme="light"] .cont-btn-ok,
 [data-theme="light"] .cont-btn-back  { background: #f1f5f9; color: #475569; }
-[data-theme="light"] .cont-seg-btn.active { color: #fff; }
