@@ -39,6 +39,7 @@ export const STATUS_PROD = [
   { key: 'roteiro',  label: 'Roteiro',  tipos: ['estatico', 'video'] },
   { key: 'gravacao', label: 'Gravação', tipos: ['video'] },
   { key: 'edicao',   label: 'Edição',   tipos: ['estatico', 'video'] },
+  { key: 'feito',    label: 'Feito',    tipos: ['estatico', 'video'] },
 ];
 
 /** Status válidos para um tipo de conteúdo. */

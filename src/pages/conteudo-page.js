@@ -397,7 +397,7 @@ function _cardHTML(c, hoje) {
   let statusHTML = '';
   if (c.tipo) {
     const atual = c.producao_status || 'roteiro';
-    const cor   = ` cont-status-${atual}`;    // roteiro=azul, gravacao=roxo, edicao=verde
+    const cor   = ` cont-status-${atual}`;    // roteiro=azul, gravacao=roxo, edicao=verde, feito=teal
     statusHTML = podeEditar
       ? `<select class="cont-status-sel${cor}" data-status="${c.id}" title="Status de produção">
            ${statusDoTipo(c.tipo).map(s =>
