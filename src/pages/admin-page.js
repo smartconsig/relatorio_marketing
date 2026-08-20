@@ -404,7 +404,7 @@ export async function renderAdminPage() {
     </div>
     <div id="admin-tab-usuarios" class="admin-tab-content" style="${_adminTab !== 'usuarios' ? 'display:none' : ''}">
       <div class="admin-toolbar">
-        <button class="btn-primary" id="btn-invite-user">+ Convidar Usuário</button>
+        <button class="btn-primary" id="btn-invite-user">+ Novo Usuário</button>
       </div>
       <div id="users-list-wrap"></div>
     </div>
@@ -581,8 +581,19 @@ async function openInviteModal() {
   const content = document.getElementById('admin-modal-content');
 
   content.innerHTML = `
-    <h2 class="modal-title">Convidar Usuário</h2>
-    <p class="modal-desc">O usuário receberá um e-mail com link para criar a senha e acessar o sistema.</p>
+    <h2 class="modal-title">Novo Usuário</h2>
+    <p class="modal-desc" id="invite-mode-desc">Defina a senha inicial agora e informe ao usuário — ele já entra direto, sem depender de e-mail.</p>
+    <div class="form-group">
+      <label>Como criar o acesso?</label>
+      <div style="display:flex;gap:16px;padding:4px 0">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;cursor:pointer">
+          <input type="radio" name="invite-mode" value="password" checked> Definir senha agora
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;cursor:pointer">
+          <input type="radio" name="invite-mode" value="email"> Enviar convite por e-mail
+        </label>
+      </div>
+    </div>
     <div class="form-group">
       <label>E-mail *</label>
       <input type="email" id="invite-email" placeholder="email@exemplo.com" autocomplete="off">
@@ -602,17 +613,42 @@ async function openInviteModal() {
       <label>Nome do Operador <span style="font-weight:400;text-transform:none">(opcional — para vincular ao ranking)</span></label>
       <input type="text" id="invite-operador" placeholder="Nome exato como aparece no ranking" autocomplete="off">
     </div>
+    <div id="invite-pass-fields">
+      <div class="form-group">
+        <label>Senha inicial *</label>
+        <input type="password" id="invite-pass-1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirmar senha *</label>
+        <input type="password" id="invite-pass-2" placeholder="Repita a senha" autocomplete="new-password">
+      </div>
+    </div>
     <div id="invite-feedback" style="display:none;padding:10px 12px;border-radius:7px;font-size:13px;margin-bottom:4px"></div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="document.getElementById('admin-modal').style.display='none'">Cancelar</button>
-      <button class="btn-primary" id="btn-send-invite">Enviar Convite</button>
+      <button class="btn-primary" id="btn-send-invite">Criar Usuário</button>
     </div>
   `;
 
   modal.style.display = 'flex';
   document.getElementById('invite-email').focus();
 
+  const getMode = () => document.querySelector('input[name="invite-mode"]:checked')?.value || 'password';
+
+  // Alterna campos de senha e textos conforme o modo escolhido
+  content.querySelectorAll('input[name="invite-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isPass = getMode() === 'password';
+      document.getElementById('invite-pass-fields').style.display = isPass ? '' : 'none';
+      document.getElementById('btn-send-invite').textContent = isPass ? 'Criar Usuário' : 'Enviar Convite';
+      document.getElementById('invite-mode-desc').textContent = isPass
+        ? 'Defina a senha inicial agora e informe ao usuário — ele já entra direto, sem depender de e-mail.'
+        : 'O usuário receberá um e-mail com link para criar a senha e acessar o sistema.';
+    });
+  });
+
   document.getElementById('btn-send-invite').addEventListener('click', async () => {
+    const mode          = getMode();
     const email         = document.getElementById('invite-email').value.trim().toLowerCase();
     const nome          = document.getElementById('invite-nome').value.trim();
     const grupo_id      = document.getElementById('invite-grupo').value || null;
@@ -631,19 +667,34 @@ async function openInviteModal() {
       _showFeedback(feedback, 'Selecione um grupo de acesso.', 'err'); return;
     }
 
-    btn.textContent = 'Enviando…'; btn.disabled = true;
+    let password = null;
+    if (mode === 'password') {
+      const p1 = document.getElementById('invite-pass-1').value;
+      const p2 = document.getElementById('invite-pass-2').value;
+      if (!p1 || p1.length < 8) {
+        _showFeedback(feedback, 'A senha deve ter pelo menos 8 caracteres.', 'err'); return;
+      }
+      if (p1 !== p2) {
+        _showFeedback(feedback, 'As senhas não conferem.', 'err'); return;
+      }
+      password = p1;
+    }
+
+    const btnLabel = mode === 'password' ? 'Criar Usuário' : 'Enviar Convite';
+    btn.textContent = mode === 'password' ? 'Criando…' : 'Enviando…';
+    btn.disabled = true;
     feedback.style.display = 'none';
 
     const { data, error } = await sb.functions.invoke('invite-user', {
-      body: { email, nome, grupo_id, operador_nome },
+      body: { email, nome, grupo_id, operador_nome, ...(password ? { password } : {}) },
     });
 
-    btn.textContent = 'Enviar Convite'; btn.disabled = false;
+    btn.textContent = btnLabel; btn.disabled = false;
 
     if (error || data?.error) {
       // supabase-js v2: quando a função retorna não-2xx, o body real fica na
       // Response em error.context — error.message é só o texto genérico
-      let msg = data?.error || 'Erro ao enviar convite';
+      let msg = data?.error || 'Erro ao criar usuário';
       if (!data?.error) {
         if (error?.context && typeof error.context.json === 'function') {
           try {
@@ -660,17 +711,30 @@ async function openInviteModal() {
       return;
     }
 
+    // Blindagem: se a Edge Function em produção ainda for a versão antiga,
+    // ela ignora a senha e envia convite por e-mail — avisa em vez de confirmar
+    if (mode === 'password' && data?.mode !== 'password') {
+      _showFeedback(feedback,
+        'A função invite-user no Supabase ainda é a versão antiga e não suporta senha direta — foi enviado um convite por e-mail. Atualize a Edge Function.', 'err');
+      return;
+    }
+
     // Sucesso — mostra feedback antes de fechar
-    const msg = data.resent
-      ? `✅ ${email} já está cadastrado. Um link de redefinição de senha foi enviado.`
-      : `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`;
+    let msg;
+    if (mode === 'password') {
+      msg = `✅ Usuário ${email} criado. Informe a senha definida para ele acessar o sistema.`;
+    } else {
+      msg = data.resent
+        ? `✅ ${email} já está cadastrado. Um link de redefinição de senha foi enviado.`
+        : `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`;
+    }
     _showFeedback(feedback, msg, 'ok');
-    btn.textContent = 'Enviado!'; btn.disabled = true;
+    btn.textContent = mode === 'password' ? 'Criado!' : 'Enviado!'; btn.disabled = true;
 
     setTimeout(async () => {
       modal.style.display = 'none';
       await loadUsers();
-    }, 2000);
+    }, 2500);
   });
 }
 

@@ -50,11 +50,62 @@ serve(async (req) => {
 
     // Read invite payload
     const body = await req.json().catch(() => ({}));
-    const { email, nome, grupo_id } = body as { email: string; nome?: string; grupo_id?: string };
+    const { email, nome, grupo_id, operador_nome, password } = body as {
+      email: string; nome?: string; grupo_id?: string; operador_nome?: string; password?: string;
+    };
 
     if (!email || !email.includes('@')) {
       return new Response(JSON.stringify({ error: 'E-mail inválido' }), {
         status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Modo "senha direta": admin define a senha na hora, sem e-mail de convite
+    if (password) {
+      if (password.length < 8) {
+        return new Response(JSON.stringify({ error: 'A senha deve ter pelo menos 8 caracteres' }), {
+          status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: nome || '' },
+      });
+
+      if (createErr || !created?.user) {
+        console.error('createUser error:', createErr);
+        const msg = (createErr?.message || '').toLowerCase();
+        if (msg.includes('already') || (createErr as any)?.status === 422) {
+          return new Response(JSON.stringify({
+            error: 'Este e-mail já está cadastrado. Use "Enviar convite por e-mail" para reenviar o acesso ou redefinir a senha.',
+          }), {
+            status: 409, headers: { ...CORS, 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ error: createErr?.message || 'Falha ao criar usuário' }), {
+          status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
+
+      await supabaseAdmin.from('profiles').upsert({
+        id:            created.user.id,
+        nome:          nome          || null,
+        email:         email,
+        grupo_id:      grupo_id      || null,
+        operador_nome: operador_nome || null,
+        ativo:         true,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        mode:    'password',
+        user_id: created.user.id,
+        email,
+      }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
@@ -76,11 +127,12 @@ serve(async (req) => {
         if (existingUser) {
           // Atualiza grupo e nome no perfil existente
           await supabaseAdmin.from('profiles').upsert({
-            id:       existingUser.id,
-            nome:     nome     || null,
-            email:    email,
-            grupo_id: grupo_id || null,
-            ativo:    true,
+            id:            existingUser.id,
+            nome:          nome          || null,
+            email:         email,
+            grupo_id:      grupo_id      || null,
+            operador_nome: operador_nome || null,
+            ativo:         true,
           });
 
           // Envia link de redefinição de senha
@@ -109,11 +161,12 @@ serve(async (req) => {
     await supabaseAdmin
       .from('profiles')
       .upsert({
-        id:       invited.user.id,
-        nome:     nome     || null,
-        email:    email,
-        grupo_id: grupo_id || null,
-        ativo:    true,
+        id:            invited.user.id,
+        nome:          nome          || null,
+        email:         email,
+        grupo_id:      grupo_id      || null,
+        operador_nome: operador_nome || null,
+        ativo:         true,
       });
 
     return new Response(JSON.stringify({
