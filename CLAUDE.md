@@ -104,7 +104,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
-> ⚠️ **Migrations parcialmente incompletas**: `profiles` e `grupos_acesso` (em `001_user_management.sql`), as tabelas `uni_*` e as tabelas `conteudo_*` (em `002_conteudo.sql` e `003_conteudo_anexos.sql`) têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas duas precisam ser criadas à mão.
+> ⚠️ **Migrations parcialmente incompletas**: `profiles` e `grupos_acesso` (em `001_user_management.sql`), as tabelas `uni_*` e as tabelas `conteudo_*` (em `002_conteudo.sql`, `003_conteudo_anexos.sql`, `005_conteudo_tipo_status.sql` e `006_conteudo_status_feito.sql`) têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas duas precisam ser criadas à mão.
 
 ---
 
@@ -125,7 +125,7 @@ relatorio_marketing/
 ├── supabase/
 │   ├── functions/            # Edge Functions: smart-sync, invite-user, delete-user, kolmeya-reports
 │   ├── migrations/           # SQL de criação de tabelas e RLS
-│   │                         # 002_conteudo.sql, 003_conteudo_anexos.sql (Esteira de Conteúdo)
+│   │                         # 002, 003, 005, 006 (Esteira de Conteúdo), 004 (BMs)
 │   └── quitacoes_clientes.sql # SQL solto (fora de migrations/) da tabela quitacoes_clientes
 ├── src/
 │   ├── main.js               # Ponto de entrada; expõe funções no window.*
@@ -233,6 +233,8 @@ relatorio_marketing/
 - **"Ajuste" é um estado, não uma coluna**: card reprovado volta para *Em produção* com `em_ajuste = true` e o motivo em `ajuste_motivo`. A taxa de retrabalho sai do log de eventos, não de uma coluna própria.
 - **`conteudo_eventos` é a fonte de tudo**: histórico do card, chat (tipo `comentario`) e as futuras métricas de gargalo saem da mesma tabela, em ordem cronológica.
 - **`coluna_desde`** é reiniciado a cada troca de etapa — é a base do "parado há X dias" e do tempo médio por etapa.
+- **Tipo + status de produção**: card pode ter `tipo` (`estatico` | `video`) e `producao_status` — fluxo `roteiro` → `gravacao` (só vídeo) → `edicao` → `feito`. As listas vivem em `STATUS_PROD`/`statusDoTipo()` (`conteudo-svc.js`), mas o banco também valida via CHECK constraint (`005` e `006`) — **adicionar status novo exige migration + rodar o SQL à mão antes do deploy do front**. Cores dos chips: roteiro azul, gravação roxo, edição verde, feito teal (`conteudo.css`).
+- **Filtros da toolbar**: dropdown de responsável ("Todos", "Só os meus", um item por colaborador **que tem card no quadro**, "Sem responsável" se houver card órfão) + dropdown de canal; combinam entre si e não persistem (F5 volta para "Todos").
 - **Permissões próprias**: `conteudo_visualizar`, `conteudo_editar` e `conteudo_aprovar`; admin tem as três por padrão.
 
 **Central de BMs**: controle das Business Managers da API oficial da Meta/WhatsApp e dos seus números oficiais — nasceu da dor de banimento. Padrão igual ao da Esteira: grava direto no Supabase (sem snapshot), revalida a cada 30s e ao focar a aba. Pontos de desenho:
