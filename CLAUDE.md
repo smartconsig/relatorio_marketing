@@ -53,7 +53,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 - **Database**: tabelas abaixo; RLS habilitado
 - **Edge Functions** (em `supabase/functions/`): `smart-sync` (busca leads da API Smart Consig), `invite-user`, `delete-user`, `kolmeya-reports` (relatórios de SMS Kolmeya). A função `meta-ads` é invocada pelo código (`sb.functions.invoke('meta-ads')`) mas **não está versionada no repo** — vive apenas no painel do Supabase
 - ⚠️ **Deploy de Edge Function é manual**: o push na `main` só publica o frontend (Vercel). Qualquer mudança em `supabase/functions/*` precisa ser reimplantada à mão no painel do Supabase (Edge Functions → função → Code → colar → Deploy) ou via `supabase functions deploy <nome>` — senão produção continua rodando a versão antiga
-- **Snapshots**: o estado completo da aplicação é serializado em JSON e salvo na tabela `snapshots` a cada 2 segundos (debounced) após qualquer classificação ou alteração
+- **Snapshots**: o estado completo da aplicação é serializado em JSON e salvo na tabela `snapshots` a cada 2 segundos (debounced) após qualquer classificação ou alteração. Desde 29/08/2026 o payload vai **comprimido com gzip nativo** (prefixo `gz1:`, ~92% menor; helpers em `src/utils/gzip.js`) e a leitura aceita os dois formatos; o cache do localStorage usa a mesma compressão. ⚠️ O snapshot está em processo de aposentadoria — ver seção **"Migração do snapshot (Fase 3)"**
 - Credenciais do cliente (anon key) estão **hardcoded** em `src/services/supabase.js` — não colocar em `.env`
 - Secrets das Edge Functions (SMART_USERNAME, SMART_PASSWORD, SERVICE_ROLE_KEY, KOLMEYA_TOKEN, entre outros) ficam no painel do Supabase
 
@@ -91,6 +91,11 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `quitacoes_clientes` | Registros de quitação/pagamento |
+| `propostas` | Fase 3: 1 linha por proposta do import (`cpf`/`sale_date` indexados + entry completa em `data` jsonb); substituída inteira a cada import via `import_id` |
+| `smart_leads` | Fase 3: leads Smart em forma reduzida (operador, time, estágio, andamento, data), 1 linha por lead; substituída a cada import |
+| `import_meta` | Fase 3: linha única com o `import_id` ativo (ponteiro), diagnóstico, agregados e quem/quando importou |
+| `divergencias_confirmadas` | Divergências confirmadas, 1 linha por CPF (antes só existiam dentro do snapshot) |
+| `vendor_mappings` | Mapeamento de nomes de vendedor Ecorban↔Smart (antes só no snapshot) |
 | `parceiros_data` | Ranking de Parceiros: uma única linha com o ranking inteiro em JSON (mesmo padrão de `bsc_data`) |
 | `conteudo_cards` | Cards da Esteira de Conteúdo (kanban de criação) |
 | `conteudo_eventos` | Histórico do card: movimentações, aprovações e comentários |
@@ -103,6 +108,8 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 **Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs` e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
+
+> ✅ **Fase 3 (`propostas`, `smart_leads`, `import_meta`, `divergencias_confirmadas`, `vendor_mappings`)**: migration `007_propostas.sql` **já rodada em produção em 29/08/2026** e validada (primeiro import populou ~7.030 propostas).
 
 > ⚠️ **Migrations parcialmente incompletas**: `profiles` e `grupos_acesso` (em `001_user_management.sql`), as tabelas `uni_*` e as tabelas `conteudo_*` (em `002_conteudo.sql`, `003_conteudo_anexos.sql`, `005_conteudo_tipo_status.sql` e `006_conteudo_status_feito.sql`) têm migration versionada. `quitacoes_clientes` tem SQL solto em `supabase/quitacoes_clientes.sql` (fora de `migrations/`). **`snapshots` e `classifications` não têm SQL versionado nenhum** — foram criadas manualmente pelo painel do Supabase. Ao recriar o ambiente do zero, essas duas precisam ser criadas à mão.
 
@@ -159,6 +166,7 @@ relatorio_marketing/
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
 │   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
+│   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
 │   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
 │   │   ├── bm-svc.js         # Central de BMs: BMs, números oficiais e eventos (sem snapshot)
 │   │   ├── bsc-svc.js        # Balanced Scorecard service
@@ -188,6 +196,7 @@ relatorio_marketing/
 │   │   └── uni-gamificacao.js# Configurações de gamificação
 │   ├── utils/
 │   │   ├── currency.js       # Formatação e parse de BRL
+│   │   ├── gzip.js           # Compressão gzip nativa (snapshot + cache local)
 │   │   ├── date.js           # Manipulação de datas e filtros por intervalo
 │   │   ├── string.js         # Normalização de strings
 │   │   ├── cpf.js            # Formatação e validação de CPF
@@ -212,6 +221,27 @@ relatorio_marketing/
 3. **Snapshot**: ao login, compara timestamp local com Supabase; se desatualizado, carrega snapshot completo e mescla com estado local
 4. **Renderização**: páginas renderizam sob demanda na navegação; todas chamam `renderAll()` para sincronizar com `state`
 5. **Persistência**: qualquer classificação → debounce de 2s → `snapshot.js` → Supabase tabela `snapshots`
+
+---
+
+## Migração do snapshot (Fase 3) — EM ANDAMENTO
+
+O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo substituído por tabelas normalizadas. Plano acordado com o responsável em 29/08/2026, execução em etapas reversíveis:
+
+| Etapa | O quê | Status |
+|---|---|---|
+| Fase 1a | Snapshot comprimido com gzip (`gz1:`), hash pula save sem mudança | ✅ produção 29/08/2026 (commit `700c01fd`) |
+| Fase 1b | Cache localStorage comprimido; `loadState()` virou async | ✅ produção 29/08/2026 (commit `e3de3b32`) |
+| Etapa A | Dual-write: import grava fichas (`propostas`/`smart_leads`/`import_meta`) além do snapshot, não-fatal; divergências e vendor mappings gravam nas tabelas no ato | ✅ produção 29/08/2026 (commit `a5af2d6a`), migration 007 rodada e validada (~7.030 fichas) |
+| Etapa B0 | Leitura sombra: login monta estado pelas fichas em paralelo e compara com o snapshot (console + action-log); migration 008 acrescenta contagens esperadas no `import_meta` (defesa contra upload interrompido e imports simultâneos) | ⏳ próxima — **conferência agendada para ~05/09/2026** |
+| Etapa B1 | Virada: fichas viram a fonte de leitura; snapshot vira reserva (fallback se contagem não bater) e continua sendo gravado | após 1–2 dias de B0 limpa |
+| Etapa C | Remove escrita/leitura do snapshot; clique salva só a linha dele; adicionar **revalidação automática a cada 30s** das `classifications` (pedido do responsável, padrão da Esteira) | após ~1 semana de B1 limpa |
+
+**Desenho da Etapa A** (`src/services/propostas-store.js`): sem chave natural de proposta — cada import insere as linhas com um `import_id` novo → aponta `import_meta.import_id` → apaga as linhas do import anterior. Leitores futuros filtram pelo `import_id` do ponteiro e nunca veem mistura. Decisões humanas (classificações, divergências, mapeamentos) ficam em tabelas próprias e são mescladas por cima na montagem — clique em "É Marketing" **não** mexe na tabela `propostas`.
+
+**Checagens de saúde da Etapa A** (fazer antes da B0): contagem de `propostas` estável em ~7 mil a cada import (não acumulando), um único `import_id` por vez, sem `console.warn` de `replaceImportData` nos imports da semana.
+
+**Pendência paralela — tela de Tráfego**: desenhada (formulário no card de importação + página com visão de planilha + tabela `trafego_diario`), aguardando 2 decisões do responsável: (1) dado digitado vira fonte oficial de investimento/leads no `calcKPIs.js`? (2) CAC/ROAS com ou sem os 13% de imposto? A planilha de referência é "Investimento em Mídia - Setor Marketing.xlsx" (5 campos digitados/dia; CPL, CTR e investimento+imposto são derivados).
 
 ---
 
