@@ -298,9 +298,9 @@
   font-family: var(--font-h);
 }
 
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group select {
+.form-group input:not([type="radio"]):not([type="checkbox"]),
+.form-group select,
+.form-group textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 9px 12px;

@@ -319,7 +319,8 @@
   margin-bottom: 16px;
 }
 
-.lib-form-row label {
+.lib-form-row label,
+.lib-form-row-2 label {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
@@ -330,7 +331,11 @@
 }
 
 .lib-form-row input,
-.lib-form-row textarea {
+.lib-form-row textarea,
+.lib-form-row select,
+.lib-form-row-2 input,
+.lib-form-row-2 textarea,
+.lib-form-row-2 select {
   width: 100%;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -343,7 +348,11 @@
 }
 
 .lib-form-row input:focus,
-.lib-form-row textarea:focus {
+.lib-form-row textarea:focus,
+.lib-form-row select:focus,
+.lib-form-row-2 input:focus,
+.lib-form-row-2 textarea:focus,
+.lib-form-row-2 select:focus {
   outline: none;
   border-color: var(--red);
 }

@@ -1,0 +1,50 @@
+/* ── Kit compartilhado de modais ────────────────────────────────────────────
+   Polimento comum a todos os modais do sistema: fundo desfocado, entrada
+   suave e itens de seleção padronizados. As regras de campo de cada modal
+   vivem no CSS da própria feature. */
+
+#lib-modal,
+#bol-modal,
+#admin-modal,
+#propostas-export-modal,
+.bm-modal-bg,
+.cont-modal-bg,
+.trafego-modal-overlay,
+.confirm-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+#lib-modal.open #lib-modal-content,
+#bol-modal.open #bol-modal-content,
+.bm-modal-bg .bm-modal,
+.cont-modal-bg .cont-modal,
+.trafego-modal-overlay.open .trafego-modal,
+#propostas-export-modal > div,
+#admin-modal-content {
+  animation: modal-pop 0.16s ease-out;
+}
+
+/* Itens de coluna do modal "Exportar CSV" (Propostas) */
+.export-col-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--white);
+  cursor: pointer;
+  border: 1px solid transparent;
+  user-select: none;
+}
+.export-col-item:hover {
+  background: var(--surface2);
+  border-color: var(--border);
+}
+.export-col-item input { cursor: pointer; }

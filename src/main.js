@@ -15,6 +15,7 @@ import './styles/liberacao.css';
 import './styles/boletos.css';
 import './styles/ranking.css';
 import './styles/trafego.css';
+import './styles/modal-kit.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';

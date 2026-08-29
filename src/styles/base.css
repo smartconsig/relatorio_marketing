@@ -29,6 +29,11 @@ body {
   font-size: 14px;
 }
 
+/* Navegadores usam fonte de sistema em controles de formulário por padrão —
+   herda a fonte do app em todos eles */
+input, select, textarea, button { font-family: inherit; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--red); }
+
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
