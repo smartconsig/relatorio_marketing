@@ -1,55 +1,66 @@
 import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { fmtN } from '../utils/currency.js';
+import { supportsGzip, gzipToBase64, gunzipFromBase64 } from '../utils/gzip.js';
 
 const STORE_RESULT  = 'sc_result_v1';
 const STORE_FILTER  = 'sc_filter_v1';
 const STORE_OVR     = 'sc_overrides_v1';
 const STORE_SNAP_TS = 'sc_snap_ts_v1';
 
+// Cache antigo é JSON puro; o novo leva este prefixo (gzip + base64).
+// A leitura precisa aceitar os dois formatos.
+const GZ_PREFIX = 'gz1:';
+
+let _saveSeq = 0;
+
 export function saveState() {
   if (!state.result) return;
-  try {
-    localStorage.setItem(STORE_RESULT, JSON.stringify({
-      entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
-      facebook:             state.result.facebook,
-      unknownStatuses:      state.result.unknownStatuses,
-      diag:                 state.result.diag,
-      smartLeadsByOperador: state.result.smartLeadsByOperador || {},
-      smartLeadsByTime:     state.result.smartLeadsByTime     || {},
-      smartLeads:           state.result.smartLeads           || [],
-      confirmedDivergences: state.confirmedDivergences,
-      vendorMappings:       state.vendorMappings || {},
-    }));
-  } catch (e) {
-    console.warn('saveState (primeira tentativa):', e);
-    try {
-      localStorage.removeItem(STORE_RESULT);
-      localStorage.setItem(STORE_RESULT, JSON.stringify({
-        entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
-        facebook:             state.result.facebook,
-        unknownStatuses:      state.result.unknownStatuses,
-        diag:                 state.result.diag,
-        smartLeadsByOperador: state.result.smartLeadsByOperador || {},
-        smartLeadsByTime:     state.result.smartLeadsByTime     || {},
-        smartLeads:           state.result.smartLeads           || [],
-        confirmedDivergences: state.confirmedDivergences,
-        vendorMappings:       state.vendorMappings || {},
-      }));
-    } catch (e2) {
-      console.warn('saveState (retry):', e2);
-      toast('Espaço insuficiente no navegador para salvar os dados', 'err');
-    }
-  }
+  // O stringify é síncrono de propósito: captura o estado deste exato instante,
+  // mesmo que o chamador altere o state logo depois (ex.: flags temporárias do procv)
+  const payload = JSON.stringify({
+    entries:              state.result.entries.map(({ _justConfirmed, _confirmedInFilter, ...rest }) => rest),
+    facebook:             state.result.facebook,
+    unknownStatuses:      state.result.unknownStatuses,
+    diag:                 state.result.diag,
+    smartLeadsByOperador: state.result.smartLeadsByOperador || {},
+    smartLeadsByTime:     state.result.smartLeadsByTime     || {},
+    smartLeads:           state.result.smartLeads           || [],
+    confirmedDivergences: state.confirmedDivergences,
+    vendorMappings:       state.vendorMappings || {},
+  });
+  const seq = ++_saveSeq;
+  writeResultBlob(payload, seq).catch(e => console.warn('saveState:', e));
   // Filtro e overrides são pequenos — salvos separadamente mesmo se o blob principal falhar
   try { localStorage.setItem(STORE_FILTER, JSON.stringify(state.filterDates)); } catch {}
   try { localStorage.setItem(STORE_OVR, JSON.stringify(state.overrides)); } catch {}
 }
 
-export function loadState() {
+async function writeResultBlob(payload, seq) {
+  let blob = payload;
+  if (supportsGzip()) {
+    try { blob = GZ_PREFIX + await gzipToBase64(payload); } catch (e) { console.warn('gzip do cache local falhou, salvando sem compressão:', e); }
+  }
+  if (seq !== _saveSeq) return; // um save mais novo já foi disparado — não sobrescrever com dado velho
   try {
-    const raw = localStorage.getItem(STORE_RESULT);
+    localStorage.setItem(STORE_RESULT, blob);
+  } catch (e) {
+    console.warn('saveState (primeira tentativa):', e);
+    try {
+      localStorage.removeItem(STORE_RESULT);
+      localStorage.setItem(STORE_RESULT, blob);
+    } catch (e2) {
+      console.warn('saveState (retry):', e2);
+      toast('Espaço insuficiente no navegador para salvar os dados', 'err');
+    }
+  }
+}
+
+export async function loadState() {
+  try {
+    let raw = localStorage.getItem(STORE_RESULT);
     if (!raw) return false;
+    if (raw.startsWith(GZ_PREFIX)) raw = await gunzipFromBase64(raw.slice(GZ_PREFIX.length));
     const parsed = JSON.parse(raw);
     parsed.entries = parsed.entries.map(e => ({
       ...e,
