@@ -6,6 +6,7 @@ import { normStr } from '../utils/string.js';
 import changelog from '../data/changelog.json';
 import { saveState } from '../core/storage.js';
 import { saveSnapshotToSupabase } from '../services/snapshot.js';
+import { saveVendorMapping } from '../services/propostas-store.js';
 
 // ── Árvore de permissões ─────────────────────────────────────────────────────
 const PERM_TREE = [
@@ -307,6 +308,7 @@ function _renderMapeamento() {
     if (!smNorm || !ecNorm) { toast('Selecione os dois nomes para criar o mapeamento', 'err'); return; }
     if (!state.vendorMappings) state.vendorMappings = {};
     state.vendorMappings[ecNorm] = smNorm;
+    saveVendorMapping(ecNorm, smNorm);
     _persistMapeamento();
     _renderMapeamento();
     toast('Mapeamento adicionado');
@@ -314,6 +316,7 @@ function _renderMapeamento() {
 
   window._removeMapeamento = (ecNorm) => {
     if (state.vendorMappings) delete state.vendorMappings[ecNorm];
+    saveVendorMapping(ecNorm, null);
     _persistMapeamento();
     _renderMapeamento();
     toast('Mapeamento removido');

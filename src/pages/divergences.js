@@ -7,6 +7,7 @@ import { renderOverview } from './overview.js';
 import { renderAll } from '../navigation.js';
 import { normCPF } from '../utils/cpf.js';
 import { saveClassificationToSupabase } from '../services/classifications.js';
+import { saveDivergencia } from '../services/propostas-store.js';
 
 /** Confirma que a entrada é mesmo marketing — some da lista de divergências. */
 export function confirmDivergence(idx) {
@@ -14,7 +15,10 @@ export function confirmDivergence(idx) {
   const entry = state.result.entries[idx];
   if (!entry) return;
   entry.divergenceConfirmed = true;
-  if (entry.cpf) state.confirmedDivergences[normCPF(entry.cpf)] = true;
+  if (entry.cpf) {
+    state.confirmedDivergences[normCPF(entry.cpf)] = true;
+    saveDivergencia(normCPF(entry.cpf), true);
+  }
   saveState();
   scheduleSaveSnapshot();
   toast('✅ Confirmado como Marketing');
@@ -37,6 +41,7 @@ export async function rejectDivergence(idx) {
     const key = normCPF(entry.cpf);
     state.overrides[key] = false;
     delete state.confirmedDivergences[key];
+    saveDivergencia(key, false);
     localStorage.setItem('sc_overrides_v1', JSON.stringify(state.overrides));
   }
   saveState();
