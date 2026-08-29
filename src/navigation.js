@@ -22,6 +22,7 @@ import { renderUniAdmin } from './pages/uni-admin.js';
 import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 import { renderLiberacao } from './pages/liberacao-page.js';
 import { renderBoletos } from './pages/boletos-page.js';
+import { renderTrafego } from './pages/trafego-page.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -30,6 +31,7 @@ const GROUP_MAP = {
   bsc:       'dashboard',
   parceiros: 'dashboard',
   perfil:    'dashboard',
+  trafego:   'dashboard',
   propostas: 'comercial',
   goals:     'comercial',
 };
@@ -38,6 +40,7 @@ const TITLES = {
   import:       'Importar Dados',
   overview:     'Visão Geral',
   ranking:      'Ranking de Vendas',
+  trafego:      'Tráfego (Ads)',
   perfil:       'Perfil de Cliente',
   gestao:       'Gestão de Classificações',
   quitacoes:    'Quitações',
@@ -113,6 +116,7 @@ export function navigate(sec) {
   document.querySelector('.content')?.scrollTo({ top: 0 });
   // Renderiza seções sob demanda
   if (sec === 'admin')        renderAdminPage();
+  if (sec === 'trafego')     renderTrafego();
   if (sec === 'quitacoes')   renderQuitacoes();
   if (sec === 'conteudo')    renderConteudo();
   if (sec === 'bms')         renderBMs();
@@ -133,6 +137,7 @@ export function applyPermissionsToUI() {
     import:    () => can('importacao_fb03') || can('importacao_ecorban') || can('importacao_processar'),
     overview:  () => can('visao_geral'),
     ranking:   () => can('ranking'),
+    trafego:   () => perm.trafegoVisualizar(),
     gestao:    () => canSeeGestao(),
     quitacoes: () => can('quitacoes_visualizar'),
     conteudo:  () => perm.conteudoVisualizar(),
@@ -182,6 +187,10 @@ export function applyPermissionsToUI() {
     const allHidden = children.length > 0 && children.every(el => el.style.display === 'none');
     groupEl.style.display = allHidden ? 'none' : '';
   });
+
+  // Card de Tráfego na tela de importação — só para quem pode lançar
+  const trafegoCard = document.getElementById('card-trafego');
+  if (trafegoCard) trafegoCard.style.display = perm.trafegoEditar() ? '' : 'none';
 
   // Sub-abas de Gestão
   const procvTab    = document.querySelector('.gestao-tab-btn[data-tab="procv"]');
@@ -356,6 +365,7 @@ const FLOAT_NAV_ITEMS = [
     children: [
       { sec: 'overview', title: 'Visão Geral',      svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
       { sec: 'ranking',  title: 'Ranking',          svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+      { sec: 'trafego',  title: 'Tráfego (Ads)',    svg: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>' },
       { sec: 'bsc',      title: 'Ranking BSC',      svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
       { sec: 'parceiros', title: 'Ranking Parceiros', svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>' },
       { sec: 'perfil',   title: 'Perfil de Cliente', svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="21" x2="23" y2="15"/><line x1="16" y1="15" x2="16" y2="21"/><polyline points="20 18 23 21 26 18"/>' },

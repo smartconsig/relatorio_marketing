@@ -14,6 +14,7 @@ import './styles/uni-admin.css';
 import './styles/liberacao.css';
 import './styles/boletos.css';
 import './styles/ranking.css';
+import './styles/trafego.css';
 
 import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
@@ -31,6 +32,7 @@ import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, setPropostasOrigem, setPropostasAudiencia, openExportModal, closeExportModal, doExportCSV, goToPropostasPage, sortPropostas } from './pages/propostas.js';
 import { renderConteudo } from './pages/conteudo-page.js';
 import { renderBMs } from './pages/bm-page.js';
+import { renderTrafego, openTrafegoForm, closeTrafegoForm, saveTrafegoForm, askDeleteTrafego } from './pages/trafego-page.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
@@ -190,6 +192,11 @@ window.q_maskCNPJ         = q_maskCNPJ;
 window.q_maskMoney        = q_maskMoney;
 window.renderConteudo     = renderConteudo;
 window.renderBMs          = renderBMs;
+window.renderTrafego      = renderTrafego;
+window.openTrafegoForm    = openTrafegoForm;
+window.closeTrafegoForm   = closeTrafegoForm;
+window.saveTrafegoForm    = saveTrafegoForm;
+window.askDeleteTrafego   = askDeleteTrafego;
 
 initNavigation();
 initAuth();

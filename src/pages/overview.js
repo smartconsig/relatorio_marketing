@@ -7,6 +7,7 @@ import { filteredData } from '../core/calcKPIs.js';
 import { toTitle } from '../utils/string.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { sectionTitle } from '../components/ui.js';
+import { trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -65,8 +66,14 @@ function renderChart(fd) {
   if (state.chart) { state.chart.destroy(); state.chart = null; }
   const dayMap = {};
 
-  // Usa dados diários da API do Meta se disponível, senão usa planilha Excel
-  if (state.metaAds?.daily?.length) {
+  // Fonte oficial: dias digitados no Tráfego (com imposto); depois API do Meta; depois planilha
+  const trDays = trafegoInRange(state.filterDates.start, state.filterDates.end).rows;
+  if (trDays.length) {
+    for (const r of trDays) {
+      if (!dayMap[r.dia]) dayMap[r.dia] = { invest: 0, valid: 0, rejected: 0 };
+      dayMap[r.dia].invest += (Number(r.investimento) || 0) * (1 + TAXA_IMPOSTO);
+    }
+  } else if (state.metaAds?.daily?.length) {
     for (const row of state.metaAds.daily) {
       if (!dayMap[row.date]) dayMap[row.date] = { invest: 0, valid: 0, rejected: 0 };
       dayMap[row.date].invest += row.invest;
@@ -291,7 +298,7 @@ export function renderOverview(k, fd) {
   h += `<div class="hero-grid">
     ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
     ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
-    ${heroCard('Investimento', null, k.invest, 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
+    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
     ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', '#f59e0b', null, false, 'var(--white)', null)}
     ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
   </div>`;
@@ -313,7 +320,7 @@ export function renderOverview(k, fd) {
     ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
     ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true, g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null)}
     ${kpiCard('Leads Gerados', fmtN(k.leads), 'leads recebidos no período', null, false)}
-    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), 'Reportado pelo Facebook', null, false)}
+    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), k.investSource === 'trafego' ? 'painel Meta · sem imposto' : 'Reportado pelo Facebook', null, false)}
   </div>`;
 
   // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────

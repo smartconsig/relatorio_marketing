@@ -51,6 +51,10 @@ export const perm = {
   bmVisualizar:        () => can('bm_visualizar') || can('admin_usuarios') || can('admin_grupos'),
   bmEditar:            () => can('bm_editar')     || can('admin_usuarios') || can('admin_grupos'),
 
+  // Tráfego (Ads) — dados diários digitados
+  trafegoVisualizar:   () => can('trafego_visualizar') || can('admin_usuarios') || can('admin_grupos'),
+  trafegoEditar:       () => can('trafego_editar')     || can('admin_usuarios') || can('admin_grupos'),
+
   // Liberação de Margem Master
   liberacaoMargem:     () => can('liberacao_margem') || can('admin_usuarios') || can('admin_grupos'),
 
@@ -101,6 +105,8 @@ export const DEFAULT_PERMISSIONS = {
   conteudo_aprovar: false,
   bm_visualizar: false,
   bm_editar: false,
+  trafego_visualizar: false,
+  trafego_editar: false,
   liberacao_margem: false,
   quitacao_boleto: false,
   admin_usuarios: false,

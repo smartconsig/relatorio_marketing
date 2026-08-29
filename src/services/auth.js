@@ -5,6 +5,7 @@ import { loadAllGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
 import { shadowCompareImportData } from './propostas-store.js';
+import { loadTrafego } from './trafego-svc.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
@@ -144,6 +145,9 @@ export async function onAuthenticated() {
     renderAll();
     renderDiag(state.result.diag);
   }
+
+  // Tráfego digitado: fonte oficial dos KPIs — carrega e re-renderiza quando chegar
+  loadTrafego().then(ok => { if (ok && state.result) renderAll(); });
 
   // 2. Consulta leve ao Supabase: só o updated_at
   const serverTs = await checkSnapshotTimestamp();

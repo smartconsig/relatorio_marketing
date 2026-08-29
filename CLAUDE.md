@@ -96,6 +96,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `import_meta` | Fase 3: linha única com o `import_id` ativo (ponteiro), diagnóstico, agregados e quem/quando importou |
 | `divergencias_confirmadas` | Divergências confirmadas, 1 linha por CPF (antes só existiam dentro do snapshot) |
 | `vendor_mappings` | Mapeamento de nomes de vendedor Ecorban↔Smart (antes só no snapshot) |
+| `trafego_diario` | Tráfego (Ads): 1 linha por dia digitado (investimento sem imposto, leads, cliques, impressões, alcance) — fonte oficial dos KPIs |
 | `parceiros_data` | Ranking de Parceiros: uma única linha com o ranking inteiro em JSON (mesmo padrão de `bsc_data`) |
 | `conteudo_cards` | Cards da Esteira de Conteúdo (kanban de criação) |
 | `conteudo_eventos` | Histórico do card: movimentações, aprovações e comentários |
@@ -241,7 +242,7 @@ O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo 
 
 **Checagens de saúde da Etapa A** (fazer antes da B0): contagem de `propostas` estável em ~7 mil a cada import (não acumulando), um único `import_id` por vez, sem `console.warn` de `replaceImportData` nos imports da semana.
 
-**Pendência paralela — tela de Tráfego**: desenhada (formulário no card de importação + página com visão de planilha + tabela `trafego_diario`), aguardando 2 decisões do responsável: (1) dado digitado vira fonte oficial de investimento/leads no `calcKPIs.js`? (2) CAC/ROAS com ou sem os 13% de imposto? A planilha de referência é "Investimento em Mídia - Setor Marketing.xlsx" (5 campos digitados/dia; CPL, CTR e investimento+imposto são derivados).
+**Tráfego (Ads) — ENTREGUE em 29/08/2026** (migration `009_trafego.sql`): substitui a planilha "Investimento em Mídia" e a API do Meta como fonte oficial de investimento/leads. Decisões do responsável: dado **digitado** é a fonte oficial (API do Meta estava fora e fica como fallback); CAC/ROAS usam investimento **com imposto de 13%** (`TAXA_IMPOSTO` em `trafego-svc.js`). Desenho: card "Tráfego (Ads)" na tela de importação abre o formulário do dia (5 números; CPL/CTR/imposto derivados); página "Tráfego (Ads)" no grupo Dashboard mostra a visão de planilha do período filtrado com edição; tabela `trafego_diario` (1 linha/dia, sem snapshot). Precedência no `calcKPIs.js`: dias digitados no período → senão `state.metaAds` → senão planilha FB. **"CPL Facebook"** = investimento sem imposto ÷ leads (bate com o painel do Meta); **"CPL Calculado"** = com imposto. Permissões `trafego_visualizar`/`trafego_editar` (admin herda; grupos precisam ser marcados na tela de Admin).
 
 ---
 

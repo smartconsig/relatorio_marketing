@@ -20,5 +20,6 @@ export const state = {
   propostasSort:  { col: 'cliente', dir: 'asc' },
   bsc: null,
   metaAds:   null,      // { invest, leads, daily:[{date,invest,leads}], lastSync }
+  trafego:   null,      // [{ dia:'YYYY-MM-DD', investimento, leads, cliques, impressoes, alcance }] — fonte oficial dos KPIs
   kolmeya:   null,      // { period, jobs:[], enviados, entregues, naoEntregues, respostas, acessos, valorPago, lastSync }
 };

@@ -85,6 +85,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           <span class="nav-label">Ranking</span>
         </div>
+        <div class="nav-item" data-sec="trafego" data-title="Tráfego (Ads)" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <span class="nav-label">Tráfego (Ads)</span>
+        </div>
         <div class="nav-item" data-sec="bsc" data-title="Ranking BSC">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/></svg>
           <span class="nav-label">Ranking BSC</span>
@@ -232,6 +236,13 @@
           <div class="upload-filename" id="fn-ecorban"></div>
         </div>
 
+        <div class="upload-card trafego-card" id="card-trafego" style="display:none" onclick="openTrafegoForm()">
+          <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+          <div class="upload-label">Tráfego (Ads)</div>
+          <div class="upload-desc">Lançar investimento e leads do dia</div>
+          <div class="upload-filename"></div>
+        </div>
+
 
       </div>
       <button class="btn-process" id="btn-process" disabled onclick="processAll()">Processar Dados</button>
@@ -359,6 +370,8 @@
 
     <!-- ── PERFIL DE CLIENTE ── -->
     <div class="section" id="sec-perfil"></div>
+
+    <div class="section" id="sec-trafego"></div>
 
     <!-- ── QUITAÇÕES ── -->
     <div class="section" id="sec-quitacoes"></div>

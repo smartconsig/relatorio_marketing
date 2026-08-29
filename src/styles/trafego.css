@@ -1,0 +1,77 @@
+/* ── Tráfego (Ads) ──────────────────────────────────────────────────────── */
+
+.trafego-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+
+.trafego-add-btn {
+  background: var(--accent, #940b10); color: #fff; border: none;
+}
+.trafego-add-btn:hover { filter: brightness(1.15); }
+
+.trafego-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.trafego-chip {
+  background: var(--card-bg, var(--panel, rgba(255,255,255,0.04)));
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: 10px; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 2px; min-width: 120px;
+}
+.trafego-chip span   { font-size: 11px; color: var(--gray-light, #9ca3af); }
+.trafego-chip strong { font-size: 16px; }
+
+.trafego-falta {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25);
+  color: #f59e0b; border-radius: 8px; padding: 10px 14px;
+  font-size: 12px; margin-bottom: 14px; line-height: 1.6;
+}
+
+.trafego-table-wrap { overflow-x: auto; }
+.trafego-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.trafego-table th {
+  text-align: right; padding: 8px 10px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--gray-light, #9ca3af);
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.1));
+}
+.trafego-table th:first-child, .trafego-table td:first-child { text-align: left; }
+.trafego-table td {
+  text-align: right; padding: 8px 10px;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.05));
+  white-space: nowrap;
+}
+.trafego-table tbody tr:hover { background: rgba(148,11,16,0.05); }
+.trafego-dia { font-weight: 600; }
+.trafego-imposto { color: var(--accent, #f87171); font-weight: 600; }
+.trafego-table tfoot td { font-weight: 700; border-top: 2px solid var(--border, rgba(255,255,255,0.15)); }
+.trafego-acoes { white-space: nowrap; }
+.trafego-acoes .btn-sm { padding: 2px 8px; }
+
+.trafego-nota { font-size: 11px; color: var(--gray-light, #9ca3af); margin-top: 10px; }
+
+/* Modal */
+.trafego-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+.trafego-modal-overlay.open { display: flex; }
+.trafego-modal {
+  background: var(--panel, #1a1a1e); border: 1px solid var(--border, rgba(255,255,255,0.1));
+  border-radius: 14px; padding: 22px; width: min(420px, 92vw);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.trafego-modal-title { font-size: 16px; font-weight: 700; }
+.trafego-modal label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--gray-light, #9ca3af); }
+.trafego-modal input {
+  background: var(--input-bg, rgba(255,255,255,0.05)); color: inherit;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 8px; padding: 8px 10px; font-size: 14px;
+}
+.trafego-modal input:focus { outline: none; border-color: var(--accent, #940b10); }
+.trafego-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trafego-modal-calc { font-size: 12px; color: var(--gray-light, #9ca3af); min-height: 16px; }
+.trafego-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.trafego-save-btn { background: var(--accent, #940b10); color: #fff; border: none; }
+
+/* Card na tela de importação */
+.upload-card.trafego-card { cursor: pointer; }
+.upload-card.trafego-card .upload-icon { color: #f59e0b; }

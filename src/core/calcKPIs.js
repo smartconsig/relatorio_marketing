@@ -5,6 +5,7 @@ import { parseBRL, fmtBRL, fmtN } from '../utils/currency.js';
 import { parseExcelDate, inRange } from '../utils/date.js';
 import { getCol } from '../utils/string.js';
 import { HIERARCHY } from '../config/status.js';
+import { trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
 
 const _PAID        = new Set([...STATUS_PAID].map(normStr));
 const _ALMOST_PAID = new Set([...STATUS_ALMOST_PAID].map(normStr));
@@ -42,13 +43,23 @@ export function filteredData() {
 }
 
 export function calcKPIs(entries, facebook) {
-  let invest = 0, leads = 0, fbCpl = 0, cplCalc = 0;
+  let invest = 0, leads = 0, fbCpl = 0, cplCalc = 0, investSource = 'nenhum';
 
-  if (state.metaAds) {
+  const tr = trafegoInRange(state.filterDates.start, state.filterDates.end);
+  if (tr.dias > 0) {
+    // Fonte oficial: tráfego digitado. invest carrega o imposto (custo real);
+    // fbCpl fica sem imposto — é o CPL que o painel do Meta mostra.
+    invest       = tr.invest * (1 + TAXA_IMPOSTO);
+    leads        = tr.leads;
+    cplCalc      = leads ? invest / leads : 0;
+    fbCpl        = leads ? tr.invest / leads : 0;
+    investSource = 'trafego';
+  } else if (state.metaAds) {
     // Dados em tempo real da API do Meta — substitui a planilha do Facebook
     invest   = state.metaAds.invest;
     leads    = state.metaAds.leads;
     cplCalc  = leads ? invest / leads : 0;
+    investSource = 'api';
   } else {
     // Fallback: planilha do Facebook importada manualmente
     let fbCplSum = 0, fbCplCount = 0;
@@ -68,6 +79,7 @@ export function calcKPIs(entries, facebook) {
     }
     fbCpl   = fbCplCount ? fbCplSum / fbCplCount : 0;
     cplCalc = leads ? invest / leads : 0;
+    if (invest > 0 || leads > 0) investSource = 'planilha';
   }
 
   const inProgMkt      = entries.filter(r => r.isMarketing && r.statusCat === 'aprovado');
@@ -103,7 +115,7 @@ export function calcKPIs(entries, facebook) {
   const toReview = [];
 
   return {
-    invest, leads, fbCpl, cplCalc,
+    invest, leads, fbCpl, cplCalc, investSource,
     inProgMkt: inProgMkt.length, almostPaidMkt: almostPaidMkt.length, paidMkt: paidMkt.length, rejMkt: rejMkt.length,
     valueInProgMkt, valueAlmostPaidMkt,
     valueMkt, valueRejMkt, valueValidMkt, countValidMkt,

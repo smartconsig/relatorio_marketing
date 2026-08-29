@@ -49,6 +49,10 @@ const PERM_TREE = [
     { key: 'bm_visualizar', label: 'Visualizar BMs e números' },
     { key: 'bm_editar',     label: 'Criar / editar / ligar-desligar' },
   ]},
+  { label: 'Tráfego (Ads)', children: [
+    { key: 'trafego_visualizar', label: 'Visualizar página e métricas' },
+    { key: 'trafego_editar',     label: 'Preencher / editar dias' },
+  ]},
   { key: 'liberacao_margem',    label: 'Liberação de Margem Master' },
   { key: 'quitacao_boleto',     label: 'Quitação de Boleto' },
   { label: 'Universidade Smart', children: [
@@ -840,6 +844,7 @@ function _summarizePerms(permissoes) {
     { key: 'parceiros',            label: 'Parceiros' },
     { key: 'quitacoes_visualizar',     label: 'Quitações' },
     { key: 'conteudo_visualizar',      label: 'Conteúdo' },
+    { key: 'trafego_visualizar',       label: 'Tráfego' },
     { key: 'bm_visualizar',            label: 'BMs' },
     { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'quitacao_boleto',          label: 'Quit. Boleto' },
