@@ -80,6 +80,7 @@ export function canSeeGestao() {
  * Acesso mínimo: apenas visão geral e ranking.
  */
 export const DEFAULT_PERMISSIONS = {
+  home: true,
   importacao_fb03: false,
   importacao_fb06: false,
   importacao_ecorban: false,

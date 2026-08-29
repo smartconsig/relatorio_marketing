@@ -53,6 +53,10 @@ async function loadUserProfile() {
   }
 }
 
+// Diferencia login explícito (cai na Home) de restauração de sessão no F5
+// (volta para a tela em que a pessoa estava)
+let _freshLogin = false;
+
 export async function doSignIn() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
@@ -72,6 +76,7 @@ export async function doSignIn() {
   document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || data.user.email;
   startSessionTimeout();
   document.getElementById('login-screen').style.display = 'none';
+  _freshLogin = true;
   await onAuthenticated();
 }
 
@@ -116,8 +121,9 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['import','overview','ranking','perfil','gestao','propostas','goals','bsc','admin','quitacoes','conteudo','liberacao','universidade']);
-  const defaultSec = can('visao_geral')                              ? 'overview'
+  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','quitacoes','conteudo','liberacao','boletos','universidade']);
+  const defaultSec = can('home')                                     ? 'home'
+    : can('visao_geral')                                             ? 'overview'
     : (can('liberacao_margem') || perm.isAdmin())                    ? 'liberacao'
     : perm.conteudoVisualizar()                                      ? 'conteudo'
     : can('universidade_acessar')                                    ? 'universidade'
@@ -125,17 +131,25 @@ export async function onAuthenticated() {
   // Valida se o usuário tem permissão para acessar a seção
   const canAccessSec = (sec) => {
     if (!sec || !VALID_SECS.has(sec)) return false;
+    if (sec === 'home')         return can('home');
     if (sec === 'overview')     return can('visao_geral');
     if (sec === 'universidade') return can('universidade_acessar') || perm.isAdmin();
     if (sec === 'liberacao')    return can('liberacao_margem') || perm.isAdmin();
+    if (sec === 'boletos')      return can('quitacao_boleto') || perm.isAdmin();
     if (sec === 'conteudo')     return perm.conteudoVisualizar();
+    if (sec === 'trafego')      return perm.trafegoVisualizar();
+    if (sec === 'bms')          return perm.bmVisualizar();
+    if (sec === 'quitacoes')    return can('quitacoes_visualizar');
     return true;
   };
   const hashSec   = window.location.hash.replace('#', '');
   const storedSec = localStorage.getItem('sc_last_section');
-  const lastSection = (canAccessSec(hashSec) ? hashSec : null)
+  // Login explícito → sempre cai na Home; F5/restauração → volta para onde estava
+  const lastSection = (_freshLogin && can('home')) ? 'home'
+    : (canAccessSec(hashSec) ? hashSec : null)
     || (canAccessSec(storedSec) ? storedSec : null)
     || defaultSec;
+  _freshLogin = false;
   navigate(lastSection);
 
   // 2. Carrega cache local e preenche os dados

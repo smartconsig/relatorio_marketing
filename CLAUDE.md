@@ -174,6 +174,7 @@ relatorio_marketing/
 │   │   ├── action-log.js     # Log de eventos do sistema
 │   │   └── session-timeout.js# Auto-logout por inatividade
 │   ├── pages/                # Uma função renderXxx() por página
+│   │   ├── home-page.js      # Home: boas-vindas + atalhos por permissão (login cai aqui; F5 mantém a tela)
 │   │   ├── import-page.js    # Upload e processamento de Excel
 │   │   ├── overview.js       # Dashboard de KPIs
 │   │   ├── ranking.js        # Rankings e funil
@@ -217,7 +218,7 @@ relatorio_marketing/
 
 ## Fluxo de dados
 
-1. **Login**: `auth.js` → Supabase Auth → `state.currentUser` populado com perfil e permissões do grupo
+1. **Login**: `auth.js` → Supabase Auth → `state.currentUser` populado com perfil e permissões do grupo. **Login explícito cai na Home** (permissão `home`, ligada em todos os grupos pela migration `010_home_permissao.sql`); **F5 volta para a seção em que a pessoa estava** (hash da URL + `sc_last_section`). Menu agrupado: Home, Importar, Dashboard, Gestão, Comercial, Marketing, Tarefas, Financeiro, Universidade, Administração
 2. **Import**: `import-page.js` recebe Excel → `buildResult.js` normaliza e tipifica → `state.result.entries[]`
 3. **Snapshot**: ao login, compara timestamp local com Supabase; se desatualizado, carrega snapshot completo e mescla com estado local
 4. **Renderização**: páginas renderizam sob demanda na navegação; todas chamam `renderAll()` para sincronizar com `state`

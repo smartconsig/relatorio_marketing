@@ -10,6 +10,7 @@ import { saveVendorMapping } from '../services/propostas-store.js';
 
 // ── Árvore de permissões ─────────────────────────────────────────────────────
 const PERM_TREE = [
+  { key: 'home', label: 'Home (boas-vindas)' },
   { label: 'Importação', children: [
     { key: 'importacao_fb03',      label: 'Importar FB03' },
     { key: 'importacao_fb06',      label: 'Importar FB06' },
