@@ -4,6 +4,7 @@ import { toast } from '../utils/ui.js';
 import { loadAllGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
+import { shadowCompareImportData } from './propostas-store.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
@@ -166,6 +167,7 @@ export async function onAuthenticated() {
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
     syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
+    shadowCompareImportData('login-cache'); // Fase 3 / B0: ensaio em segundo plano
     return;
   }
 
@@ -221,6 +223,7 @@ export async function onAuthenticated() {
   // Sincroniza Meta Ads e Kolmeya em background — re-renderiza quando chegar
   syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
   syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
+  shadowCompareImportData('login-servidor'); // Fase 3 / B0: ensaio em segundo plano
 }
 
 function loadGoalsFromStorage() {

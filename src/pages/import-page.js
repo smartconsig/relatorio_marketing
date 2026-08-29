@@ -3,7 +3,7 @@ import { toast } from '../utils/ui.js';
 import { saveState, setCacheIndicator } from '../core/storage.js';
 import { buildResult } from '../core/buildResult.js';
 import { saveSnapshotToSupabase } from '../services/snapshot.js';
-import { replaceImportData } from '../services/propostas-store.js';
+import { replaceImportData, shadowCompareImportData } from '../services/propostas-store.js';
 import { syncClassificationsFromSupabase } from '../services/classifications.js';
 import { normCPF } from '../utils/cpf.js';
 import { renderAll } from '../navigation.js';
@@ -100,7 +100,12 @@ export async function processAll() {
     navigate('overview');
     saveSnapshotToSupabase();
     // Fase 3 / Etapa A: dual-write nas tabelas normalizadas (fundo, não-fatal)
-    replaceImportData().then(ok => { if (ok) console.info('Fichas de propostas atualizadas no Supabase'); });
+    replaceImportData().then(ok => {
+      if (ok) {
+        console.info('Fichas de propostas atualizadas no Supabase');
+        shadowCompareImportData('pós-import'); // Etapa B0: ensaio da leitura
+      }
+    });
     logAction('__import__', 'Dados processados', 'imported_data').then(() =>
       renderLastSystemEvent('import-last-log', '__import__')
     );
