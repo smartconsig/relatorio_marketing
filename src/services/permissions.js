@@ -61,6 +61,10 @@ export const perm = {
   // Quitação de Boleto
   quitacaoBoleto:      () => can('quitacao_boleto') || can('admin_usuarios') || can('admin_grupos'),
 
+  // Resíduos (tela interna — parceiros não têm acesso)
+  residuosVisualizar:  () => can('residuos_visualizar') || can('admin_usuarios') || can('admin_grupos'),
+  residuosEditar:      () => can('residuos_editar')     || can('admin_usuarios') || can('admin_grupos'),
+
   // Administração
   adminUsuarios:       () => can('admin_usuarios'),
   adminGrupos:         () => can('admin_grupos'),
@@ -110,6 +114,8 @@ export const DEFAULT_PERMISSIONS = {
   trafego_editar: false,
   liberacao_margem: false,
   quitacao_boleto: false,
+  residuos_visualizar: false,
+  residuos_editar: false,
   admin_usuarios: false,
   admin_grupos: false,
 };

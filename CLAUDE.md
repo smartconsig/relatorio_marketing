@@ -91,6 +91,9 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `quitacoes_clientes` | Registros de quitação/pagamento |
+| `quitacao_boletos` | Quitação de Boleto: fases do boleto por parceiro; status só muda via RPC `boleto_mudar_status` (migration 006). Coluna `em_residuo` marca cliente enviado para Resíduos |
+| `residuos` | Resíduos: 1 linha por cliente vindo da Quitação de Boleto (fases solicitado/enviado) via RPC `boleto_para_residuo`; status `residuo_solicitado → residuo_anexado (auto ao anexar) → residuo_pago` (RPC `residuo_marcar_pago`) |
+| `residuo_docs` | Metadados dos PDFs do resíduo (tipo boleto/fatura, contrato, caminho no Storage); o arquivo em si fica no bucket `residuos-docs` |
 | `propostas` | Fase 3: 1 linha por proposta do import (`cpf`/`sale_date` indexados + entry completa em `data` jsonb); substituída inteira a cada import via `import_id` |
 | `smart_leads` | Fase 3: leads Smart em forma reduzida (operador, time, estágio, andamento, data), 1 linha por lead; substituída a cada import |
 | `import_meta` | Fase 3: linha única com o `import_id` ativo (ponteiro), diagnóstico, agregados e quem/quando importou |
@@ -106,7 +109,9 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `bm_eventos` | Histórico das BMs/números: criação, banimento, troca de qualidade |
 | tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
 
-**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs` e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
+**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs`, `residuos-docs` (privado — PDFs de boletos/faturas dos Resíduos em `<cpf>/boletos|faturas/<arquivo>.pdf`, URL assinada 1h) e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
+
+> ⚠️ **`residuos`/`residuo_docs` (tela de Resíduos)**: migration versionada em `supabase/migrations/011_residuos.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** antes do deploy do front — ela cria as tabelas, as RPCs, a coluna `em_residuo` em `quitacao_boletos`, o bucket `residuos-docs` e as policies do Storage.
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
@@ -166,6 +171,7 @@ relatorio_marketing/
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
+│   │   ├── residuos-svc.js   # Resíduos: dados, upload p/ Storage e análise dos ZIPs (fflate + pdf.js sob demanda)
 │   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
 │   │   ├── trafego-svc.js    # Tráfego (Ads): CRUD de trafego_diario + TAXA_IMPOSTO + trafegoInRange (fonte dos KPIs)
@@ -188,6 +194,8 @@ relatorio_marketing/
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── quitacoes-page.js # Gestão de quitações
+│   │   ├── boletos-page.js   # Quitação de Boleto (fases por parceiro; regras na migration 006)
+│   │   ├── residuos-page.js  # Resíduos (importação de lotes ZIP + anexos por cliente)
 │   │   ├── parceiros-page.js # Ranking de Parceiros (pódio + lista + overlay "Top Parceiros")
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
@@ -283,6 +291,13 @@ O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo 
 - **Sem "nota"**: diferente do BSC, parceiro não tem score — o ranking é por posição/valor Integrado. Logos ficam no bucket público `avatars/parceiros/<slug>.jpg` (editáveis pela UI) com fallback de iniciais.
 - **"Mostrar valores"** (`_showValues`, padrão desligado): a tela nasce limpa para print/TV; o toggle revela as métricas em R$.
 - **Overlay "Top Parceiros"**: tela cheia estilo "modo TV" do BSC (fundo branco fixo, cabeçalho + relógio, pódio 2º-1º-3º + grid dos demais, **só posição, sem R$**), com botões de quantidade **Top 10 / 25 / 50** (desabilita a opção maior que o total). Só exibição — não persiste nada. Sai no `✕` ou `Esc`.
+
+**Resíduos**: tela interna do Financeiro para clientes que não conseguem quitar porque ainda há resíduo a pagar. Pontos de desenho que não são óbvios lendo o código:
+- **Entrada**: botão "Resíduo →" na Quitação de Boleto, visível só nas fases `boleto_solicitado`/`boleto_enviado`. A RPC `boleto_para_residuo` cria a linha em `residuos` E marca `em_residuo` no boleto num passo só (transacional); o registro **continua visível** na tela de boletos com a marca. Excluir o resíduo (só admin) tira a marca de volta via trigger.
+- **Status**: `residuo_solicitado` → `residuo_anexado` (promoção **automática** por trigger ao inserir o 1º doc) → `residuo_pago` (clique manual, valor opcional). Mudança direta de status por UPDATE é bloqueada (padrão da migration 006).
+- **Importação em lote**: os documentos chegam em ZIPs com formatos DIFERENTES — boletos em pastas por CPF (`<cpf>/<contrato>/Boleto_*.pdf`, casamento determinístico) e faturas soltas como `NOME - 9999.pdf` onde 9999 é o **final do cartão, não o CPF**. A fatura casa pelo **CPF extraído do texto do PDF** (pdf.js, carregado sob demanda); fallback por nome normalizado (tolera abreviações); ambíguos caem em atribuição manual. **Nada é gravado antes da tela de conferência** — o ZIP inteiro é lido no navegador (fflate) e o upload é sequencial com dedupe por `(residuo, tipo, nome_arquivo)`, então reimportar o mesmo lote só tenta o que faltou.
+- **Sem snapshot/localStorage**: grava direto nas tabelas, revalida a cada 30s e ao focar a aba (padrão Esteira).
+- **Permissões próprias**: `residuos_visualizar` e `residuos_editar` — tela interna, parceiros NÃO têm acesso (diferente dos boletos); admin herda as duas.
 
 **Permissões**: cada grupo tem um JSON de permissões (`grupos_acesso.permissoes`). A função `can('chave')` verifica acesso e o objeto `perm` expõe atalhos semânticos nomeados (`perm.isAdmin()`, `perm.visaoGeral()`, `perm.procvConfirmar()`, …). `navigation.js` esconde/mostra elementos da UI com base nisso.
 

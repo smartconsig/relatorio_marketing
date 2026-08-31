@@ -56,6 +56,10 @@ const PERM_TREE = [
   ]},
   { key: 'liberacao_margem',    label: 'Liberação de Margem Master' },
   { key: 'quitacao_boleto',     label: 'Quitação de Boleto' },
+  { label: 'Resíduos', children: [
+    { key: 'residuos_visualizar', label: 'Visualizar a tela' },
+    { key: 'residuos_editar',     label: 'Importar lote / anexar / marcar pago' },
+  ]},
   { label: 'Universidade Smart', children: [
     { key: 'universidade_acessar',    label: 'Acessar Universidade' },
     { key: 'universidade_criador',    label: 'Criador de Cursos (Admin)' },
@@ -849,6 +853,7 @@ function _summarizePerms(permissoes) {
     { key: 'bm_visualizar',            label: 'BMs' },
     { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'quitacao_boleto',          label: 'Quit. Boleto' },
+    { key: 'residuos_visualizar',      label: 'Resíduos' },
     { key: 'universidade_acessar',     label: 'Universidade' },
     { key: 'universidade_criador',     label: 'Criador' },
     { key: 'universidade_gamificacao', label: 'Gamificação' },

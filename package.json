@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@preact/preset-vite": "^2.10.5",
+    "fflate": "^0.8.3",
+    "pdfjs-dist": "^6.3.289",
     "preact": "^10.29.2",
     "xlsx": "^0.18.5"
   }

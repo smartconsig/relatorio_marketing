@@ -1,0 +1,299 @@
+/* ── Resíduos ──────────────────────────────────────────────────────────────
+   Reaproveita .lib-* (liberacao.css) e .bol-* (boletos.css) para layout,
+   filtros, tabela, chips e modal-form. Aqui ficam só as peças exclusivas:
+   status próprios, chips/popover de documentos e o modal de importação. */
+
+/* ── Status (badge da linha + chip de filtro no topo) ─────────────────── */
+.res-st-sol { color: #b98900; background: rgba(230,175,20,.14); }
+.res-st-anx { color: #2f7fd1; background: rgba(60,140,220,.14); }
+.res-st-pag { color: #20b450; background: rgba(32,180,80,.14);  }
+
+.bol-chip.res-st-sol,
+.bol-chip.res-st-anx,
+.bol-chip.res-st-pag { background: var(--surface); }
+
+.res-valor-pago {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #20b450;
+  white-space: nowrap;
+}
+
+/* ── Chips de documentos na linha ─────────────────────────────────────── */
+.res-doc-chips { display: inline-flex; gap: 5px; cursor: pointer; }
+
+.res-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-light);
+  white-space: nowrap;
+}
+.res-chip-ok   { border-color: rgba(32,180,80,.4); color: #20b450; }
+.res-chip-none { border-style: dashed; color: var(--gray); }
+.res-doc-chips:hover .res-chip-ok { border-color: var(--red); }
+
+.res-btn-anexo {
+  margin-left: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  background: none;
+  color: var(--gray);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: border-color .15s, color .15s;
+}
+.res-btn-anexo:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Popover de documentos (posicionado por JS, position:fixed) ───────── */
+.res-pop {
+  position: fixed;
+  z-index: 1200;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  padding: 12px 14px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.res-pop-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.res-pop-grp {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  margin: 8px 0 2px;
+}
+.res-pop-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.res-pop-file:last-child { border-bottom: none; }
+.res-pop-nm {
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.res-pop-nm em { font-style: normal; color: var(--gray); font-size: 0.7rem; }
+.res-pop-ops { display: flex; gap: 9px; flex-shrink: 0; }
+.res-pop-ops a {
+  color: var(--red-hover);
+  font-weight: 700;
+  font-size: 0.72rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.res-pop-ops a:hover { text-decoration: underline; }
+.res-pop-ops .res-pop-del { color: var(--gray); }
+.res-pop-ops .res-pop-del:hover { color: #d64545; }
+
+/* ── Modal (mesmo visual do #bol-modal) ───────────────────────────────── */
+.res-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.res-modal.open { display: flex; }
+
+.res-modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+
+/* ── Importação: resumo, conferência e progresso ──────────────────────── */
+.res-sumchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+.res-sumchip {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  padding: 5px 11px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--gray-light);
+}
+.res-sum-ok   { color: #20b450; border-color: rgba(32,180,80,.4); }
+.res-sum-warn { color: #b98900; border-color: rgba(230,175,20,.4); }
+.res-sum-err  { color: #d64545; border-color: rgba(215,70,70,.4); }
+
+.res-mtbl {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.res-mhead {
+  background: var(--surface2);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.res-mbody { max-height: 240px; overflow-y: auto; }
+
+.res-mrow {
+  display: grid;
+  grid-template-columns: minmax(0,1.1fr) 18px minmax(0,1fr) 62px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.76rem;
+}
+.res-mrow:last-child { border-bottom: none; }
+.res-mfile {
+  color: var(--gray-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.res-mto  { color: var(--gray); text-align: center; }
+.res-mwho {
+  font-weight: 700;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.res-mtag {
+  justify-self: end;
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.res-mtag-cpf  { color: #20b450; background: rgba(32,180,80,.14); }
+.res-mtag-nome { color: #b98900; background: rgba(230,175,20,.14); }
+
+.res-orow {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 220px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.76rem;
+}
+.res-orow:last-child { border-bottom: none; }
+.res-omotivo {
+  display: block;
+  font-style: normal;
+  font-size: 0.66rem;
+  color: var(--gray);
+}
+.res-osel {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 8px;
+  color: var(--white);
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.res-osel:focus { outline: none; border-color: var(--red); }
+
+.res-progress {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin: 14px 0 8px;
+}
+.res-progress-bar {
+  height: 100%;
+  background: var(--red);
+  border-radius: 6px;
+  transition: width .25s ease;
+}
+.res-prg-txt {
+  font-size: 0.78rem;
+  color: var(--gray-light);
+  margin: 0 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Marca "Em resíduo" na tela de Quitação de Boleto ─────────────────── */
+.bol-badge-residuo {
+  display: inline-block;
+  margin-top: 3px;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #b98900;
+  background: rgba(230,175,20,.14);
+  white-space: nowrap;
+}
+.bol-btn-residuo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--gray-light);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s;
+}
+.bol-btn-residuo:hover { border-color: #b98900; color: #b98900; }
+
+@media (max-width: 640px) {
+  .res-orow { grid-template-columns: 1fr; }
+  .res-mrow { grid-template-columns: minmax(0,1fr) 14px minmax(0,1fr) 54px; }
+}

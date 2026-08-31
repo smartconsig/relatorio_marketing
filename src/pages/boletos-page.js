@@ -9,6 +9,7 @@ import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
 import { showConfirm } from '../utils/confirm.js';
 import { parseBRL } from '../utils/currency.js';
+import { enviarParaResiduo } from '../services/residuos-svc.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
@@ -88,6 +89,9 @@ function _msgErroBanco(error) {
   if (m.includes('BOLETO_SEM_PERMISSAO'))      return 'Sem permissão para agir neste registro.';
   if (m.includes('BOLETO_REGISTRO_FINALIZADO'))return 'Registro finalizado — somente admin pode editar.';
   if (m.includes('BOLETO_STATUS_SOMENTE_RPC')) return 'Status não pode ser alterado diretamente.';
+  if (m.includes('RESIDUO_JA_EXISTE'))         return 'Este cliente já está na tela de Resíduos.';
+  if (m.includes('RESIDUO_FASE_INVALIDA'))     return 'Só é possível enviar para Resíduos nas fases Boleto Solicitado ou Enviado.';
+  if (m.includes('RESIDUO_SEM_PERMISSAO'))     return 'Sem permissão para enviar clientes para Resíduos.';
   return m || 'Erro inesperado.';
 }
 
@@ -367,6 +371,14 @@ function _renderRow(r, admin) {
       <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">✕ Reprovar</button>`;
   }
 
+  // Cliente com resíduo não chega à fase final do boleto: sai daqui para a
+  // tela de Resíduos (o registro continua visível, com a marca "Em resíduo")
+  const podeResiduo = (admin || perm.residuosEditar()) && !r.em_residuo &&
+    (r.status === 'boleto_solicitado' || r.status === 'boleto_enviado');
+  const residuoBtn = podeResiduo
+    ? `<button class="bol-btn-residuo" onclick="bolParaResiduo('${r.id}')" title="Cliente tem resíduo — enviar para a tela de Resíduos">Resíduo →</button>`
+    : '';
+
   const canEdit = admin || (dono && !final);
   const editBtn = canEdit
     ? `<button class="lib-btn-edit" onclick="bolEditarCliente('${r.id}')" title="Editar">
@@ -402,10 +414,11 @@ function _renderRow(r, admin) {
       <td>
         <span class="bol-badge ${meta.cls}">${meta.label}</span>
         ${statusDate ? `<span class="bol-badge-date">${statusDate}</span>` : ''}
+        ${r.em_residuo ? '<span class="bol-badge-residuo">Em resíduo</span>' : ''}
         ${motivoBtn}
       </td>
       <td class="lib-obs" title="${_esc(r.obs || '')}">${_esc(r.obs || '—')}</td>
-      <td class="lib-td-actions bol-td-actions">${statusBtns}${editBtn}${delBtn}</td>
+      <td class="lib-td-actions bol-td-actions">${statusBtns}${residuoBtn}${editBtn}${delBtn}</td>
     </tr>`;
 }
 
@@ -470,6 +483,27 @@ export async function bolMudarStatus(id, novo, motivo = null) {
   _updateTable();
   toast(`Status atualizado: ${STATUS_META[novo]?.label || novo}.`);
   return true;
+}
+
+// ── Enviar para a tela de Resíduos (transação garantida no banco) ─────────
+export function bolParaResiduo(id) {
+  const r = _registros.find(x => x.id === id);
+  if (!r) return;
+  showConfirm(
+    'Enviar para Resíduos',
+    `"${r.nome}" tem resíduo a pagar? O cliente entra na tela de Resíduos como "Resíduo Solicitado" e este registro continua aqui com a marca "Em resíduo".`,
+    'Enviar para Resíduos',
+    async () => {
+      try {
+        await enviarParaResiduo(id);
+        toast(`${r.nome} enviado para a tela de Resíduos.`);
+        await _loadData();
+        _updateTable();
+      } catch (e) {
+        toast(_msgErroBanco(e), 'err');
+      }
+    }
+  );
 }
 
 export function bolMarcarQuitado(id) {
