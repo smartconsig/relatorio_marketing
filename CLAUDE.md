@@ -168,6 +168,7 @@ relatorio_marketing/
 │   │   ├── quitacoes-service.js # Serviço de quitações
 │   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
+│   │   ├── trafego-svc.js    # Tráfego (Ads): CRUD de trafego_diario + TAXA_IMPOSTO + trafegoInRange (fonte dos KPIs)
 │   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
 │   │   ├── bm-svc.js         # Central de BMs: BMs, números oficiais e eventos (sem snapshot)
 │   │   ├── bsc-svc.js        # Balanced Scorecard service
@@ -192,6 +193,7 @@ relatorio_marketing/
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
 │   │   ├── divergences.js    # Divergências de dados
 │   │   ├── history-panel.js  # Log de alterações
+│   │   ├── trafego-page.js   # Tráfego (Ads): visão de planilha + modal de lançamento do dia
 │   │   ├── admin-page.js     # Gestão de usuários e grupos
 │   │   ├── universidade.js   # Módulo de treinamento corporativo
 │   │   ├── uni-admin.js      # Criação de cursos
@@ -235,7 +237,7 @@ O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo 
 | Fase 1a | Snapshot comprimido com gzip (`gz1:`), hash pula save sem mudança | ✅ produção 29/08/2026 (commit `700c01fd`) |
 | Fase 1b | Cache localStorage comprimido; `loadState()` virou async | ✅ produção 29/08/2026 (commit `e3de3b32`) |
 | Etapa A | Dual-write: import grava fichas (`propostas`/`smart_leads`/`import_meta`) além do snapshot, não-fatal; divergências e vendor mappings gravam nas tabelas no ato | ✅ produção 29/08/2026 (commit `a5af2d6a`), migration 007 rodada e validada (~7.030 fichas) |
-| Etapa B0 | Leitura sombra: `loadImportData()` monta o estado pelas fichas e `shadowCompareImportData()` compara com o snapshot em segundo plano (console `[Fase3/sombra …]` + action-log `fase3_sombra`), após cada import e nos dois caminhos do login; campos mudados por classificação ficam fora da comparação de propósito | ✅ produção 29/08/2026 (commit `7df3bbc8`) — ⚠️ migration `008_import_counts.sql` precisa rodar no SQL Editor antes do próximo import |
+| Etapa B0 | Leitura sombra: `loadImportData()` monta o estado pelas fichas e `shadowCompareImportData()` compara com o snapshot em segundo plano (console `[Fase3/sombra …]` + action-log `fase3_sombra`), após cada import e nos dois caminhos do login; campos mudados por classificação ficam fora da comparação de propósito | ✅ produção 29/08/2026 (commit `7df3bbc8`), migration `008_import_counts.sql` rodada |
 | Etapa B1 | Virada: fichas viram a fonte de leitura; snapshot vira reserva (fallback se contagem não bater) e continua sendo gravado | ⏳ próxima — **conferência agendada para 05/09/2026** avalia as comparações da semana e vira a chave |
 | Etapa C | Remove escrita/leitura do snapshot; clique salva só a linha dele; adicionar **revalidação automática a cada 30s** das `classifications` (pedido do responsável, padrão da Esteira) | após ~1 semana de B1 limpa |
 
@@ -315,6 +317,7 @@ O dev server usa polling de arquivos (`usePolling: true`) — necessário no Win
 - **CPF como chave**: CPFs são normalizados (só dígitos) em `utils/cpf.js` antes de qualquer comparação — nunca comparar strings brutas
 - **CSS por feature**: cada feature grande tem seu próprio `.css` em `src/styles/`; a maioria é importada em `main.js` (exceção: `admin.css` é carregado direto no `<head>` do `index.html`)
 - **Sem TypeScript no frontend**: o app é JS/JSX; TypeScript só aparece nas Edge Functions do Supabase (Deno, `.ts`). Sem JSDoc sistemático
+- **Formulários herdam a fonte do app**: regra global em `base.css` (`input, select, textarea, button { font-family: inherit }` + `accent-color` da marca em checkbox/radio) — nunca deixar campo com fonte de sistema. `modal-kit.css` aplica blur de fundo e animação de entrada a todos os modais; as regras de campo de cada modal vivem no CSS da própria feature (padrão: fundo `--surface`, campo `--surface2`, foco `--red`)
 
 ---
 
