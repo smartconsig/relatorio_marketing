@@ -81,12 +81,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER TABLE quitacao_boletos DROP COLUMN IF EXISTS em_residuo;
 
--- Storage da v1: remove policies e o bucket (vazio)
+-- Storage da v1: remove as policies. O bucket residuos-docs (vazio) NÃO pode
+-- ser apagado via SQL (o Supabase bloqueia DELETE direto em storage.buckets) —
+-- se quiser removê-lo, use o painel: Storage → residuos-docs → Delete bucket.
 DROP POLICY IF EXISTS "residuos_docs_storage_select" ON storage.objects;
 DROP POLICY IF EXISTS "residuos_docs_storage_insert" ON storage.objects;
 DROP POLICY IF EXISTS "residuos_docs_storage_update" ON storage.objects;
 DROP POLICY IF EXISTS "residuos_docs_storage_delete" ON storage.objects;
-DELETE FROM storage.buckets WHERE id = 'residuos-docs';
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- PARTE 2 — Documentos na Quitação de Boleto
