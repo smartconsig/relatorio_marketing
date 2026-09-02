@@ -340,6 +340,7 @@ O dev server usa polling de arquivos (`usePolling: true`) — necessário no Win
 - **CSS por feature**: cada feature grande tem seu próprio `.css` em `src/styles/`; a maioria é importada em `main.js` (exceção: `admin.css` é carregado direto no `<head>` do `index.html`)
 - **Sem TypeScript no frontend**: o app é JS/JSX; TypeScript só aparece nas Edge Functions do Supabase (Deno, `.ts`). Sem JSDoc sistemático
 - **Formulários herdam a fonte do app**: regra global em `base.css` (`input, select, textarea, button { font-family: inherit }` + `accent-color` da marca em checkbox/radio) — nunca deixar campo com fonte de sistema. `modal-kit.css` aplica blur de fundo e animação de entrada a todos os modais; as regras de campo de cada modal vivem no CSS da própria feature (padrão: fundo `--surface`, campo `--surface2`, foco `--red`)
+- **Filtro de período** (desde 02/09/2026): o seletor de datas **não fica mais no header** — cada tela de período (Visão Geral, Ranking, Perfil, Gestão, Propostas, Tráfego) imprime a própria barra via `src/components/period-bar.js` (reutiliza as classes visuais `date-filter`/`qf-*`; eventos por delegação global, sem IDs fixos). **Toda mudança de período passa por `setPeriodo()` em `navigation.js`** — nunca gravar `state.filterDates` ou campos de data na mão. Tela nova que use o período: imprimir a barra e adicionar a seção em `PERIOD_SECS`. Metas fica fora (tem seletor de mês próprio). Perfil e Tráfego renderizam em contêiner interno (`perfil-body`/`trafego-body`) para a barra sobreviver ao redesenho
 
 ---
 
