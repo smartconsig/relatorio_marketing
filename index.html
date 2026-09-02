@@ -547,6 +547,13 @@
   <div id="bol-modal-content"></div>
 </div>
 
+<!-- Quitação de Boleto: importação de lote de PDFs + popover de documentos -->
+<div class="res-modal" id="bol-lote-modal">
+  <div class="res-modal-box" id="bol-lote-content"></div>
+</div>
+<div class="res-pop" id="bol-pop" style="display:none" onmouseenter="bolPopEnter()" onmouseleave="bolPopLeave()"></div>
+<input type="file" id="bol-zip-input" accept=".zip" style="display:none" onchange="bolOnZipFile(this)" />
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -58,7 +58,7 @@ const PERM_TREE = [
   { key: 'quitacao_boleto',     label: 'Quitação de Boleto' },
   { label: 'Resíduos', children: [
     { key: 'residuos_visualizar', label: 'Visualizar a tela' },
-    { key: 'residuos_editar',     label: 'Importar lote / anexar / marcar pago' },
+    { key: 'residuos_editar',     label: 'Mover da Liberação / mudar status' },
   ]},
   { label: 'Universidade Smart', children: [
     { key: 'universidade_acessar',    label: 'Acessar Universidade' },

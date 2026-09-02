@@ -6,6 +6,7 @@ import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
 import { showConfirm } from '../utils/confirm.js';
 import { parseBRL } from '../utils/currency.js';
+import { enviarParaResiduo } from '../services/residuos-svc.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
@@ -114,7 +115,9 @@ async function _loadData() {
     if (!data || data.length < PAGE) break;
     from += PAGE;
   }
-  _registros = all;
+  // Cliente em resíduo some desta tela e volta automaticamente quando o
+  // resíduo for pago (com a observação) — ver residuos-page.js / migration 012
+  _registros = all.filter(r => !r.em_residuo);
 }
 
 // ── Render shell (once) ───────────────────────────────────────────────────
@@ -298,9 +301,15 @@ function _renderRow(r, admin) {
     ? `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" ${acertoLocked ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onchange="libSalvarAcerto('${r.id}', this.value)"`} />`
     : fmtDate(r.acerto);
 
+  // Cliente com resíduo a pagar sai desta tela para a de Resíduos
+  const residuoBtn = perm.residuosEditar()
+    ? `<button class="bol-btn-residuo" onclick="libParaResiduo('${r.id}')" title="Cliente tem resíduo — enviar para a tela de Resíduos">Resíduo →</button>`
+    : '';
+
   const okLocked = !admin && r.aprovado;   // parceiro: depois de dar OK, não pode remover
   const okBtn = canAct ? `
     <td class="lib-td-actions">
+      ${residuoBtn}
       <button class="lib-btn-ok${r.aprovado ? ' ok' : ''}${okLocked ? ' locked' : ''}" ${okLocked ? 'disabled title="OK confirmado — somente admin pode remover"' : `onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}"`}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
@@ -379,6 +388,32 @@ export function libVerMais() {
   _updateTable();
   // Scroll suave até o fim da tabela
   document.getElementById('lib-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Enviar para Resíduos (transacional no banco: cria + esconde daqui) ────
+export function libParaResiduo(id) {
+  const r = _registros.find(x => x.id === id);
+  if (!r) return;
+  showConfirm(
+    'Enviar para Resíduos',
+    `"${r.nome}" tem resíduo a pagar? O cliente sai desta tela e entra em Resíduos como "Resíduo Pendente". Ele volta para cá automaticamente quando o resíduo for pago.`,
+    'Enviar para Resíduos',
+    async () => {
+      try {
+        await enviarParaResiduo(id);
+        toast(`${r.nome} enviado para a tela de Resíduos.`);
+        await _loadData();
+        _updateTable();
+      } catch (e) {
+        const m = e?.message || '';
+        toast(
+          m.includes('RESIDUO_JA_EXISTE')      ? 'Este cliente já está na tela de Resíduos.' :
+          m.includes('RESIDUO_SEM_PERMISSAO')  ? 'Sem permissão para enviar clientes para Resíduos.' :
+          m.includes('RESIDUO_CPF_INVALIDO')   ? 'CPF do cliente é inválido — corrija antes de enviar.' :
+          m || 'Erro inesperado.', 'err');
+      }
+    }
+  );
 }
 
 // ── Exportar Excel (admin) ────────────────────────────────────────────────

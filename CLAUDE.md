@@ -38,6 +38,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | Backend/DB | Supabase (PostgreSQL + Auth + Edge Functions) |
 | Charts | Chart.js 4.4.0 (CDN) |
 | Excel | xlsx 0.18.5 (npm) |
+| Lotes ZIP/PDF | fflate + pdfjs-dist (npm, **import dinâmico** — só carregam ao importar lote na Quitação de Boleto) |
 | Auth client | @supabase/supabase-js 2.x (CDN) |
 | Deploy | Vercel |
 | CDN de vídeo | Bunny.net (módulo Universidade) |
@@ -91,9 +92,9 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `quitacoes_clientes` | Registros de quitação/pagamento |
-| `quitacao_boletos` | Quitação de Boleto: fases do boleto por parceiro; status só muda via RPC `boleto_mudar_status` (migration 006). Coluna `em_residuo` marca cliente enviado para Resíduos |
-| `residuos` | Resíduos: 1 linha por cliente vindo da Quitação de Boleto (fases solicitado/enviado) via RPC `boleto_para_residuo`; status `residuo_solicitado → residuo_anexado (auto ao anexar) → residuo_pago` (RPC `residuo_marcar_pago`) |
-| `residuo_docs` | Metadados dos PDFs do resíduo (tipo boleto/fatura, contrato, caminho no Storage); o arquivo em si fica no bucket `residuos-docs` |
+| `quitacao_boletos` | Quitação de Boleto: fases do boleto por parceiro; status só muda via RPC `boleto_mudar_status` (migration 006) |
+| `boleto_docs` | Metadados dos PDFs (boletos/faturas) anexados aos clientes da Quitação de Boleto pelos lotes ZIP (migration 012); o arquivo em si fica no bucket `boletos-docs`. Anexar o 1º doc em cliente `boleto_solicitado` promove para `boleto_enviado` (trigger) |
+| `residuos` | Resíduos v2: 1 linha por cliente vindo da **Liberação de Margem** via RPC `liberacao_para_residuo`; status `residuo_pendente → residuo_solicitado → residuo_pago` (RPC `residuo_mudar_status`). Ao pagar, volta automático para a Liberação com obs "RESÍDUO PAGO em dd/mm/aaaa" |
 | `propostas` | Fase 3: 1 linha por proposta do import (`cpf`/`sale_date` indexados + entry completa em `data` jsonb); substituída inteira a cada import via `import_id` |
 | `smart_leads` | Fase 3: leads Smart em forma reduzida (operador, time, estágio, andamento, data), 1 linha por lead; substituída a cada import |
 | `import_meta` | Fase 3: linha única com o `import_id` ativo (ponteiro), diagnóstico, agregados e quem/quando importou |
@@ -109,9 +110,9 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `bm_eventos` | Histórico das BMs/números: criação, banimento, troca de qualidade |
 | tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
 
-**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs`, `residuos-docs` (privado — PDFs de boletos/faturas dos Resíduos em `<cpf>/boletos|faturas/<arquivo>.pdf`, URL assinada 1h) e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
+**Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs`, `boletos-docs` (privado — PDFs de boletos/faturas da Quitação de Boleto em `<cpf>/boletos|faturas/<arquivo>.pdf`, URL assinada 1h; parceiro lê os dos próprios clientes via policy) e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
 
-> ⚠️ **`residuos`/`residuo_docs` (tela de Resíduos)**: migration versionada em `supabase/migrations/011_residuos.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** antes do deploy do front — ela cria as tabelas, as RPCs, a coluna `em_residuo` em `quitacao_boletos`, o bucket `residuos-docs` e as policies do Storage.
+> ✅ **Resíduos v2 / documentos do boleto**: migrations `011_residuos.sql` e `012_residuos_v2.sql` **já rodadas em produção em 02/09/2026** (a 012 desmonta a v1, que nunca foi usada, e cria a estrutura v2 inteira: `boleto_docs` + bucket `boletos-docs`, `residuos` conectada à `liberacao_margem_master` com a coluna `em_residuo`, RPCs `liberacao_para_residuo`/`residuo_mudar_status`). Front v2 deployado no mesmo dia (commit `ae1b4c69`). **Fluxo em validação**: teste com a responsável do setor agendado para 03/09/2026 — ajustes podem sair dele. Restos conhecidos: o bucket vazio `residuos-docs` da v1 ficou órfão (Supabase não deixa apagar bucket via SQL — excluir pelo painel Storage, se quiser); a coluna legada `quitacoes_clientes.doc_pdf` ainda guarda documentos antigos em base64 (migrar para Storage é tarefa futura).
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
@@ -171,7 +172,8 @@ relatorio_marketing/
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── quitacoes-service.js # Serviço de quitações
-│   │   ├── residuos-svc.js   # Resíduos: dados, upload p/ Storage e análise dos ZIPs (fflate + pdf.js sob demanda)
+│   │   ├── residuos-svc.js   # Resíduos v2: CRUD + RPCs (liberacao_para_residuo, residuo_mudar_status)
+│   │   ├── boleto-docs-svc.js# Docs da Quitação de Boleto: upload p/ Storage e análise dos ZIPs (fflate + pdf.js sob demanda)
 │   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
 │   │   ├── trafego-svc.js    # Tráfego (Ads): CRUD de trafego_diario + TAXA_IMPOSTO + trafegoInRange (fonte dos KPIs)
@@ -194,8 +196,8 @@ relatorio_marketing/
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── quitacoes-page.js # Gestão de quitações
-│   │   ├── boletos-page.js   # Quitação de Boleto (fases por parceiro; regras na migration 006)
-│   │   ├── residuos-page.js  # Resíduos (importação de lotes ZIP + anexos por cliente)
+│   │   ├── boletos-page.js   # Quitação de Boleto (fases por parceiro; importa lotes ZIP de docs; regras nas migrations 006/012)
+│   │   ├── residuos-page.js  # Resíduos v2 (lista de controle pendente/solicitado/pago, ligada à Liberação)
 │   │   ├── parceiros-page.js # Ranking de Parceiros (pódio + lista + overlay "Top Parceiros")
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
@@ -292,12 +294,17 @@ O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo 
 - **"Mostrar valores"** (`_showValues`, padrão desligado): a tela nasce limpa para print/TV; o toggle revela as métricas em R$.
 - **Overlay "Top Parceiros"**: tela cheia estilo "modo TV" do BSC (fundo branco fixo, cabeçalho + relógio, pódio 2º-1º-3º + grid dos demais, **só posição, sem R$**), com botões de quantidade **Top 10 / 25 / 50** (desabilita a opção maior que o total). Só exibição — não persiste nada. Sai no `✕` ou `Esc`.
 
-**Resíduos**: tela interna do Financeiro para clientes que não conseguem quitar porque ainda há resíduo a pagar. Pontos de desenho que não são óbvios lendo o código:
-- **Entrada**: botão "Resíduo →" na Quitação de Boleto, visível só nas fases `boleto_solicitado`/`boleto_enviado`. A RPC `boleto_para_residuo` cria a linha em `residuos` E marca `em_residuo` no boleto num passo só (transacional); o registro **continua visível** na tela de boletos com a marca. Excluir o resíduo (só admin) tira a marca de volta via trigger.
-- **Status**: `residuo_solicitado` → `residuo_anexado` (promoção **automática** por trigger ao inserir o 1º doc) → `residuo_pago` (clique manual, valor opcional). Mudança direta de status por UPDATE é bloqueada (padrão da migration 006).
-- **Importação em lote**: os documentos chegam em ZIPs com formatos DIFERENTES — boletos em pastas por CPF (`<cpf>/<contrato>/Boleto_*.pdf`, casamento determinístico) e faturas soltas como `NOME - 9999.pdf` onde 9999 é o **final do cartão, não o CPF**. A fatura casa pelo **CPF extraído do texto do PDF** (pdf.js, carregado sob demanda); fallback por nome normalizado (tolera abreviações); ambíguos caem em atribuição manual. **Nada é gravado antes da tela de conferência** — o ZIP inteiro é lido no navegador (fflate) e o upload é sequencial com dedupe por `(residuo, tipo, nome_arquivo)`, então reimportar o mesmo lote só tenta o que faltou.
+**Documentos da Quitação de Boleto (lotes ZIP)**: boletos e faturas chegam em lotes ZIP e são anexados aos clientes da tela Quitação de Boleto (botão "Importar Lote", só admin). Pontos de desenho:
+- **Elegibilidade**: documento só casa com cliente em `boleto_solicitado` OU `boleto_enviado` (os lotes só existem para quem já teve boleto/fatura pedidos). **Importar É o envio**: cliente em `boleto_solicitado` que recebe o 1º doc vira `boleto_enviado` automaticamente (trigger `boleto_docs_envia`).
+- **Formatos dos ZIPs (diferentes entre si)**: boletos em pastas por CPF (`<cpf>/<contrato>/Boleto_*.pdf`, casamento determinístico); faturas soltas como `NOME - 9999.pdf` onde 9999 é o **final do cartão, não o CPF** — a fatura casa pelo **CPF extraído do texto do PDF** (pdf.js sob demanda), fallback por nome normalizado (tolera abreviações), ambíguos caem em atribuição manual.
+- **Nada é gravado antes da tela de conferência** — o ZIP inteiro é lido no navegador (fflate) e o upload é sequencial com dedupe por `(boleto, tipo, nome_arquivo)`; reimportar o mesmo lote só tenta o que faltou.
+- **Visibilidade**: parceiro vê/baixa os docs dos próprios clientes (RLS + policy do Storage por metadado); excluir doc é só admin. Chips 📄/🧾 na linha com popover ver/baixar.
+
+**Resíduos (v2)**: tela interna do Financeiro, conectada à **Liberação de Margem Master** (não aos boletos). Lista de controle pura — **sem documentos**. Pontos de desenho:
+- **Entrada**: botão "Resíduo →" em cada linha da Liberação (quem tem `residuos_editar`; admin herda). A RPC `liberacao_para_residuo` cria a linha em `residuos` E marca `em_residuo` na liberação num passo só; a linha **some da Liberação** enquanto está em resíduo.
+- **Status**: `residuo_pendente` (entrada) → `residuo_solicitado` (clique) → `residuo_pago` (clique, valor opcional). Ao pagar, a RPC devolve a linha à Liberação com `em_residuo=false` e obs "RESÍDUO PAGO em dd/mm/aaaa" (preserva o obs anterior) e o registro **some da tela** de Resíduos (fica no banco como histórico). Se a linha da liberação tiver sido apagada, o pago não trava (aviso no retorno). Excluir o resíduo (admin) devolve a linha à Liberação sem observação (trigger).
 - **Sem snapshot/localStorage**: grava direto nas tabelas, revalida a cada 30s e ao focar a aba (padrão Esteira).
-- **Permissões próprias**: `residuos_visualizar` e `residuos_editar` — tela interna, parceiros NÃO têm acesso (diferente dos boletos); admin herda as duas.
+- **Permissões próprias**: `residuos_visualizar` e `residuos_editar` — tela interna, parceiros NÃO têm acesso; admin herda as duas.
 
 **Permissões**: cada grupo tem um JSON de permissões (`grupos_acesso.permissoes`). A função `can('chave')` verifica acesso e o objeto `perm` expõe atalhos semânticos nomeados (`perm.isAdmin()`, `perm.visaoGeral()`, `perm.procvConfirmar()`, …). `navigation.js` esconde/mostra elementos da UI com base nisso.
 
