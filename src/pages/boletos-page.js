@@ -9,10 +9,13 @@ import { perm } from '../services/permissions.js';
 import * as XLSX from 'xlsx';
 import { showConfirm } from '../utils/confirm.js';
 import { parseBRL } from '../utils/currency.js';
-import { enviarParaResiduo } from '../services/residuos-svc.js';
+import { loadBoletoDocs, getBoletoDocUrl, deleteBoletoDoc, analisarZipBoletos, executarImportBoletos } from '../services/boleto-docs-svc.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let _registros = [];
+let _docs      = new Map();   // boleto_id -> [boleto_docs]
+let _plano     = null;        // resultado da análise do ZIP (conferência)
+let _importando = false;
 let _page          = 1;
 let _search        = '';
 let _dateFrom      = null;
@@ -89,9 +92,6 @@ function _msgErroBanco(error) {
   if (m.includes('BOLETO_SEM_PERMISSAO'))      return 'Sem permissão para agir neste registro.';
   if (m.includes('BOLETO_REGISTRO_FINALIZADO'))return 'Registro finalizado — somente admin pode editar.';
   if (m.includes('BOLETO_STATUS_SOMENTE_RPC')) return 'Status não pode ser alterado diretamente.';
-  if (m.includes('RESIDUO_JA_EXISTE'))         return 'Este cliente já está na tela de Resíduos.';
-  if (m.includes('RESIDUO_FASE_INVALIDA'))     return 'Só é possível enviar para Resíduos nas fases Boleto Solicitado ou Enviado.';
-  if (m.includes('RESIDUO_SEM_PERMISSAO'))     return 'Sem permissão para enviar clientes para Resíduos.';
   return m || 'Erro inesperado.';
 }
 
@@ -175,6 +175,20 @@ async function _loadData() {
     from += PAGE;
   }
   _registros = all;
+
+  // Documentos anexados (boletos/faturas dos lotes) — não-fatal: se a tabela
+  // ainda não existir (migration 012 pendente), a tela funciona sem os chips
+  try {
+    const docs = await loadBoletoDocs();
+    _docs = new Map();
+    for (const d of docs) {
+      if (!_docs.has(d.boleto_id)) _docs.set(d.boleto_id, []);
+      _docs.get(d.boleto_id).push(d);
+    }
+  } catch (e) {
+    console.warn('boleto_docs indisponível:', e?.message);
+    _docs = new Map();
+  }
 }
 
 // ── Render shell ──────────────────────────────────────────────────────────
@@ -205,6 +219,10 @@ function _render(el) {
             Importar Planilha
           </button>
           <input type="file" id="bol-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="bolOnImportFile(this)" />
+          ${admin ? `<button class="lib-btn-import" onclick="bolAbrirLote()" title="Importar ZIP de boletos ou faturas — os PDFs são anexados aos clientes em Boleto Solicitado/Enviado">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Importar Lote (.zip)
+          </button>` : ''}
           <button class="lib-btn-add" onclick="bolAddCliente()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Adicionar Cliente
@@ -255,6 +273,7 @@ function _render(el) {
               <th>Troco</th>
               <th>Cadastro</th>
               <th>Status</th>
+              <th>Docs</th>
               <th>Obs</th>
               <th></th>
             </tr>
@@ -274,7 +293,7 @@ function _updateTable() {
   const filtered = _filtered();
   const visible  = filtered.slice(0, _page * PAGE_SIZE);
   const hasMore  = filtered.length > visible.length;
-  const cols     = admin ? 13 : 12;
+  const cols     = admin ? 14 : 13;
 
   // Contagem
   const countEl = document.querySelector('.bol-count');
@@ -371,13 +390,17 @@ function _renderRow(r, admin) {
       <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">✕ Reprovar</button>`;
   }
 
-  // Cliente com resíduo não chega à fase final do boleto: sai daqui para a
-  // tela de Resíduos (o registro continua visível, com a marca "Em resíduo")
-  const podeResiduo = (admin || perm.residuosEditar()) && !r.em_residuo &&
-    (r.status === 'boleto_solicitado' || r.status === 'boleto_enviado');
-  const residuoBtn = podeResiduo
-    ? `<button class="bol-btn-residuo" onclick="bolParaResiduo('${r.id}')" title="Cliente tem resíduo — enviar para a tela de Resíduos">Resíduo →</button>`
-    : '';
+  // Documentos anexados pelos lotes (parceiro só recebe os dos próprios
+  // clientes — o RLS filtra no banco)
+  const docs = _docs.get(r.id) || [];
+  const nBol = docs.filter(d => d.tipo === 'boleto').length;
+  const nFat = docs.filter(d => d.tipo === 'fatura').length;
+  const docsCell = docs.length
+    ? `<span class="res-doc-chips" onmouseenter="bolPopShow(event,'${r.id}')" onmouseleave="bolPopLeave()" onclick="bolPopShow(event,'${r.id}',true)">
+         ${nBol ? `<span class="res-chip res-chip-ok">📄 ${nBol}</span>` : ''}
+         ${nFat ? `<span class="res-chip res-chip-ok">🧾 ${nFat}</span>` : ''}
+       </span>`
+    : `<span class="res-chip res-chip-none">—</span>`;
 
   const canEdit = admin || (dono && !final);
   const editBtn = canEdit
@@ -414,11 +437,11 @@ function _renderRow(r, admin) {
       <td>
         <span class="bol-badge ${meta.cls}">${meta.label}</span>
         ${statusDate ? `<span class="bol-badge-date">${statusDate}</span>` : ''}
-        ${r.em_residuo ? '<span class="bol-badge-residuo">Em resíduo</span>' : ''}
         ${motivoBtn}
       </td>
+      <td>${docsCell}</td>
       <td class="lib-obs" title="${_esc(r.obs || '')}">${_esc(r.obs || '—')}</td>
-      <td class="lib-td-actions bol-td-actions">${statusBtns}${residuoBtn}${editBtn}${delBtn}</td>
+      <td class="lib-td-actions bol-td-actions">${statusBtns}${editBtn}${delBtn}</td>
     </tr>`;
 }
 
@@ -485,25 +508,324 @@ export async function bolMudarStatus(id, novo, motivo = null) {
   return true;
 }
 
-// ── Enviar para a tela de Resíduos (transação garantida no banco) ─────────
-export function bolParaResiduo(id) {
-  const r = _registros.find(x => x.id === id);
-  if (!r) return;
+// ── Popover de documentos (hover / clique) ────────────────────────────────
+let _popTimer     = null;
+let _popFixo      = false;
+let _popListeners = false;
+
+export function bolPopShow(ev, boletoId, fixo = false) {
+  clearTimeout(_popTimer);
+  const pop = document.getElementById('bol-pop');
+  const r   = _registros.find(x => x.id === boletoId);
+  if (!pop || !r) return;
+  _popFixo = fixo;
+
+  if (!_popListeners) {
+    _popListeners = true;
+    document.addEventListener('click', e => {
+      if (e.target.closest('.res-pop') || e.target.closest('.res-doc-chips')) return;
+      _popFixo = false;
+      pop.style.display = 'none';
+    });
+  }
+
+  const docs  = _docs.get(boletoId) || [];
+  const admin = isAdmin();
+  const linha = d => `
+    <div class="res-pop-file">
+      <span class="res-pop-nm" title="${_esc(d.nome_arquivo)}">${d.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(d.nome_arquivo)}${d.contrato ? ` <em>· ${_esc(d.contrato)}</em>` : ''}</span>
+      <span class="res-pop-ops">
+        <a onclick="bolVerDoc('${d.id}')">ver</a>
+        <a onclick="bolBaixarDoc('${d.id}')">baixar</a>
+        ${admin ? `<a class="res-pop-del" onclick="bolExcluirDoc('${d.id}')">excluir</a>` : ''}
+      </span>
+    </div>`;
+
+  const bols = docs.filter(d => d.tipo === 'boleto');
+  const fats = docs.filter(d => d.tipo === 'fatura');
+  pop.innerHTML = `
+    <div class="res-pop-title">${_esc(r.nome)}</div>
+    ${bols.length ? `<div class="res-pop-grp">Boletos</div>${bols.map(linha).join('')}` : ''}
+    ${fats.length ? `<div class="res-pop-grp">Faturas</div>${fats.map(linha).join('')}` : ''}
+    ${!docs.length ? `<div class="res-pop-grp">Nenhum documento</div>` : ''}
+  `;
+
+  const rect = ev.currentTarget.getBoundingClientRect();
+  pop.style.display = 'block';
+  const popW = Math.min(380, window.innerWidth - 24);
+  pop.style.width = popW + 'px';
+  const left = Math.max(12, Math.min(rect.left, window.innerWidth - popW - 12));
+  let top  = rect.bottom + 6;
+  const popH = pop.offsetHeight || 200;
+  if (top + popH > window.innerHeight - 12) top = Math.max(12, rect.top - popH - 6);
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+}
+
+export function bolPopEnter() { clearTimeout(_popTimer); }
+
+export function bolPopLeave() {
+  clearTimeout(_popTimer);
+  _popTimer = setTimeout(() => {
+    if (_popFixo) return; // fixado por clique: fecha só clicando fora
+    const pop = document.getElementById('bol-pop');
+    if (pop) pop.style.display = 'none';
+  }, 300);
+}
+
+function _findDoc(docId) {
+  for (const docs of _docs.values()) {
+    const d = docs.find(x => x.id === docId);
+    if (d) return d;
+  }
+  return null;
+}
+
+export async function bolVerDoc(docId) {
+  const doc = _findDoc(docId);
+  if (!doc) return;
+  const win = window.open('', '_blank');
+  try {
+    const url = await getBoletoDocUrl(doc.storage_path);
+    if (win) win.location = url; else window.open(url, '_blank');
+  } catch (e) {
+    if (win) win.close();
+    handleError('Erro ao abrir o documento.', e);
+  }
+}
+
+export async function bolBaixarDoc(docId) {
+  const doc = _findDoc(docId);
+  if (!doc) return;
+  try {
+    const url = await getBoletoDocUrl(doc.storage_path, doc.nome_arquivo);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.nome_arquivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    handleError('Erro ao baixar o documento.', e);
+  }
+}
+
+export function bolExcluirDoc(docId) {
+  const doc = _findDoc(docId);
+  if (!doc) return;
   showConfirm(
-    'Enviar para Resíduos',
-    `"${r.nome}" tem resíduo a pagar? O cliente entra na tela de Resíduos como "Resíduo Solicitado" e este registro continua aqui com a marca "Em resíduo".`,
-    'Enviar para Resíduos',
+    'Excluir documento',
+    `Excluir "${doc.nome_arquivo}" deste cliente? O arquivo é removido do Storage.`,
+    'Excluir',
     async () => {
       try {
-        await enviarParaResiduo(id);
-        toast(`${r.nome} enviado para a tela de Resíduos.`);
+        await deleteBoletoDoc(doc);
+        toast('Documento excluído.');
         await _loadData();
         _updateTable();
-      } catch (e) {
-        toast(_msgErroBanco(e), 'err');
-      }
+      } catch (e) { handleError('Erro ao excluir o documento.', e); }
     }
   );
+}
+
+// ── Importação de lote (ZIP de boletos ou faturas) ────────────────────────
+// Casa com clientes em boleto_solicitado/boleto_enviado; quem estava
+// SOLICITADO e recebe o 1º doc vira BOLETO_ENVIADO (trigger no banco).
+
+const _elegiveis = () =>
+  _registros.filter(r => r.status === 'boleto_solicitado' || r.status === 'boleto_enviado');
+
+export function bolAbrirLote() {
+  if (!_elegiveis().length) {
+    toast('Nenhum cliente em Boleto Solicitado/Enviado — o lote não teria com quem casar.', 'err');
+    return;
+  }
+  document.getElementById('bol-zip-input')?.click();
+}
+
+export async function bolOnZipFile(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const content = document.getElementById('bol-lote-content');
+  const modal   = document.getElementById('bol-lote-modal');
+  if (!content || !modal) return;
+
+  modal.classList.add('open');
+  modal.onclick = null; // durante análise/upload não fecha clicando fora
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Importar lote de documentos</h2>
+    <p style="font-size:.85rem;color:var(--gray);margin:0 0 14px">${_esc(file.name)} · ${(file.size/1048576).toFixed(1)} MB</p>
+    <div class="res-progress"><div class="res-progress-bar" id="bol-prg-bar" style="width:2%"></div></div>
+    <p class="res-prg-txt" id="bol-prg-txt">Abrindo o arquivo…</p>
+  `;
+
+  try {
+    const todosDocs = [...(_docs.values() || [])].flat();
+    _plano = await analisarZipBoletos(file, _elegiveis(), todosDocs, (n, total, etapa) => {
+      const b = document.getElementById('bol-prg-bar');
+      const t = document.getElementById('bol-prg-txt');
+      if (b && total) b.style.width = Math.max(2, Math.round((n/total)*100)) + '%';
+      if (t) t.textContent = etapa || `Analisando ${n}/${total}…`;
+    });
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = `
+      <h2 class="lib-modal-title">Importar lote de documentos</h2>
+      <p style="color:var(--red-hover);font-size:.9rem">Não consegui ler o ZIP: ${_esc(e?.message || 'erro desconhecido')}</p>
+      <div class="lib-modal-actions"><button class="lib-btn-save" onclick="bolFecharLote()">Fechar</button></div>`;
+    return;
+  }
+
+  _renderConferenciaLote(file.name);
+}
+
+function _renderConferenciaLote(zipName) {
+  const content = document.getElementById('bol-lote-content');
+  const modal   = document.getElementById('bol-lote-modal');
+  if (!content || !modal || !_plano) return;
+  modal.onclick = null;
+
+  const { itens, orfaos, jaAnexados, clientesSemArquivo } = _plano;
+  const clientesCasados = new Set(itens.map(i => i.alvo.id)).size;
+  const viraEnviado = new Set(itens.filter(i => i.alvo.status === 'boleto_solicitado').map(i => i.alvo.id)).size;
+
+  const amostra = itens.slice(0, 60);
+  const linhas = amostra.map(i => `
+    <div class="res-mrow">
+      <span class="res-mfile" title="${_esc(i.nomeArquivo)}">${i.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(i.nomeArquivo)}</span>
+      <span class="res-mto">→</span>
+      <span class="res-mwho" title="${_esc(i.alvo.nome)} · ${_esc(i.alvo.produto || '')}">${_esc(i.alvo.nome)}</span>
+      <span class="res-mtag ${i.metodo === 'nome' ? 'res-mtag-nome' : 'res-mtag-cpf'}">${i.metodo === 'nome' ? 'nome ≈' : 'CPF ✓'}</span>
+    </div>`).join('');
+
+  const eleg = _elegiveis();
+  const orfLinhas = orfaos.map((o, idx) => `
+    <div class="res-orow">
+      <span class="res-mfile" title="${_esc(o.path)}">${o.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(o.nomeArquivo)}<em class="res-omotivo">${_esc(o.motivo || '')}</em></span>
+      <select class="res-osel" onchange="bolAtribuirOrfaoLote(${idx}, this.value)">
+        <option value="">Ignorar este arquivo</option>
+        ${eleg.map(r => `<option value="${r.id}">${_esc(r.nome)} · ${fmtCpf(r.cpf)} · ${_esc(r.produto || '')}</option>`).join('')}
+      </select>
+    </div>`).join('');
+
+  const semArq = clientesSemArquivo.length
+    ? `<div class="res-sumchip res-sum-warn" title="${_esc(clientesSemArquivo.map(c => c.nome).join(', '))}">${clientesSemArquivo.length} cliente(s) em Solicitado sem arquivo neste lote</div>`
+    : '';
+
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Conferência do lote</h2>
+    <p style="font-size:.85rem;color:var(--gray);margin:0 0 12px">${_esc(zipName)} — nada foi gravado ainda. Confira e confirme.</p>
+
+    <div class="res-sumchips">
+      <div class="res-sumchip res-sum-ok">${itens.length} documento(s) para anexar em ${clientesCasados} cliente(s)</div>
+      ${viraEnviado ? `<div class="res-sumchip">${viraEnviado} cliente(s) passarão de Solicitado para Enviado</div>` : ''}
+      ${jaAnexados.length ? `<div class="res-sumchip">${jaAnexados.length} já anexado(s) antes — serão pulados</div>` : ''}
+      ${orfaos.length ? `<div class="res-sumchip res-sum-warn">${orfaos.length} sem correspondência</div>` : ''}
+      ${semArq}
+    </div>
+
+    ${itens.length ? `
+      <div class="res-mtbl">
+        <div class="res-mhead">Casamentos propostos${itens.length > amostra.length ? ` (mostrando ${amostra.length} de ${itens.length})` : ''}</div>
+        <div class="res-mbody">${linhas}</div>
+      </div>` : ''}
+
+    ${orfaos.length ? `
+      <div class="res-mtbl">
+        <div class="res-mhead">Sem correspondência — atribuir manualmente ou ignorar</div>
+        <div class="res-mbody">${orfLinhas}</div>
+      </div>` : ''}
+
+    <div class="lib-modal-actions">
+      <button class="lib-btn-cancel" onclick="bolFecharLote()">Cancelar</button>
+      <button class="lib-btn-save" id="bol-btn-lote" onclick="bolConfirmarLote()">Confirmar e anexar</button>
+    </div>
+  `;
+  _updateLoteBtn();
+}
+
+function _updateLoteBtn() {
+  const btn = document.getElementById('bol-btn-lote');
+  if (!btn || !_plano) return;
+  const extra = _plano.orfaos.filter(o => o._alvoId).length;
+  const total = _plano.itens.length + extra;
+  btn.disabled = total === 0;
+  btn.textContent = `Confirmar e anexar ${total} documento(s)`;
+}
+
+export function bolAtribuirOrfaoLote(idx, boletoId) {
+  if (!_plano?.orfaos?.[idx]) return;
+  _plano.orfaos[idx]._alvoId = boletoId || null;
+  _updateLoteBtn();
+}
+
+export async function bolConfirmarLote() {
+  if (!_plano || _importando) return;
+  const content = document.getElementById('bol-lote-content');
+  if (!content) return;
+
+  const atribuidos = _plano.orfaos
+    .filter(o => o._alvoId)
+    .map(o => ({
+      alvo: _registros.find(r => r.id === o._alvoId),
+      nomeArquivo: o.nomeArquivo, tipo: o.tipo, contrato: o.contrato,
+      blob: o.blob, metodo: 'manual',
+    }))
+    .filter(i => i.alvo);
+
+  const fila = [..._plano.itens, ...atribuidos];
+  if (!fila.length) return;
+
+  _importando = true;
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Anexando documentos…</h2>
+    <div class="res-progress"><div class="res-progress-bar" id="bol-prg-bar" style="width:2%"></div></div>
+    <p class="res-prg-txt" id="bol-prg-txt">Enviando 1/${fila.length}…</p>
+    <p style="font-size:.78rem;color:var(--gray)">Não feche esta janela até terminar.</p>
+  `;
+
+  const { ok, falhas } = await executarImportBoletos(fila, (n, total, item) => {
+    const b = document.getElementById('bol-prg-bar');
+    const t = document.getElementById('bol-prg-txt');
+    if (b) b.style.width = Math.max(2, Math.round((n/total)*100)) + '%';
+    if (t) t.textContent = item ? `Enviando ${n+1}/${total} — ${item.nomeArquivo}` : 'Finalizando…';
+  });
+
+  _importando = false;
+  await _loadData();
+  _updateTable();
+
+  content.innerHTML = `
+    <h2 class="lib-modal-title">Importação concluída</h2>
+    <div class="res-sumchips" style="margin-top:8px">
+      <div class="res-sumchip res-sum-ok">${ok.length} documento(s) anexado(s)</div>
+      ${falhas.length ? `<div class="res-sumchip res-sum-err">${falhas.length} falha(s)</div>` : ''}
+    </div>
+    ${falhas.length ? `
+      <div class="res-mtbl">
+        <div class="res-mhead">Falhas (o restante foi gravado normalmente)</div>
+        <div class="res-mbody">${falhas.map(f => `
+          <div class="res-mrow">
+            <span class="res-mfile">${_esc(f.nomeArquivo)}</span>
+            <span class="res-mto">·</span>
+            <span class="res-mwho" style="color:var(--red-hover)">${_esc(f.erro)}</span>
+            <span></span>
+          </div>`).join('')}</div>
+      </div>
+      <p style="font-size:.8rem;color:var(--gray)">Importe o mesmo ZIP de novo para tentar só as falhas — o que já foi anexado é pulado automaticamente.</p>` : ''}
+    <div class="lib-modal-actions">
+      <button class="lib-btn-save" onclick="bolFecharLote()">Fechar</button>
+    </div>
+  `;
+  _plano = null;
+}
+
+export function bolFecharLote() {
+  const modal = document.getElementById('bol-lote-modal');
+  if (modal) modal.classList.remove('open');
+  _plano = null;
 }
 
 export function bolMarcarQuitado(id) {
