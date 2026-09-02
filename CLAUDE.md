@@ -38,6 +38,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | Backend/DB | Supabase (PostgreSQL + Auth + Edge Functions) |
 | Charts | Chart.js 4.4.0 (CDN) |
 | Excel | xlsx 0.18.5 (npm) |
+| Lotes ZIP/PDF | fflate + pdfjs-dist (npm, **import dinâmico** — só carregam ao importar lote na Quitação de Boleto) |
 | Auth client | @supabase/supabase-js 2.x (CDN) |
 | Deploy | Vercel |
 | CDN de vídeo | Bunny.net (módulo Universidade) |
@@ -111,7 +112,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 
 **Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs`, `boletos-docs` (privado — PDFs de boletos/faturas da Quitação de Boleto em `<cpf>/boletos|faturas/<arquivo>.pdf`, URL assinada 1h; parceiro lê os dos próprios clientes via policy) e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
 
-> ⚠️ **Resíduos v2 / documentos do boleto**: a migration `012_residuos_v2.sql` **precisa ser rodada à mão no SQL Editor** (depois da 011) antes do deploy do front — ela desmonta a v1 (que nunca foi usada), cria `boleto_docs` + bucket `boletos-docs`, recria `residuos` conectada à `liberacao_margem_master` (coluna nova `em_residuo` lá) e as RPCs `liberacao_para_residuo`/`residuo_mudar_status`.
+> ✅ **Resíduos v2 / documentos do boleto**: migrations `011_residuos.sql` e `012_residuos_v2.sql` **já rodadas em produção em 02/09/2026** (a 012 desmonta a v1, que nunca foi usada, e cria a estrutura v2 inteira: `boleto_docs` + bucket `boletos-docs`, `residuos` conectada à `liberacao_margem_master` com a coluna `em_residuo`, RPCs `liberacao_para_residuo`/`residuo_mudar_status`). Front v2 deployado no mesmo dia (commit `ae1b4c69`). **Fluxo em validação**: teste com a responsável do setor agendado para 03/09/2026 — ajustes podem sair dele. Restos conhecidos: o bucket vazio `residuos-docs` da v1 ficou órfão (Supabase não deixa apagar bucket via SQL — excluir pelo painel Storage, se quiser); a coluna legada `quitacoes_clientes.doc_pdf` ainda guarda documentos antigos em base64 (migrar para Storage é tarefa futura).
 
 > ⚠️ **`bm_*` (Central de BMs)**: migration versionada em `supabase/migrations/004_bms.sql`, mas **precisa ser rodada à mão no SQL Editor do Supabase** ao subir a feature — o app não cria tabela sozinho.
 
