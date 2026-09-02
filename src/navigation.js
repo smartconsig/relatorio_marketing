@@ -268,9 +268,14 @@ export function renderAll() {
   }
 }
 
-export function applyFilter() {
-  state.filterDates.start = document.getElementById('date-start').value || null;
-  state.filterDates.end   = document.getElementById('date-end').value   || null;
+/**
+ * Porta de entrada única para mudar o período do sistema.
+ * Toda origem (header, atalhos, futuras barras por tela) deve passar por aqui —
+ * nunca gravar state.filterDates ou os campos de data diretamente.
+ */
+export function setPeriodo(start, end) {
+  state.filterDates = { start: start || null, end: end || null };
+  _syncFilterInputs();
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
     state.kolmeya  = null;
@@ -279,22 +284,24 @@ export function applyFilter() {
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
     syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
   }
+  renderTrafego(); // fora do if: a tela de Tráfego funciona mesmo sem import processado
+}
+
+function _syncFilterInputs() {
+  const s = document.getElementById('date-start');
+  const e = document.getElementById('date-end');
+  if (s) s.value = state.filterDates.start || '';
+  if (e) e.value = state.filterDates.end   || '';
+}
+
+export function applyFilter() {
+  setPeriodo(document.getElementById('date-start').value, document.getElementById('date-end').value);
 }
 
 export function clearFilter() {
-  state.filterDates = { start: null, end: null };
-  document.getElementById('date-start').value = '';
-  document.getElementById('date-end').value   = '';
   const btn = document.getElementById('qf-btn');
   if (btn) btn.textContent = 'Período ▾';
-  if (state.result) {
-    state.metaAds    = null;
-    state.kolmeya    = null;
-    renderAll();
-    saveState();
-    syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
-  }
+  setPeriodo(null, null);
 }
 
 const _pad = n => String(n).padStart(2, '0');
@@ -332,12 +339,10 @@ export function quickFilter(preset) {
     case '30d':{ const s = new Date(today); s.setDate(s.getDate()-29); start=_fmt(s); end=_fmt(today); break; }
     default: return;
   }
-  document.getElementById('date-start').value = start;
-  document.getElementById('date-end').value   = end;
   document.getElementById('qf-menu').classList.remove('open');
   const btn = document.getElementById('qf-btn');
   if (btn) btn.textContent = (QF_LABELS[preset] || 'Período') + ' ▾';
-  applyFilter();
+  setPeriodo(start, end);
 }
 
 export function toggleQuickFilter() {
