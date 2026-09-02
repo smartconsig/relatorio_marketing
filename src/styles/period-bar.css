@@ -1,0 +1,19 @@
+/* ── Barra de período por tela (Etapa 2 do redesenho do filtro) ──
+   O grosso do visual vem das classes reutilizadas date-filter/qf-* (components.css);
+   aqui só o "cartão" que ancora a barra dentro da página. */
+.pb-host { margin-bottom: 16px; }
+
+.period-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+
+/* dentro da página o menu abre alinhado à esquerda (no header abre à direita) */
+.period-bar .qf-menu { right: auto; left: 0; }
+
+@media (max-width: 768px) {
+  .period-bar { padding: 8px 10px; }
+}

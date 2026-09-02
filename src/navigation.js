@@ -25,6 +25,7 @@ import { renderBoletos } from './pages/boletos-page.js';
 import { renderResiduos } from './pages/residuos-page.js';
 import { renderTrafego } from './pages/trafego-page.js';
 import { renderHome } from './pages/home-page.js';
+import { syncPeriodBars, PERIOD_SECS } from './components/period-bar.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -109,6 +110,11 @@ export function navigate(sec) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
+
+  // Filtro do header só nas telas que usam período; barras refletem o state atual
+  const headerFilter = document.querySelector('.topbar .date-filter');
+  if (headerFilter) headerFilter.style.display = PERIOD_SECS.includes(sec) ? '' : 'none';
+  syncPeriodBars();
 
   // Float rail — itens standalone
   document.querySelectorAll('.nav-float-item:not(.nav-float-group)').forEach(el =>
@@ -227,6 +233,7 @@ function _syncGoalsToPeriodo() {
 
 export function renderAll() {
   _syncGoalsToPeriodo();
+  syncPeriodBars(); // pós-restauração de F5/login, as barras refletem o filtro carregado
   const fd = filteredData();
   if (!fd) return;
   const kpis = calcKPIs(fd.entries, fd.facebook);
@@ -276,6 +283,7 @@ export function renderAll() {
 export function setPeriodo(start, end) {
   state.filterDates = { start: start || null, end: end || null };
   _syncFilterInputs();
+  syncPeriodBars();
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
     state.kolmeya  = null;

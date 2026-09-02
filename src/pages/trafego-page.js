@@ -49,7 +49,7 @@ function _diasFaltantes(start, end, rows) {
 }
 
 export async function renderTrafego() {
-  const sec = document.getElementById('sec-trafego');
+  const sec = document.getElementById('trafego-body');
   if (!sec) return;
   if (!perm.trafegoVisualizar()) {
     sec.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">Sem acesso</div><div class="empty-desc">Peça a permissão de Tráfego ao administrador.</div></div>';

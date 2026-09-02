@@ -346,7 +346,7 @@ function _renderConteudo(filteredEntries) {
 }
 
 export function renderPerfil(filteredEntries) {
-  const el = document.getElementById('sec-perfil');
+  const el = document.getElementById('perfil-body');
   if (!el) return;
 
   _lastEntries = filteredEntries;
