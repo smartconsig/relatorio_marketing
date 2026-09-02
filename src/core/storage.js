@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { fmtN } from '../utils/currency.js';
 import { supportsGzip, gzipToBase64, gunzipFromBase64 } from '../utils/gzip.js';
+import { syncPeriodBars } from '../components/period-bar.js';
 
 const STORE_RESULT  = 'sc_result_v1';
 const STORE_FILTER  = 'sc_filter_v1';
@@ -80,8 +81,7 @@ export async function loadState() {
     const flt = localStorage.getItem(STORE_FILTER);
     if (flt) {
       state.filterDates = JSON.parse(flt);
-      if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-      if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+      syncPeriodBars();
     }
     return true;
   } catch (e) {
@@ -105,8 +105,7 @@ export function clearState() {
   state.confirmedDivergences = {};
   state.vendorMappings = {};
   state.filterDates = { start: null, end: null };
-  document.getElementById('date-start').value = '';
-  document.getElementById('date-end').value   = '';
+  syncPeriodBars();
   ['fb03', 'fb06', 'smart', 'ecorban', 'overrides'].forEach(k => {
     state.raw[k] = null;
     const card = document.getElementById(`card-${k}`);

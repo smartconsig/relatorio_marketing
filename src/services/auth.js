@@ -6,6 +6,7 @@ import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
 import { shadowCompareImportData } from './propostas-store.js';
 import { loadTrafego } from './trafego-svc.js';
+import { syncPeriodBars } from '../components/period-bar.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
@@ -218,8 +219,7 @@ export async function onAuthenticated() {
     const savedFilter = localStorage.getItem('sc_filter_v1');
     if (savedFilter) {
       state.filterDates = JSON.parse(savedFilter);
-      if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-      if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+      syncPeriodBars();
     }
   } catch {}
 

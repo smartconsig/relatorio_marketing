@@ -20,7 +20,7 @@ import './styles/modal-kit.css';
 import './styles/home.css';
 import './styles/residuos.css';
 
-import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
+import { initNavigation, navigate, clearFilter, renderAll, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV, exportNoValueCSV } from './pages/overview.js';
@@ -51,10 +51,8 @@ import { renderResiduos, resSetSearch, resSetStatusFiltro, resVerMais, resSolici
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
-window.applyFilter       = applyFilter;
 window.clearFilter       = clearFilter;
 window.quickFilter       = quickFilter;
-window.toggleQuickFilter = toggleQuickFilter;
 window.switchGestaoTab   = switchGestaoTab;
 window.toggleSidebar     = toggleSidebar;
 window.doSignIn          = doSignIn;

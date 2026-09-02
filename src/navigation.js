@@ -25,7 +25,7 @@ import { renderBoletos } from './pages/boletos-page.js';
 import { renderResiduos } from './pages/residuos-page.js';
 import { renderTrafego } from './pages/trafego-page.js';
 import { renderHome } from './pages/home-page.js';
-import { syncPeriodBars, PERIOD_SECS } from './components/period-bar.js';
+import { syncPeriodBars } from './components/period-bar.js';
 
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
@@ -111,10 +111,7 @@ export function navigate(sec) {
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
 
-  // Filtro do header só nas telas que usam período; barras refletem o state atual
-  const headerFilter = document.querySelector('.topbar .date-filter');
-  if (headerFilter) headerFilter.style.display = PERIOD_SECS.includes(sec) ? '' : 'none';
-  syncPeriodBars();
+  syncPeriodBars(); // barras de período refletem o state ao trocar de tela
 
   // Float rail — itens standalone
   document.querySelectorAll('.nav-float-item:not(.nav-float-group)').forEach(el =>
@@ -277,12 +274,11 @@ export function renderAll() {
 
 /**
  * Porta de entrada única para mudar o período do sistema.
- * Toda origem (header, atalhos, futuras barras por tela) deve passar por aqui —
- * nunca gravar state.filterDates ou os campos de data diretamente.
+ * Toda origem (barras por tela, atalhos, restauração de F5/login) deve passar
+ * por aqui — nunca gravar state.filterDates ou campos de data diretamente.
  */
 export function setPeriodo(start, end) {
   state.filterDates = { start: start || null, end: end || null };
-  _syncFilterInputs();
   syncPeriodBars();
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
@@ -295,35 +291,12 @@ export function setPeriodo(start, end) {
   renderTrafego(); // fora do if: a tela de Tráfego funciona mesmo sem import processado
 }
 
-function _syncFilterInputs() {
-  const s = document.getElementById('date-start');
-  const e = document.getElementById('date-end');
-  if (s) s.value = state.filterDates.start || '';
-  if (e) e.value = state.filterDates.end   || '';
-}
-
-export function applyFilter() {
-  setPeriodo(document.getElementById('date-start').value, document.getElementById('date-end').value);
-}
-
 export function clearFilter() {
-  const btn = document.getElementById('qf-btn');
-  if (btn) btn.textContent = 'Período ▾';
   setPeriodo(null, null);
 }
 
 const _pad = n => String(n).padStart(2, '0');
 const _fmt = d => `${d.getFullYear()}-${_pad(d.getMonth()+1)}-${_pad(d.getDate())}`;
-
-const QF_LABELS = {
-  'today':      'Hoje',
-  'yesterday':  'Ontem',
-  'this-month': 'Esse Mês',
-  'last-month': 'Último Mês',
-  '7d':         'Últimos 7 dias',
-  '15d':        'Últimos 15 dias',
-  '30d':        'Últimos 30 dias',
-};
 
 export function quickFilter(preset) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -347,25 +320,7 @@ export function quickFilter(preset) {
     case '30d':{ const s = new Date(today); s.setDate(s.getDate()-29); start=_fmt(s); end=_fmt(today); break; }
     default: return;
   }
-  document.getElementById('qf-menu').classList.remove('open');
-  const btn = document.getElementById('qf-btn');
-  if (btn) btn.textContent = (QF_LABELS[preset] || 'Período') + ' ▾';
   setPeriodo(start, end);
-}
-
-export function toggleQuickFilter() {
-  const menu = document.getElementById('qf-menu');
-  const isOpen = menu.classList.toggle('open');
-  if (isOpen) {
-    setTimeout(() => {
-      document.addEventListener('click', function handler(e) {
-        if (!document.getElementById('qf-btn').contains(e.target)) {
-          menu.classList.remove('open');
-          document.removeEventListener('click', handler);
-        }
-      });
-    }, 0);
-  }
 }
 
 export function switchGestaoTab(tab) {
