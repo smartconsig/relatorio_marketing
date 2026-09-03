@@ -1,8 +1,8 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   UNIVERSIDADE SMART â€” Streaming Layout
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════════════════
+   UNIVERSIDADE SMART — Streaming Layout
+   ══════════════════════════════════════════════════════ */
 
-/* â”€â”€ Uni Mode: esconde o chrome do Smart RYC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Uni Mode: esconde o chrome do Smart RYC ─────────── */
 body.uni-mode #sidebar,
 body.uni-mode .topbar,
 body.uni-mode .mobile-bottom-nav,
@@ -11,7 +11,7 @@ body.uni-mode .main                { margin-left: 0 !important; width: 100% !imp
 body.uni-mode .content             { padding: 0 !important; height: 100vh !important; overflow: hidden !important; }
 body.uni-mode #sec-universidade    { display: flex !important; flex-direction: column; height: 100%; overflow: hidden; padding: 0 !important; }
 
-/* â”€â”€ BotÃ£o de retorno ao Smart RYC (fixo, canto inferior esquerdo) â”€â”€ */
+/* ── Botão de retorno ao Smart RYC (fixo, canto inferior esquerdo) ── */
 .uni-ryc-return {
   position: fixed;
   bottom: 24px;
@@ -53,7 +53,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   .uni-ryc-return { bottom: 70px; left: 14px; }
 }
 
-/* â”€â”€ App shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── App shell ───────────────────────────────────────── */
 .uni-app {
   display: flex;
   width: 100%;
@@ -62,7 +62,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   overflow: hidden;
 }
 
-/* â”€â”€ Sidebar prÃ³pria â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sidebar própria ─────────────────────────────────── */
 .uni-sidebar {
   width: 64px;
   min-width: 64px;
@@ -131,7 +131,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-back-btn:hover { color: #aaa; background: rgba(255,255,255,.05); }
 
-/* â”€â”€ Main scroll area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Main scroll area ────────────────────────────────── */
 .uni-main {
   flex: 1;
   overflow-y: auto;
@@ -144,7 +144,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-main::-webkit-scrollbar-track { background: transparent; }
 .uni-main::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
 
-/* â”€â”€ Hero banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero banner ─────────────────────────────────────── */
 .uni-hero {
   position: relative;
   width: 100%;
@@ -213,7 +213,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-hero-actions { display: flex; gap: 12px; align-items: center; }
 
-/* â”€â”€ BotÃµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Botões ──────────────────────────────────────────── */
 .uni-btn-primary {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--red); color: #fff;
@@ -236,7 +236,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-btn-ghost:hover { background: rgba(255,255,255,.18); }
 
-/* â”€â”€ NÃ­vel badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Nível badges ────────────────────────────────────── */
 .uni-nivel-badge {
   display: inline-block;
   font-size: 10px; font-family: var(--font-h); font-weight: 700;
@@ -247,7 +247,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-nivel-intermediario { background: rgba(251,191,36,.18); color: #fbbf24; }
 .uni-nivel-avancado      { background: rgba(239,68,68,.18);  color: #f87171; }
 
-/* â”€â”€ Rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Rows ────────────────────────────────────────────── */
 .uni-rows {
   padding: 40px 52px 64px;
   margin-top: 0;
@@ -280,7 +280,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-cards-scroll::-webkit-scrollbar { display: none; }
 
-/* â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Card ────────────────────────────────────────────── */
 .uni-card {
   flex-shrink: 0; width: 155px;
   cursor: pointer; position: relative; z-index: 1;
@@ -342,7 +342,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-card:hover .uni-card-title { color: #fff; }
 .uni-card-meta { font-size: 10px; color: #555; font-family: var(--font-b); }
 
-/* â”€â”€ Detalhe do curso â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Detalhe do curso ────────────────────────────────── */
 .uni-detail-hero {
   position: relative; height: 58vh; min-height: 360px;
   background-size: cover; background-position: center;
@@ -404,7 +404,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-aula-num { font-size: 10px; color: #444; width: 22px; text-align: center; flex-shrink: 0; }
 .uni-aula-dur { margin-left: auto; font-size: 10px; color: #444; white-space: nowrap; }
 
-/* â”€â”€ Card badges (concluÃ­do) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Card badges (concluído) ─────────────────────────── */
 .uni-card-concluido-badge {
   position: absolute; top: 7px; right: 7px;
   font-size: 8px; font-family: var(--font-h); font-weight: 700;
@@ -415,14 +415,14 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   letter-spacing: 0.4px;
 }
 
-/* â”€â”€ Aula item states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Aula item states ────────────────────────────────── */
 .uni-aula-item.uni-aula-concluida { color: #4ade80; }
 .uni-aula-item.uni-aula-concluida .uni-aula-num { color: #4ade80; }
 .uni-aula-item.uni-aula-clicavel  { cursor: pointer; }
 .uni-aula-item.uni-aula-clicavel:hover { color: #fff; }
 .uni-aula-check-icon { color: #4ade80; flex-shrink: 0; }
 
-/* â”€â”€ Progresso do curso (detalhe) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Progresso do curso (detalhe) ────────────────────── */
 .uni-detail-progress {
   margin-bottom: 24px;
   max-width: 480px;
@@ -440,7 +440,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   transition: width .4s ease;
 }
 
-/* â”€â”€ Player â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Player ──────────────────────────────────────────── */
 .uni-player-wrap {
   display: flex; flex-direction: column;
   min-height: 100%;
@@ -534,7 +534,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-player-fim { cursor: default; }
 .uni-player-fim:hover { background: transparent; }
 
-/* â”€â”€ Spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Spinner ─────────────────────────────────────────── */
 .uni-spinner {
   width: 28px; height: 28px;
   border: 2px solid #1e1e1e;
@@ -544,7 +544,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 @keyframes uni-spin { to { transform: rotate(360deg); } }
 
-/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toast ───────────────────────────────────────────── */
 .uni-toast {
   position: fixed; bottom: 32px; right: 32px; z-index: 9999;
   background: #1a1a1a; border: 1px solid #2e2e2e;
@@ -559,7 +559,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-toast.uni-toast-show { transform: translateY(0); opacity: 1; }
 .uni-toast.uni-toast-big { font-size: 14px; padding: 14px 24px; }
 
-/* â”€â”€ Prova â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Prova ───────────────────────────────────────────── */
 .uni-prova-section {
   display: flex; align-items: center; gap: 16px;
   padding: 18px 20px; border-radius: 12px; margin-bottom: 24px;
@@ -660,7 +660,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-resultado-dica strong { color: #888; }
 
-/* â”€â”€ Coming soon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Coming soon ─────────────────────────────────────── */
 .uni-coming-soon {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -676,7 +676,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-coming-soon-sub   { font-size: 13px; color: #555; font-family: var(--font-b); margin-top: 4px; }
 
-/* â”€â”€ Mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mobile ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   body.uni-mode #sec-universidade { flex-direction: column !important; }
   .uni-app { flex-direction: column; height: 100dvh; }
@@ -710,7 +710,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
   .uni-toast           { bottom: 72px; right: 16px; left: 16px; justify-content: center; }
 }
 
-/* â”€â”€ Certificado Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Certificado Modal ───────────────────────────────── */
 .uni-cert-overlay {
   position: fixed; inset: 0; z-index: 99999;
   background: rgba(0,0,0,.85);
@@ -815,7 +815,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-cert-codigo-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
 .uni-cert-codigo { font-family: monospace; font-size: 12px; color: #555; font-weight: 600; }
 
-/* BotÃµes do modal */
+/* Botões do modal */
 .uni-cert-actions {
   display: flex; gap: 10px; justify-content: flex-end;
 }
@@ -833,8 +833,8 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 }
 .uni-cert-btn-download:hover { background: #22c55e; }
 
-/* Print: mostra sÃ³ o certificado â€” apenas quando o modal estÃ¡ aberto no DOM,
-   para nÃ£o esconder o #print-area de outras exportaÃ§Ãµes (ex.: Ranking) */
+/* Print: mostra só o certificado — apenas quando o modal está aberto no DOM,
+   para não esconder o #print-area de outras exportações (ex.: Ranking) */
 @media print {
   body:has(> #uni-cert-modal) > *:not(#uni-cert-modal) { display: none !important; }
   .uni-cert-overlay { position: static !important; background: none !important; padding: 0 !important; }

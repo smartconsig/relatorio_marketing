@@ -1,8 +1,8 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   BSC â€” Ranking Page Styles
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════════════════
+   BSC — Ranking Page Styles
+   ══════════════════════════════════════════════════════ */
 
-/* â”€â”€ Import bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Import bar ─────────────────────────────────────── */
 .bsc-import-bar {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--surface); border: 1px solid var(--border);
@@ -11,14 +11,14 @@
 .bsc-import-period { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); }
 .bsc-import-info   { font-size: 11px; color: var(--gray); margin-top: 3px; }
 
-/* â”€â”€ Shared badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Shared badge ────────────────────────────────────── */
 .bsc-badge {
   display: inline-block; font-size: 11px; font-family: var(--font-h); font-weight: 700;
   padding: 3px 9px; border-radius: 20px; border: 1px solid transparent;
   letter-spacing: 0.3px; white-space: nowrap;
 }
 
-/* â”€â”€ Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Avatar ──────────────────────────────────────────── */
 .bsc-avatar {
   border-radius: 50%; overflow: hidden; flex-shrink: 0;
   position: relative; background: var(--surface2);
@@ -38,7 +38,7 @@
 }
 .bsc-avatar-edit:hover { transform: scale(1.12); }
 
-/* â”€â”€ Podium (Top 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Podium (Top 3) ──────────────────────────────────── */
 .bsc-podium {
   display: grid; grid-template-columns: 1fr 1.15fr 1fr;
   align-items: end; gap: 14px; margin-bottom: 8px;
@@ -70,7 +70,7 @@
 .bsc-podium-metrics span  { color: var(--gray); }
 .bsc-podium-metrics strong { color: var(--white); font-family: var(--font-h); }
 
-/* â”€â”€ List (Top 4â€“10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── List (Top 4–10) ─────────────────────────────────── */
 .bsc-list         { display: flex; flex-direction: column; gap: 8px; }
 .bsc-list-card {
   display: flex; align-items: center; gap: 14px;
@@ -85,9 +85,9 @@
 .bsc-bar-wrap   { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
 .bsc-bar        { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════════════
    TV MODE OVERLAY
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ══════════════════════════════════════════════════════ */
 #bsc-tv-overlay {
   position: fixed; inset: 0; z-index: 9999;
   display: none; flex-direction: column;
@@ -100,13 +100,13 @@
   display: flex; flex-direction: column; flex: 1; min-height: 0;
 }
 
-/* â”€â”€ TV Content (centers podium + strip vertically) â”€â”€â”€ */
+/* ── TV Content (centers podium + strip vertically) ─── */
 .tv-content {
   flex: 1; display: flex; flex-direction: column;
   justify-content: center; gap: 0; min-height: 0;
 }
 
-/* â”€â”€ TV Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Header ───────────────────────────────────────── */
 .tv-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 24px; flex-shrink: 0;
@@ -115,7 +115,7 @@
 .tv-title  { font-family: var(--font-h); font-size: 22px; font-weight: 800; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
 .tv-clock  { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: #555; min-width: 110px; text-align: right; }
 
-/* â”€â”€ TV Podium â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Podium ───────────────────────────────────────── */
 .tv-podium {
   display: grid; grid-template-columns: 1fr 1.2fr 1fr;
   align-items: end; gap: 16px;
@@ -144,7 +144,7 @@
 .tv-metrics span  { color: #888; }
 .tv-metrics strong { color: #111; font-family: var(--font-h); font-size: 14px; }
 
-/* â”€â”€ TV Strip (4â€“10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Strip (4–10) ─────────────────────────────────── */
 .tv-strip-title {
   font-family: var(--font-h); font-size: 12px; font-weight: 700; color: #999;
   text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; text-align: center;
@@ -161,7 +161,7 @@
 .tv-list-name  { font-family: var(--font-h); font-size: 11px; font-weight: 700; color: #111; line-height: 1.2; }
 .tv-list-nota  { font-family: var(--font-h); font-size: 16px; font-weight: 800; }
 
-/* â”€â”€ TV Team Scoreboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Team Scoreboard ──────────────────────────────── */
 .tv-teams {
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; flex-shrink: 0;
 }
@@ -176,7 +176,7 @@
 .tv-team-bar   { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 .tv-team-count { font-size: 11px; color: #888; }
 
-/* â”€â”€ TV Spotlight (Tela 2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Spotlight (Tela 2) ───────────────────────────── */
 .tv-spotlight {
   flex: 1; display: flex; align-items: center; justify-content: center;
   gap: 64px; padding: 20px 40px; min-height: 0;
@@ -191,7 +191,7 @@
 .tv-spotlight-metrics span  { color: #888; }
 .tv-spotlight-metrics strong { color: #111; font-family: var(--font-h); font-size: 20px; }
 
-/* â”€â”€ TV Carousel (Tela 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Carousel (Tela 3) ────────────────────────────── */
 .tv-carousel-wrap  { overflow: hidden; width: 100%; }
 .tv-carousel-track {
   display: flex; gap: 16px; width: max-content;
@@ -211,7 +211,7 @@
 .tv-carousel-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; line-height: 1.3; }
 .tv-carousel-nota { font-family: var(--font-h); font-size: 26px; font-weight: 800; }
 
-/* â”€â”€ TV Navigation dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Navigation dots ──────────────────────────────── */
 .tv-dots {
   display: flex; justify-content: center; gap: 8px;
   flex-shrink: 0; padding: 10px 0 4px;
@@ -222,7 +222,7 @@
 }
 .tv-dot-on { background: #940b10; }
 
-/* â”€â”€ TV Exit button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── TV Exit button ──────────────────────────────────── */
 .tv-exit-btn {
   position: fixed; top: 16px; right: 16px;
   background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);

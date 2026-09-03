@@ -1,4 +1,4 @@
-﻿import { state } from '../state.js';
+import { state } from '../state.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate } from '../utils/date.js';
@@ -9,7 +9,7 @@ import { badgeHTML } from '../components/Badge.jsx';
 import { sectionTitle } from '../components/ui.js';
 import { trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
 
-// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
 
 export function kpiCard(label, val, meta, p, inv, goalLabel) {
@@ -21,8 +21,8 @@ export function kpiCard(label, val, meta, p, inv, goalLabel) {
   }
   const barW    = p !== null ? Math.min(Math.max(p, 0), 100).toFixed(1) : 0;
   const metaStr = p !== null
-    ? (goalLabel ? `${goalLabel} Â· ` : '') + `${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}`
-    : (meta || 'â€”');
+    ? (goalLabel ? `${goalLabel} · ` : '') + `${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}`
+    : (meta || '—');
   const vStr    = String(val);
   const vStyle  = vStr.length > 14 ? ' style="font-size:15px"' : vStr.length > 11 ? ' style="font-size:20px"' : '';
   return `
@@ -57,16 +57,16 @@ function heroCard(label, count, value, sub, accentColor, p, inv, valueColor, goa
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
-        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' Â· ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
+        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
     </div>`;
 }
 
-// â”€â”€ chart helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── chart helper ───────────────────────────────────────────────────────────
 function renderChart(fd) {
   if (state.chart) { state.chart.destroy(); state.chart = null; }
   const dayMap = {};
 
-  // Fonte oficial: dias digitados no TrÃ¡fego (com imposto); depois API do Meta; depois planilha
+  // Fonte oficial: dias digitados no Tráfego (com imposto); depois API do Meta; depois planilha
   const trDays = trafegoInRange(state.filterDates.start, state.filterDates.end).rows;
   if (trDays.length) {
     for (const r of trDays) {
@@ -80,7 +80,7 @@ function renderChart(fd) {
     }
   } else {
     for (const r of fd.facebook) {
-      const d = parseExcelDate(r['Dia'] || r['InÃ­cio dos relatÃ³rios'] || r['Inicio dos relatÃ³rios']);
+      const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
       if (!d) continue;
       const key = d.toISOString().slice(0, 10);
       if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
@@ -110,7 +110,7 @@ function renderChart(fd) {
           yAxisID: 'y',
         },
         {
-          type: 'line', label: 'VÃ¡lidos (Em Andamento + Pagas)',
+          type: 'line', label: 'Válidos (Em Andamento + Pagas)',
           data: days.map(d => dayMap[d]?.valid || 0),
           borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)',
           pointBackgroundColor: '#22c55e', pointRadius: 4, tension: 0.3, yAxisID: 'y2',
@@ -134,7 +134,7 @@ function renderChart(fd) {
           callbacks: {
             label: c => {
               if (c.datasetIndex === 0) return ` Investimento: ${fmtBRL(c.raw)}`;
-              if (c.datasetIndex === 1) return ` VÃ¡lidos: ${fmtBRL(c.raw)}`;
+              if (c.datasetIndex === 1) return ` Válidos: ${fmtBRL(c.raw)}`;
               return ` Reprovados: ${fmtBRL(c.raw)}`;
             },
           },
@@ -161,16 +161,16 @@ export function exportNoValueCSV() {
   const fd = filteredData();
   if (!fd) return;
   const noValue = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
-  if (!noValue.length) { toast('Nenhuma entrada sem valor no perÃ­odo'); return; }
-  const header = ['Cliente','CPF','Status','Categoria','Data','Produto','Banco','Loja','Vendedor','Origem Ecorban','Ã‰ Marketing'];
+  if (!noValue.length) { toast('Nenhuma entrada sem valor no período'); return; }
+  const header = ['Cliente','CPF','Status','Categoria','Data','Produto','Banco','Loja','Vendedor','Origem Ecorban','É Marketing'];
   const rows   = noValue.map(e => [
     e.cliente||'', e.cpf||'', e.rawStatus||'', e.statusCat||'',
     e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : '',
     e.produto||'', e.banco||'', e.loja||'', e.vendedor||'',
-    e.ecorbanOrigem||'', e.isMarketing ? 'Sim' : 'NÃ£o',
+    e.ecorbanOrigem||'', e.isMarketing ? 'Sim' : 'Não',
   ]);
   const csv  = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n');
-  const blob = new Blob(['ï»¿'+csv], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
@@ -184,14 +184,14 @@ export function exportNoDatesCSV() {
   if (!state.result) return;
   const noDate = state.result.entries.filter(e => !e.saleDate);
   if (!noDate.length) { toast('Nenhuma entrada sem data'); return; }
-  const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Valor', 'Origem Ecorban', 'Loja', 'Vendedor', 'Ã‰ Marketing'];
+  const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Valor', 'Origem Ecorban', 'Loja', 'Vendedor', 'É Marketing'];
   const rows   = noDate.map(e => [
     e.cliente || '', e.cpf || '', e.rawStatus || '', e.statusCat || '',
     e.valor || 0, e.ecorbanOrigem || '', e.loja || '', e.vendedor || '',
-    e.isMarketing ? 'Sim' : 'NÃ£o',
+    e.isMarketing ? 'Sim' : 'Não',
   ]);
   const csv  = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
-  const blob = new Blob(['ï»¿' + csv], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
@@ -214,18 +214,18 @@ function renderDivergencias(entries) {
   const rows = divs.map((e, i) => `
     <tr>
       <td class="muted" style="font-size:11px">${i + 1}</td>
-      <td><strong>${e.cliente || 'â€”'}</strong></td>
-      <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || 'â€”'}</td>
-      <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || 'â€”'}</td>
+      <td><strong>${e.cliente || '—'}</strong></td>
+      <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+      <td class="muted" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
       <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
       <td class="muted">${fmtBRL(e.valor)}</td>
-      <td><span style="color:#f59e0b;font-weight:600">${e.ecorbanOrigem || 'â€”'}</span></td>
-      <td class="muted">${e.loja || 'â€”'}</td>
-      <td class="muted">${toTitle(e.vendedor || 'â€”')}</td>
+      <td><span style="color:#f59e0b;font-weight:600">${e.ecorbanOrigem || '—'}</span></td>
+      <td class="muted">${e.loja || '—'}</td>
+      <td class="muted">${toTitle(e.vendedor || '—')}</td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
-          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">âœ… Ã‰ Marketing</button>
-          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">âŒ NÃ£o Ã© Marketing</button>
+          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
+          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
         </div>
       </td>
     </tr>`).join('');
@@ -233,13 +233,13 @@ function renderDivergencias(entries) {
   return `
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:8px;padding:14px 18px;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:18px">âš ï¸</span>
+        <span style="font-size:18px">⚠️</span>
         <div>
           <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b">
             ${fmtN(divs.length)} ENTRADAS CONFIRMADAS COMO MARKETING MAS COM ORIGEM DIFERENTE NO ECORBAN
           </div>
           <div style="font-size:12px;color:var(--gray-light);margin-top:2px">
-            Revise cada uma â€” confirme se Ã© realmente marketing ou remova para corrigir os nÃºmeros.
+            Revise cada uma — confirme se é realmente marketing ou remova para corrigir os números.
           </div>
         </div>
       </div>
@@ -247,7 +247,7 @@ function renderDivergencias(entries) {
         <div class="table-wrap"><table>
           <thead><tr>
             <th>#</th><th>Cliente</th><th>CPF</th><th>Telefone</th><th>Status</th>
-            <th>Valor</th><th>Origem Ecorban</th><th>Loja</th><th>Vendedor</th><th>AÃ§Ã£o</th>
+            <th>Valor</th><th>Origem Ecorban</th><th>Loja</th><th>Vendedor</th><th>Ação</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
@@ -255,101 +255,101 @@ function renderDivergencias(entries) {
     </div>`;
 }
 
-// â”€â”€ main render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── main render ────────────────────────────────────────────────────────────
 export function renderOverview(k, fd) {
   const g = state.goals;
   let h = '';
 
-  // â”€â”€ 0. AVISO ENTRADAS SEM DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 0. AVISO ENTRADAS SEM DATA ───────────────────────────────────────────
   const semData     = (state.result?.entries || []).filter(e => !e.saleDate);
   const semDataMkt  = semData.filter(e => e.isMarketing);
   if (semData.length > 0) {
     h += `
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">âš ï¸</div>
+      <div style="font-size:18px;line-height:1">⚠️</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px">ENTRADAS SEM DATA DE CADASTRO</div>
         <div style="font-size:13px;color:var(--white)">
-          <strong>${fmtN(semData.length)}</strong> entradas nÃ£o tÃªm Data de Cadastro reconhecida â€”
-          estÃ£o sendo incluÃ­das em <strong>qualquer filtro de perÃ­odo</strong> e podem estar inflando os nÃºmeros.
-          ${semDataMkt.length > 0 ? `<span style="color:#fca5a5"> (${fmtN(semDataMkt.length)} sÃ£o de marketing)</span>` : ''}
+          <strong>${fmtN(semData.length)}</strong> entradas não têm Data de Cadastro reconhecida —
+          estão sendo incluídas em <strong>qualquer filtro de período</strong> e podem estar inflando os números.
+          ${semDataMkt.length > 0 ? `<span style="color:#fca5a5"> (${fmtN(semDataMkt.length)} são de marketing)</span>` : ''}
         </div>
         <div style="margin-top:10px">
           <button onclick="exportNoDatesCSV()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
-            â¬‡ Exportar lista completa (CSV)
+            ⬇ Exportar lista completa (CSV)
           </button>
         </div>
       </div>
     </div>`;
   }
 
-  // â”€â”€ 0b. DIVERGÃŠNCIAS ECORBAN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 0b. DIVERGÊNCIAS ECORBAN ─────────────────────────────────────────────
   h += renderDivergencias(fd.entries);
 
-  // â”€â”€ 1. HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 1. HERO ──────────────────────────────────────────────────────────────
   const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
   const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
   h += sectionTitle('Resultados de Marketing');
   h += `<div class="hero-grid">
-    ${heroCard('VÃ¡lidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas Â· trÃ¡fego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
-    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operaÃ§Ãµes confirmadas Â· trÃ¡fego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
-    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido Â· trÃ¡fego digitado (c/ imposto)' : 'total investido Â· Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
-    ${heroCard('CAC VÃ¡lidas', null, cacValidas, 'custo por venda vÃ¡lida Â· 70% das vÃ¡lidas', '#f59e0b', null, false, 'var(--white)', null)}
-    ${heroCard('ConversÃ£o', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} vÃ¡lidas de ${fmtN(k.leads)} leads Facebook Â· meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
+    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
+    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
+    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', '#f59e0b', null, false, 'var(--white)', null)}
+    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
   </div>`;
 
-  // â”€â”€ 2. PIPELINE COMPLEMENTAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
   h += sectionTitle('Pipeline Marketing');
   h += `<div class="pipeline-row pipeline-3">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em anÃ¡lise / aprovadas')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbaÃ§Ã£o em andamento')}
+    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
+    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
   </div>`;
 
-  // â”€â”€ 3. INDICADORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 3. INDICADORES ───────────────────────────────────────────────────────
   h += sectionTitle('Indicadores de Performance');
   h += `<div class="kpi-grid">
-    ${kpiCard('Ticket MÃ©dio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
-    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true, g.cac ? `mÃ¡x. ${fmtBRL(g.cac)}` : null)}
-    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false, g.roas ? `mÃ­n. ${g.roas.toFixed(2)}x` : null)}
-    ${kpiCard('Taxa de ConversÃ£o', fmtPct(k.convRate), 'Leads â†’ Vendas Pagas', null, false)}
-    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true, g.cpl ? `mÃ¡x. ${fmtBRL(g.cpl)}` : null)}
-    ${kpiCard('Leads Gerados', fmtN(k.leads), 'leads recebidos no perÃ­odo', null, false)}
-    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), k.investSource === 'trafego' ? 'painel Meta Â· sem imposto' : 'Reportado pelo Facebook', null, false)}
+    ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
+    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true, g.cac ? `máx. ${fmtBRL(g.cac)}` : null)}
+    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false, g.roas ? `mín. ${g.roas.toFixed(2)}x` : null)}
+    ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
+    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true, g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null)}
+    ${kpiCard('Leads Gerados', fmtN(k.leads), 'leads recebidos no período', null, false)}
+    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), k.investSource === 'trafego' ? 'painel Meta · sem imposto' : 'Reportado pelo Facebook', null, false)}
   </div>`;
 
-  // â”€â”€ 4. SECUNDÃRIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
   h += sectionTitle('Todas as Origens', 'margin-top:8px');
   h += `<div class="pipeline-row">
     ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
     ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
     ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'todas as origens')}
     ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'todas as origens')}
-    ${pipelineCard('VÃ¡lidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
+    ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
   </div>`;
 
-  // â”€â”€ 5. AVISO SEM VALOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 5. AVISO SEM VALOR ───────────────────────────────────────────────────
   const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
   const semValorReprov  = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
   const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
   if (semValorTotal.length > 0) {
     h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">âš ï¸</div>
+      <div style="font-size:18px;line-height:1">⚠️</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
-        <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas nÃ£o tÃªm valor no campo Multiplicador â€” o sistema soma <strong>R$ 0,00</strong> para elas.</div>
+        <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.</div>
         <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
-          <span>ðŸŸ¡ VÃ¡lidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
-          <span>ðŸ”´ Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
+          <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
+          <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
         </div>
         <div style="margin-top:10px">
           <button id="no-value-toggle" onclick="
             const el=document.getElementById('no-value-table');
             const open=el.style.display!=='none';
             el.style.display=open?'none':'block';
-            this.textContent=open?'â–¼ Ver propostas':'â–² Ocultar propostas';
+            this.textContent=open?'▼ Ver propostas':'▲ Ocultar propostas';
           " style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
-            â–¼ Ver propostas
+            ▼ Ver propostas
           </button>
         </div>
         <div id="no-value-table" style="display:none;margin-top:14px">
@@ -363,15 +363,15 @@ export function renderOverview(k, fd) {
                 ${semValorTotal.map((e, i) => `
                   <tr>
                     <td class="muted" style="font-size:11px">${i + 1}</td>
-                    <td><strong>${e.cliente || 'â€”'}</strong></td>
-                    <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || 'â€”'}</td>
+                    <td><strong>${e.cliente || '—'}</strong></td>
+                    <td class="muted" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
                     <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
-                    <td class="muted">${e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : 'â€”'}</td>
-                    <td class="muted">${e.produto || 'â€”'}</td>
-                    <td class="muted">${e.banco || 'â€”'}</td>
-                    <td class="muted">${e.loja || 'â€”'}</td>
-                    <td class="muted">${e.vendedor || 'â€”'}</td>
-                    <td class="muted">${e.ecorbanOrigem || 'â€”'}</td>
+                    <td class="muted">${e.saleDate ? new Date(e.saleDate).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td class="muted">${e.produto || '—'}</td>
+                    <td class="muted">${e.banco || '—'}</td>
+                    <td class="muted">${e.loja || '—'}</td>
+                    <td class="muted">${e.vendedor || '—'}</td>
+                    <td class="muted">${e.ecorbanOrigem || '—'}</td>
                   </tr>`).join('')}
               </tbody>
             </table></div>
@@ -381,24 +381,24 @@ export function renderOverview(k, fd) {
     </div>`;
   }
 
-  // â”€â”€ 6. SMS KOLMEYA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 6. SMS KOLMEYA ───────────────────────────────────────────────────────
   if (state.kolmeya) {
     const km = state.kolmeya;
-    const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : 'â€”';
-    h += sectionTitle('SMS â€” Kolmeya');
+    const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : '—';
+    h += sectionTitle('SMS — Kolmeya');
     h += `<div class="kpi-grid">
-      ${kpiCard('Enviados', fmtN(km.enviados), `perÃ­odo ${km.period}`, null, false)}
+      ${kpiCard('Enviados', fmtN(km.enviados), `período ${km.period}`, null, false)}
       ${kpiCard('Entregues', fmtN(km.entregues), `taxa ${txEntrega}`, null, false)}
-      ${kpiCard('NÃ£o Entregues', fmtN(km.naoEntregues), 'falha na entrega', null, false)}
-      ${kpiCard('Respostas', fmtN(km.respostas), 'respostas dos destinatÃ¡rios', null, false)}
+      ${kpiCard('Não Entregues', fmtN(km.naoEntregues), 'falha na entrega', null, false)}
+      ${kpiCard('Respostas', fmtN(km.respostas), 'respostas dos destinatários', null, false)}
       ${kpiCard('Acessos no Link', fmtN(km.acessos), 'cliques no encurtador', null, false)}
-      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), 'valor pago no perÃ­odo', null, false)}
+      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), 'valor pago no período', null, false)}
     </div>`;
   }
 
-  // â”€â”€ 7. GRÃFICO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  h += sectionTitle('EvoluÃ§Ã£o DiÃ¡ria');
-  h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. VÃ¡lidos e Reprovados de Marketing (linhas)</div>
+  // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
+  h += sectionTitle('Evolução Diária');
+  h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
     <canvas id="main-chart" height="75"></canvas>
   </div>`;
 
@@ -406,7 +406,7 @@ export function renderOverview(k, fd) {
   renderChart(fd);
 }
 
-// â”€â”€ diag (unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── diag (unchanged) ──────────────────────────────────────────────────────
 export function renderDiag(diag) {
   const panel = document.getElementById('diag-panel');
   if (!panel) return;
@@ -414,7 +414,7 @@ export function renderDiag(diag) {
   const matchColor = matchPct >= 80 ? '#22c55e' : matchPct >= 50 ? '#f59e0b' : '#ef4444';
   panel.style.display = 'block';
   panel.innerHTML = `
-    ${sectionTitle('DiagnÃ³stico do Processamento', 'margin-bottom:12px')}
+    ${sectionTitle('Diagnóstico do Processamento', 'margin-bottom:12px')}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
       <div class="table-card" style="margin:0">
         <div class="table-header" style="padding:12px 16px"><div class="table-header-title">Sistema Smart</div></div>
@@ -431,9 +431,9 @@ export function renderDiag(diag) {
         <div style="padding:14px 16px;font-size:12px;line-height:2">
           <div>Propostas lidas: <strong>${fmtN(diag.ecorban.total)}</strong></div>
           <div>Encontradas no Smart: <strong style="color:${matchColor}">${fmtN(diag.ecorban.matched)} (${matchPct}%)</strong></div>
-          <div>Para revisÃ£o manual: <strong style="color:${diag.ecorban.toReview > 0 ? '#f59e0b' : '#22c55e'}">${fmtN(diag.ecorban.toReview)}</strong></div>
-          <div>Com data lida: <strong style="color:${(diag.ecorban.withDate || 0) > 0 ? '#22c55e' : '#ef4444'}">${fmtN(diag.ecorban.withDate || 0)}</strong> de ${fmtN(diag.ecorban.total)} ${(diag.ecorban.withDate || 0) === 0 ? '<span style="color:#ef4444">âš  coluna de data nÃ£o encontrada</span>' : ''}</div>
-          <div style="margin-top:6px;color:var(--gray);font-size:11px">DistribuiÃ§Ã£o de status:</div>
+          <div>Para revisão manual: <strong style="color:${diag.ecorban.toReview > 0 ? '#f59e0b' : '#22c55e'}">${fmtN(diag.ecorban.toReview)}</strong></div>
+          <div>Com data lida: <strong style="color:${(diag.ecorban.withDate || 0) > 0 ? '#22c55e' : '#ef4444'}">${fmtN(diag.ecorban.withDate || 0)}</strong> de ${fmtN(diag.ecorban.total)} ${(diag.ecorban.withDate || 0) === 0 ? '<span style="color:#ef4444">⚠ coluna de data não encontrada</span>' : ''}</div>
+          <div style="margin-top:6px;color:var(--gray);font-size:11px">Distribuição de status:</div>
           <div style="font-size:11px;margin-bottom:4px">
             Pago: <strong style="color:#22c55e">${diag.statusDist?.pago || 0}</strong> &nbsp;
             Aprovado: <strong style="color:#f59e0b">${diag.statusDist?.aprovado || 0}</strong> &nbsp;
@@ -459,11 +459,11 @@ export function renderDiag(diag) {
     </div>
     ${matchPct < 50 && diag.smart.cpfIndexed === 0 ? `
     <div style="margin-top:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fca5a5">
-      âš ï¸ <strong>AtenÃ§Ã£o:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
+      ⚠️ <strong>Atenção:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
     </div>` : ''}
     ${matchPct < 30 && diag.smart.cpfIndexed > 0 ? `
     <div style="margin-top:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fcd34d">
-      âš ï¸ <strong>Taxa de match baixa (${matchPct}%).</strong> PossÃ­vel causa: CPFs com zeros Ã  esquerda perdidos ao exportar.
+      ⚠️ <strong>Taxa de match baixa (${matchPct}%).</strong> Possível causa: CPFs com zeros à esquerda perdidos ao exportar.
     </div>` : ''}
   `;
 }
