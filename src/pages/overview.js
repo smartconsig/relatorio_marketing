@@ -54,13 +54,16 @@ function heroCard(label, count, value, sub, accentColor, p, inv, valueColor, goa
     <div class="hero-card">
       <div class="hero-label">${label}</div>
       ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
-      <div class="hero-value" style="color:${valueColor || accentColor}"${countUp}>${isNum ? fmtBRL(value) : value}</div>
+      <div class="hero-value" style="color:${valueColor || accentColor}"${countUp}>${isNum ? fmtHeroBRL(value) : value}</div>
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
         <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar ${cls || 'accent'}" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%"></div></div>
         <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
     </div>`;
 }
+
+// "R$" discreto ao lado do número grande — o valor é o protagonista
+const fmtHeroBRL = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
 
 // Conta do valor anterior até o novo (só quando muda de verdade — clique de
 // classificação com o mesmo total não re-anima). Desliga com reduced-motion.
@@ -77,7 +80,7 @@ function animateHeroValues() {
     const step = now => {
       const t = Math.min((now - t0) / dur, 1);
       const e = 1 - Math.pow(1 - t, 3);
-      el.textContent = fmtBRL(from + (target - from) * e);
+      el.innerHTML = fmtHeroBRL(from + (target - from) * e);
       if (t < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);

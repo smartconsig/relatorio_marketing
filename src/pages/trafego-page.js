@@ -77,11 +77,12 @@ export async function renderTrafego() {
   if (podeEditar) h += '<button class="btn-sm trafego-add-btn" onclick="openTrafegoForm()">+ Lançar dia</button>';
   h += '</div>';
 
+  const brlChip = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
   h += `<div class="trafego-chips">
-    <div class="trafego-chip"><span>Investimento + imposto</span><strong>${fmtBRL(t.invest * (1 + TAXA_IMPOSTO))}</strong></div>
-    <div class="trafego-chip"><span>Investimento (painel Meta)</span><strong>${fmtBRL(t.invest)}</strong></div>
+    <div class="trafego-chip"><span>Investimento + imposto</span><strong>${brlChip(t.invest * (1 + TAXA_IMPOSTO))}</strong></div>
+    <div class="trafego-chip"><span>Investimento (painel Meta)</span><strong>${brlChip(t.invest)}</strong></div>
     <div class="trafego-chip"><span>Leads</span><strong>${fmtN(t.leads)}</strong></div>
-    <div class="trafego-chip"><span>CPL (s/ imposto)</span><strong>${fmtBRL(cpl)}</strong></div>
+    <div class="trafego-chip"><span>CPL (s/ imposto)</span><strong>${brlChip(cpl)}</strong></div>
     <div class="trafego-chip"><span>CTR médio</span><strong>${ctr.toFixed(2)}%</strong></div>
     <div class="trafego-chip"><span>Dias digitados</span><strong>${t.dias}</strong></div>
   </div>`;

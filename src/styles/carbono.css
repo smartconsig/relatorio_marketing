@@ -30,9 +30,45 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(229,51,58,0.12);
 }
 
+/* "R$" discreto ao lado de números grandes (padrão de app de banco) */
+.cur-sm {
+  font-size: 0.5em; font-weight: 600; color: var(--gray-light);
+  vertical-align: 0.55em; margin-right: 3px; letter-spacing: 0;
+}
+
 /* Seleção de texto na cor da marca */
 ::selection { background: rgba(148,11,16,0.45); color: #ffffff; }
 [data-theme="light"] ::selection { background: rgba(148,11,16,0.22); color: inherit; }
+
+/* ── FINANCEIRO (Liberação · Boletos · Resíduos — compartilham .lib-*) ── */
+
+/* Semáforo de status nos tokens do tema (antes: hexes fixos fora da paleta).
+   Chips de filtro com classe de status mantêm fundo neutro — as regras de
+   2 classes das features vencem estas. */
+.bol-st-sol, .res-st-sol  { color: var(--yellow); background: rgba(245,185,61,0.10); }
+.bol-st-ped, .res-st-pen  { color: var(--blue);   background: rgba(88,166,255,0.10); }
+.bol-st-env               { color: var(--purple); background: rgba(181,131,245,0.10); }
+.bol-st-quit, .res-st-pag { color: var(--green);  background: rgba(61,214,140,0.10); }
+.bol-st-rep               { color: var(--danger); background: rgba(242,85,90,0.10); }
+.res-chip-ok              { border-color: rgba(61,214,140,0.4); color: var(--green); }
+
+/* Tabelas do financeiro no padrão do sistema */
+.lib-table th { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gray); }
+.lib-table td { font-variant-numeric: tabular-nums; }
+.lib-table tbody tr:hover td { background: rgba(229,51,58,0.04); }
+
+/* Ferramentas (presets, chips, "Ver mais") nas interações do padrão */
+.lib-preset:hover, .lib-ver-mais:hover, .res-btn-anexo:hover { border-color: rgba(229,51,58,0.5); color: var(--white); }
+.lib-preset.active {
+  background: linear-gradient(180deg, #b01015, #8c0a0f);
+  border-color: rgba(255,255,255,0.14); color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.bol-chip.active { border-color: rgba(229,51,58,0.6); color: var(--red-bright); }
+.bol-chip.active span { background: linear-gradient(180deg, #b01015, #8c0a0f); color: #ffffff; }
+
+/* Modais do financeiro no raio padrão */
+#lib-modal-content, #bol-modal-content, .res-modal { border-radius: var(--r-lg); }
 
 /* Skeleton de carregamento — usar em blocos com altura definida via style */
 @keyframes cr-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
