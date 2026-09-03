@@ -19,6 +19,7 @@ import './styles/period-bar.css';
 import './styles/modal-kit.css';
 import './styles/home.css';
 import './styles/residuos.css';
+import './styles/carbono.css'; // sempre por último — re-seleciona classes das features (Fase 3c)
 
 import { initNavigation, navigate, clearFilter, renderAll, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';

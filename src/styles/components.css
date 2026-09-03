@@ -259,13 +259,12 @@ body.sidebar-collapsed .main { margin-left: 58px; }
   position: relative; display: flex; align-items: center; gap: 7px;
   padding: 9px 18px; background: transparent; border: none;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
-  font-family: var(--font-h); font-size: 12px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.5px;
-  color: var(--gray); cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  font-family: var(--font-b); font-size: 13px; font-weight: 600;
+  color: var(--gray); cursor: pointer; transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
   border-radius: 4px 4px 0 0;
 }
 .gestao-tab-btn:hover { color: var(--white); }
-.gestao-tab-btn.active { color: var(--white); border-bottom-color: var(--red); }
+.gestao-tab-btn.active { color: var(--white); border-bottom-color: var(--red-bright); }
 .gestao-tab-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px;

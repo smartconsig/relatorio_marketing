@@ -1,0 +1,35 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CARBONO & RUBI — Fase 3c
+   Anatomia de luz das telas restantes, num lugar só. Importado por último
+   no main.js de propósito: re-seleciona classes das features para aplicar
+   o véu de luz sem tocar em cada arquivo. Telas de TV e Universidade têm
+   linguagem própria e ficam fora.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Cards e superfícies principais das features */
+.bm-kpi, .bm-card,
+.bsc-import-bar, .bsc-podium-card, .bsc-list-card,
+.parc-podium-card, .parc-list-card,
+.goal-card, .proposta-card,
+.cont-col,
+.lib-table-wrap,
+.confirm-box, .session-warning-box {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0) 46%), var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.goal-card, .lib-table-wrap, .proposta-card { border-radius: var(--r-md); }
+
+/* Cabeçalhos de dados das features seguem o padrão mono do sistema */
+.lib-table th, .trafego-table th { font-family: var(--font-mono); }
+
+/* Anel de foco padrão em todo campo de texto do sistema */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(229,51,58,0.12);
+}
+
+/* Seleção de texto na cor da marca */
+::selection { background: rgba(148,11,16,0.45); color: #ffffff; }
+[data-theme="light"] ::selection { background: rgba(148,11,16,0.22); color: inherit; }
