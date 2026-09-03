@@ -50,6 +50,8 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 [data-theme="light"] .nav-float-item .nf-badge { border-color: var(--bg); }
+[data-theme="light"] .content { background: radial-gradient(900px 260px at 50% -100px, rgba(148,11,16,0.04), transparent 70%); }
+[data-theme="light"] .kpi-progress { background: var(--surface3); }
 
 /* ── LOGIN (Porcelana) ── */
 [data-theme="light"] #login-screen,

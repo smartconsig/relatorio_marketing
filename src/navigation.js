@@ -27,6 +27,8 @@ import { renderTrafego } from './pages/trafego-page.js';
 import { renderHome } from './pages/home-page.js';
 import { syncPeriodBars } from './components/period-bar.js';
 
+let _animEnterT = null; // timer da cascata de entrada das seções
+
 // Maps each child section to its parent group identifier
 const GROUP_MAP = {
   overview:  'dashboard',
@@ -110,6 +112,16 @@ export function navigate(sec) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
+
+  // Cascata de entrada: os cards da seção sobem em sequência ao entrar nela
+  const secEl = document.getElementById(`sec-${sec}`);
+  if (secEl) {
+    secEl.classList.remove('anim-enter');
+    void secEl.offsetWidth; // reinicia as animações CSS
+    secEl.classList.add('anim-enter');
+    clearTimeout(_animEnterT);
+    _animEnterT = setTimeout(() => secEl.classList.remove('anim-enter'), 900);
+  }
 
   syncPeriodBars(); // barras de período refletem o state ao trocar de tela
 
