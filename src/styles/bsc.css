@@ -1,8 +1,8 @@
-/* ══════════════════════════════════════════════════════
-   BSC — Ranking Page Styles
-   ══════════════════════════════════════════════════════ */
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   BSC â€” Ranking Page Styles
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Import bar ─────────────────────────────────────── */
+/* â”€â”€ Import bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bsc-import-bar {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--surface); border: 1px solid var(--border);
@@ -11,14 +11,14 @@
 .bsc-import-period { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); }
 .bsc-import-info   { font-size: 11px; color: var(--gray); margin-top: 3px; }
 
-/* ── Shared badge ────────────────────────────────────── */
+/* â”€â”€ Shared badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bsc-badge {
   display: inline-block; font-size: 11px; font-family: var(--font-h); font-weight: 700;
   padding: 3px 9px; border-radius: 20px; border: 1px solid transparent;
   letter-spacing: 0.3px; white-space: nowrap;
 }
 
-/* ── Avatar ──────────────────────────────────────────── */
+/* â”€â”€ Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bsc-avatar {
   border-radius: 50%; overflow: hidden; flex-shrink: 0;
   position: relative; background: var(--surface2);
@@ -38,7 +38,7 @@
 }
 .bsc-avatar-edit:hover { transform: scale(1.12); }
 
-/* ── Podium (Top 3) ──────────────────────────────────── */
+/* â”€â”€ Podium (Top 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bsc-podium {
   display: grid; grid-template-columns: 1fr 1.15fr 1fr;
   align-items: end; gap: 14px; margin-bottom: 8px;
@@ -57,7 +57,7 @@
 }
 .bsc-podium-1st .bsc-podium-name { font-size: 16px; }
 .bsc-podium-nota {
-  font-family: var(--font-h); font-size: 28px; font-weight: 900;
+  font-family: var(--font-h); font-size: 28px; font-weight: 800;
   color: var(--white); margin: 10px 0 2px; line-height: 1;
 }
 .bsc-podium-1st .bsc-podium-nota { font-size: 36px; }
@@ -70,7 +70,7 @@
 .bsc-podium-metrics span  { color: var(--gray); }
 .bsc-podium-metrics strong { color: var(--white); font-family: var(--font-h); }
 
-/* ── List (Top 4–10) ─────────────────────────────────── */
+/* â”€â”€ List (Top 4â€“10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bsc-list         { display: flex; flex-direction: column; gap: 8px; }
 .bsc-list-card {
   display: flex; align-items: center; gap: 14px;
@@ -78,16 +78,16 @@
   border-radius: 10px; padding: 12px 16px; transition: transform 0.15s;
 }
 .bsc-list-card:hover { transform: translateX(3px); }
-.bsc-list-rank  { font-family: var(--font-h); font-size: 22px; font-weight: 900; width: 32px; flex-shrink: 0; text-align: center; }
+.bsc-list-rank  { font-family: var(--font-h); font-size: 22px; font-weight: 800; width: 32px; flex-shrink: 0; text-align: center; }
 .bsc-list-info  { flex: 1; min-width: 0; }
 .bsc-list-name  { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bsc-list-nota  { font-family: var(--font-h); font-size: 22px; font-weight: 900; flex-shrink: 0; margin-left: 8px; }
+.bsc-list-nota  { font-family: var(--font-h); font-size: 22px; font-weight: 800; flex-shrink: 0; margin-left: 8px; }
 .bsc-bar-wrap   { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
 .bsc-bar        { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
-/* ══════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TV MODE OVERLAY
-   ══════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 #bsc-tv-overlay {
   position: fixed; inset: 0; z-index: 9999;
   display: none; flex-direction: column;
@@ -100,22 +100,22 @@
   display: flex; flex-direction: column; flex: 1; min-height: 0;
 }
 
-/* ── TV Content (centers podium + strip vertically) ─── */
+/* â”€â”€ TV Content (centers podium + strip vertically) â”€â”€â”€ */
 .tv-content {
   flex: 1; display: flex; flex-direction: column;
   justify-content: center; gap: 0; min-height: 0;
 }
 
-/* ── TV Header ───────────────────────────────────────── */
+/* â”€â”€ TV Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 24px; flex-shrink: 0;
 }
 .tv-logo   { height: 44px; object-fit: contain; }
-.tv-title  { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
+.tv-title  { font-family: var(--font-h); font-size: 22px; font-weight: 800; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
 .tv-clock  { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: #555; min-width: 110px; text-align: right; }
 
-/* ── TV Podium ───────────────────────────────────────── */
+/* â”€â”€ TV Podium â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-podium {
   display: grid; grid-template-columns: 1fr 1.2fr 1fr;
   align-items: end; gap: 16px;
@@ -132,7 +132,7 @@
 .tv-podium-1st .tv-medal { font-size: 52px; }
 .tv-seller-name { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: #111; line-height: 1.2; }
 .tv-podium-1st .tv-seller-name { font-size: 22px; }
-.tv-nota       { font-family: var(--font-h); font-size: 42px; font-weight: 900; color: #111; line-height: 1; margin: 6px 0 2px; }
+.tv-nota       { font-family: var(--font-h); font-size: 42px; font-weight: 800; color: #111; line-height: 1; margin: 6px 0 2px; }
 .tv-podium-1st .tv-nota { font-size: 56px; }
 .tv-quartil    { font-family: var(--font-h); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
 .tv-badge      { font-size: 12px !important; padding: 4px 12px !important; }
@@ -144,7 +144,7 @@
 .tv-metrics span  { color: #888; }
 .tv-metrics strong { color: #111; font-family: var(--font-h); font-size: 14px; }
 
-/* ── TV Strip (4–10) ─────────────────────────────────── */
+/* â”€â”€ TV Strip (4â€“10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-strip-title {
   font-family: var(--font-h); font-size: 12px; font-weight: 700; color: #999;
   text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; text-align: center;
@@ -157,11 +157,11 @@
   border-radius: 10px; padding: 10px 8px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.tv-list-rank  { font-family: var(--font-h); font-size: 18px; font-weight: 900; line-height: 1; }
+.tv-list-rank  { font-family: var(--font-h); font-size: 18px; font-weight: 800; line-height: 1; }
 .tv-list-name  { font-family: var(--font-h); font-size: 11px; font-weight: 700; color: #111; line-height: 1.2; }
 .tv-list-nota  { font-family: var(--font-h); font-size: 16px; font-weight: 800; }
 
-/* ── TV Team Scoreboard ──────────────────────────────── */
+/* â”€â”€ TV Team Scoreboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-teams {
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; flex-shrink: 0;
 }
@@ -171,27 +171,27 @@
   display: flex; flex-direction: column; gap: 4px;
 }
 .tv-team-name  { font-family: var(--font-h); font-size: 16px; font-weight: 800; }
-.tv-team-avg   { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; line-height: 1; }
+.tv-team-avg   { font-family: var(--font-h); font-size: 22px; font-weight: 800; color: #111; line-height: 1; }
 .tv-team-bar-wrap { height: 4px; background: #e4e4e7; border-radius: 2px; overflow: hidden; }
 .tv-team-bar   { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 .tv-team-count { font-size: 11px; color: #888; }
 
-/* ── TV Spotlight (Tela 2) ───────────────────────────── */
+/* â”€â”€ TV Spotlight (Tela 2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-spotlight {
   flex: 1; display: flex; align-items: center; justify-content: center;
   gap: 64px; padding: 20px 40px; min-height: 0;
 }
 .tv-spotlight-left  { display: flex; flex-direction: column; align-items: center; gap: 20px; flex-shrink: 0; }
 .tv-spotlight-right { display: flex; flex-direction: column; }
-.tv-spotlight-name  { font-family: var(--font-h); font-size: 52px; font-weight: 900; color: #111; line-height: 1.1; }
-.tv-spotlight-nota  { font-family: var(--font-h); font-size: 110px; font-weight: 900; line-height: 1; margin: 8px 0 4px; }
+.tv-spotlight-name  { font-family: var(--font-h); font-size: 52px; font-weight: 800; color: #111; line-height: 1.1; }
+.tv-spotlight-nota  { font-family: var(--font-h); font-size: 110px; font-weight: 800; line-height: 1; margin: 8px 0 4px; }
 .tv-spotlight-quartil { font-family: var(--font-h); font-size: 22px; font-weight: 700; margin-bottom: 20px; }
 .tv-spotlight-metrics { display: flex; flex-direction: column; gap: 8px; }
 .tv-spotlight-metrics > div { display: flex; gap: 24px; justify-content: space-between; font-size: 18px; }
 .tv-spotlight-metrics span  { color: #888; }
 .tv-spotlight-metrics strong { color: #111; font-family: var(--font-h); font-size: 20px; }
 
-/* ── TV Carousel (Tela 3) ────────────────────────────── */
+/* â”€â”€ TV Carousel (Tela 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-carousel-wrap  { overflow: hidden; width: 100%; }
 .tv-carousel-track {
   display: flex; gap: 16px; width: max-content;
@@ -207,11 +207,11 @@
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   width: 180px; flex-shrink: 0;
 }
-.tv-carousel-rank { font-family: var(--font-h); font-size: 28px; font-weight: 900; line-height: 1; }
+.tv-carousel-rank { font-family: var(--font-h); font-size: 28px; font-weight: 800; line-height: 1; }
 .tv-carousel-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; line-height: 1.3; }
-.tv-carousel-nota { font-family: var(--font-h); font-size: 26px; font-weight: 900; }
+.tv-carousel-nota { font-family: var(--font-h); font-size: 26px; font-weight: 800; }
 
-/* ── TV Navigation dots ──────────────────────────────── */
+/* â”€â”€ TV Navigation dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-dots {
   display: flex; justify-content: center; gap: 8px;
   flex-shrink: 0; padding: 10px 0 4px;
@@ -222,7 +222,7 @@
 }
 .tv-dot-on { background: #940b10; }
 
-/* ── TV Exit button ──────────────────────────────────── */
+/* â”€â”€ TV Exit button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tv-exit-btn {
   position: fixed; top: 16px; right: 16px;
   background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);

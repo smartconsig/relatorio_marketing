@@ -1,9 +1,9 @@
-/* ══════════════════════════════════════════════════════
-   PARCEIROS — Ranking Page Styles (espelha bsc.css)
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PARCEIROS â€” Ranking Page Styles (espelha bsc.css)
    Reaproveita .bsc-import-bar / .bsc-import-period / .bsc-import-info
-   ══════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Logo (quadrado arredondado, estilo empresa) ─────── */
+/* â”€â”€ Logo (quadrado arredondado, estilo empresa) â”€â”€â”€â”€â”€â”€â”€ */
 .parc-logo {
   border-radius: 14px; overflow: hidden; flex-shrink: 0;
   position: relative; background: var(--surface2);
@@ -23,7 +23,7 @@
 }
 .parc-logo-edit:hover { transform: scale(1.12); }
 
-/* ── Pódio (Top 3) ───────────────────────────────────── */
+/* â”€â”€ PÃ³dio (Top 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-podium {
   display: grid; grid-template-columns: 1fr 1.15fr 1fr;
   align-items: end; gap: 14px; margin-bottom: 8px;
@@ -43,7 +43,7 @@
 }
 .parc-podium-1st .parc-podium-name { font-size: 17px; }
 
-/* ── Diferença de produção (número único em destaque, no toggle) ─ */
+/* â”€â”€ DiferenÃ§a de produÃ§Ã£o (nÃºmero Ãºnico em destaque, no toggle) â”€ */
 .parc-gap {
   border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -53,15 +53,15 @@
   color: var(--gray); font-weight: 600;
 }
 .parc-gap-value {
-  font-family: var(--font-h); font-weight: 900; font-size: 26px;
+  font-family: var(--font-h); font-weight: 800; font-size: 26px;
   color: var(--white); line-height: 1.1; white-space: nowrap;
 }
 .parc-podium-1st .parc-gap-value { font-size: 30px; }
 .parc-gap-leader {
-  font-family: var(--font-h); font-weight: 900; font-size: 20px;
+  font-family: var(--font-h); font-weight: 800; font-size: 20px;
   color: #f59e0b; letter-spacing: .3px;
 }
-/* Variante compacta usada nos cards da lista (à direita, sem borda de topo) */
+/* Variante compacta usada nos cards da lista (Ã  direita, sem borda de topo) */
 .parc-gap-compact {
   border-top: none; padding-top: 0; margin-top: 0; margin-left: auto;
   flex-shrink: 0; align-items: flex-end; text-align: right;
@@ -69,7 +69,7 @@
 .parc-gap-compact .parc-gap-value { font-size: 20px; }
 .parc-gap-compact.parc-gap-leader { font-size: 16px; }
 
-/* ── Lista (classificação completa) ──────────────────── */
+/* â”€â”€ Lista (classificaÃ§Ã£o completa) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-list { display: flex; flex-direction: column; gap: 8px; }
 .parc-list-card {
   display: flex; align-items: center; gap: 14px;
@@ -77,14 +77,14 @@
   border-radius: 10px; padding: 12px 16px; transition: transform 0.15s;
 }
 .parc-list-card:hover { transform: translateX(3px); }
-.parc-list-rank { font-family: var(--font-h); font-size: 22px; font-weight: 900; width: 32px; flex-shrink: 0; text-align: center; }
+.parc-list-rank { font-family: var(--font-h); font-size: 22px; font-weight: 800; width: 32px; flex-shrink: 0; text-align: center; }
 .parc-list-info { flex: 1; min-width: 0; }
 .parc-list-name { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--white); }
 
-/* ══════════════════════════════════════════════════════
-   TOP PARCEIROS — Overlay tela cheia (espelha o modo TV do BSC)
-   Fundo branco fixo de propósito: modo limpo para print/TV.
-   ══════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TOP PARCEIROS â€” Overlay tela cheia (espelha o modo TV do BSC)
+   Fundo branco fixo de propÃ³sito: modo limpo para print/TV.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 #parc-tv-overlay {
   position: fixed; inset: 0; z-index: 9999;
   display: none; flex-direction: column;
@@ -94,16 +94,16 @@
 }
 #parc-tv-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
-/* ── Cabeçalho ───────────────────────────────────────── */
+/* â”€â”€ CabeÃ§alho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 18px; flex-shrink: 0;
 }
 .parc-tv-logo  { height: 44px; object-fit: contain; }
-.parc-tv-title { font-family: var(--font-h); font-size: 22px; font-weight: 900; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
+.parc-tv-title { font-family: var(--font-h); font-size: 22px; font-weight: 800; color: #111; letter-spacing: 1px; text-align: center; flex: 1; padding: 0 20px; }
 .parc-tv-clock { font-family: var(--font-h); font-size: 20px; font-weight: 700; color: #555; min-width: 110px; text-align: right; }
 
-/* ── Barra de quantidade (Top 10 / 25 / 50) ──────────── */
+/* â”€â”€ Barra de quantidade (Top 10 / 25 / 50) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-qbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
 .parc-tv-qbtn {
   font-family: var(--font-h); font-size: 14px; font-weight: 700;
@@ -115,10 +115,10 @@
 .parc-tv-qbtn-on { background: #111; color: #fff; border-color: #111; }
 .parc-tv-qbtn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* ── Conteúdo (centraliza pódio + faixa) ─────────────── */
+/* â”€â”€ ConteÃºdo (centraliza pÃ³dio + faixa) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0; min-height: 0; overflow-y: auto; }
 
-/* ── Pódio Top 3 ─────────────────────────────────────── */
+/* â”€â”€ PÃ³dio Top 3 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: end; gap: 16px; }
 .parc-tv-podium-card {
   background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 16px;
@@ -130,17 +130,17 @@
 .parc-tv-podium-name { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: #111; margin-top: 4px; line-height: 1.3; }
 .parc-tv-podium-1st .parc-tv-podium-name { font-size: 21px; }
 
-/* ── Diferença de produção no modo TV (fundo branco) ─── */
+/* â”€â”€ DiferenÃ§a de produÃ§Ã£o no modo TV (fundo branco) â”€â”€â”€ */
 .parc-tv-gap { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 10px; }
 .parc-tv-gap-caption { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #999; font-weight: 600; }
-.parc-tv-gap-value { font-family: var(--font-h); font-weight: 900; font-size: 24px; color: #111827; line-height: 1.1; white-space: nowrap; }
+.parc-tv-gap-value { font-family: var(--font-h); font-weight: 800; font-size: 24px; color: #111827; line-height: 1.1; white-space: nowrap; }
 .parc-tv-podium-1st .parc-tv-gap-value { font-size: 28px; }
-.parc-tv-gap-leader { font-family: var(--font-h); font-weight: 900; font-size: 18px; color: #f59e0b; }
+.parc-tv-gap-leader { font-family: var(--font-h); font-weight: 800; font-size: 18px; color: #f59e0b; }
 .parc-tv-list-card .parc-tv-gap { margin-top: 4px; }
 .parc-tv-list-card .parc-tv-gap-value { font-size: 18px; }
 .parc-tv-list-card .parc-tv-gap-leader { font-size: 14px; }
 
-/* ── Faixa Top 4 – N (grid que quebra em linhas) ─────── */
+/* â”€â”€ Faixa Top 4 â€“ N (grid que quebra em linhas) â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-strip-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin: 22px 0 12px; }
 .parc-tv-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .parc-tv-list-card {
@@ -148,10 +148,10 @@
   background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 12px;
   padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.parc-tv-list-rank { font-family: var(--font-h); font-size: 20px; font-weight: 900; }
+.parc-tv-list-rank { font-family: var(--font-h); font-size: 20px; font-weight: 800; }
 .parc-tv-list-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #111; text-align: center; line-height: 1.25; }
 
-/* ── Botão sair ──────────────────────────────────────── */
+/* â”€â”€ BotÃ£o sair â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .parc-tv-exit-btn {
   position: fixed; top: 16px; right: 16px;
   background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);
@@ -160,7 +160,7 @@
 }
 .parc-tv-exit-btn:hover { background: rgba(0,0,0,.12); color: #111; }
 
-/* ── Responsivo ──────────────────────────────────────── */
+/* â”€â”€ Responsivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 720px) {
   .parc-podium { grid-template-columns: 1fr; }
   .parc-tv-podium { grid-template-columns: 1fr; }

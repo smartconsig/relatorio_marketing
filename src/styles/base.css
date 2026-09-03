@@ -1,21 +1,38 @@
+/* ── Tokens "Carbono & Rubi" (dark, padrão) ──
+   Carbonos com nuance quente da marca; o rubi #940b10 segue sendo a marca e
+   --red-bright é a versão acesa para glow/foco/gradiente. */
 :root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --surface2: #272727;
-  --surface3: #303030;
+  --bg: #0c0a0b;
+  --surface: #141112;
+  --surface2: #1c1819;
+  --surface3: #262123;
+  --chrome: #0b0909;            /* sidebar, topbar, bottom-nav */
   --red: #940b10;
   --red-hover: #b01015;
-  --white: #ffffff;
-  --gray: #6b7280;
-  --gray-light: #9ca3af;
-  --green: #22c55e;
-  --yellow: #f59e0b;
-  --danger: #ef4444;
-  --blue: #3b82f6;
-  --purple: #a855f7;
-  --border: #2a2a2a;
-  --font-h: 'Montserrat', sans-serif;
-  --font-b: 'Open Sans', sans-serif;
+  --red-bright: #e5333a;
+  --glow: rgba(229,51,58,0.32);
+  --white: #f4f1f2;             /* texto primário (nome legado) */
+  --gray: #8b8286;
+  --gray-light: #b5acb0;
+  --green: #3dd68c;
+  --yellow: #f5b93d;
+  --danger: #f2555a;
+  --blue: #58a6ff;
+  --purple: #b583f5;
+  --border: rgba(255,255,255,0.08);
+  /* aliases usados por boletos.css/liberacao.css (antes indefinidos) */
+  --text: var(--white);
+  --muted: var(--gray);
+  --card: var(--surface);
+  --font-h: 'Archivo', sans-serif;
+  --font-b: 'Instrument Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* escala única de raio e movimento (fases 2-4 migram os componentes) */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --dur: 160ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,7 +53,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--red); }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #444; }
 
 .divider { grid-column: 1 / -1; height: 1px; background: var(--border); margin: 6px 0; }

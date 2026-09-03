@@ -2,15 +2,25 @@
    LIGHT THEME — cobertura completa
    ═══════════════════════════════════════════════ */
 
+/* Tema claro "Porcelana" — papel frio com nuance quente; semânticos ganham
+   par claro (antes eram iguais ao dark e o contraste era corrigido na mão). */
 [data-theme="light"] {
-  --bg:         #f1f5f9;
+  --bg:         #f4f2f3;
   --surface:    #ffffff;
-  --surface2:   #f8fafc;
-  --surface3:   #f1f5f9;
-  --white:      #0f172a;
-  --gray:       #64748b;
-  --gray-light: #475569;
-  --border:     #e2e8f0;
+  --surface2:   #f8f6f7;
+  --surface3:   #efebed;
+  --chrome:     #ffffff;
+  --white:      #1d171a;
+  --gray:       #786f73;
+  --gray-light: #554d51;
+  --border:     #e7e2e4;
+  --red-bright: #b4141a;
+  --glow:       rgba(148,11,16,0.20);
+  --green:      #0e9f6e;
+  --yellow:     #b45309;
+  --danger:     #dc2626;
+  --blue:       #2563eb;
+  --purple:     #7c3aed;
 }
 
 /* ── SIDEBAR ── */
