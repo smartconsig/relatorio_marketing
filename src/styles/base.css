@@ -51,10 +51,11 @@ body {
 input, select, textarea, button { font-family: inherit; }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--red); }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+html { scrollbar-color: var(--surface3) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #444; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray); }
 
 .divider { grid-column: 1 / -1; height: 1px; background: var(--border); margin: 6px 0; }
 .row-flex { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }

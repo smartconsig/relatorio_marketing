@@ -33,3 +33,21 @@ textarea:focus {
 /* Seleção de texto na cor da marca */
 ::selection { background: rgba(148,11,16,0.45); color: #ffffff; }
 [data-theme="light"] ::selection { background: rgba(148,11,16,0.22); color: inherit; }
+
+/* Skeleton de carregamento — usar em blocos com altura definida via style */
+@keyframes cr-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.cr-skeleton {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: cr-shimmer 1.2s linear infinite;
+}
+[data-theme="light"] .cr-skeleton {
+  background: linear-gradient(90deg, rgba(23,15,17,0.05) 25%, rgba(23,15,17,0.10) 50%, rgba(23,15,17,0.05) 75%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-skeleton { animation: none; }
+  .login-box { animation: none; }
+}

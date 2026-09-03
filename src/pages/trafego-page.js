@@ -57,7 +57,8 @@ export async function renderTrafego() {
   }
 
   if (state.trafego === null) {
-    sec.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Carregando…</div></div>';
+    sec.innerHTML = `<div class="trafego-chips">${'<div class="cr-skeleton" style="height:66px;flex:1;min-width:120px"></div>'.repeat(6)}</div>
+      <div class="cr-skeleton" style="height:280px"></div>`;
     await loadTrafego();
   }
 
