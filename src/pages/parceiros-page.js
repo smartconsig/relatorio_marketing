@@ -1,4 +1,5 @@
 import { state }             from '../state.js';
+import { icon }              from '../utils/icons.js';
 import { toast }             from '../utils/ui.js';
 import { fmtBRL }            from '../utils/currency.js';
 import * as XLSX             from 'xlsx';
@@ -52,7 +53,7 @@ function logoHtml(p, size, editable = false) {
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="parc-logo-fallback" style="display:none;background:${rc}">${initials(p.nome)}</div>
       ${editable ? `<button type="button" class="parc-logo-edit" title="Editar logo"
-        onclick="event.stopPropagation();startEditParceiroLogo(${p._i})">✎</button>` : ''}
+        onclick="event.stopPropagation();startEditParceiroLogo(${p._i})">${icon('edit', 11)}</button>` : ''}
     </div>`;
 }
 
@@ -78,7 +79,7 @@ function annotateGaps(partners) {
 function gapHtml(p, compact = false) {
   const cls = 'parc-gap' + (compact ? ' parc-gap-compact' : '');
   if (p._gapAbove == null) {
-    return `<div class="${cls} parc-gap-leader">🏆 Líder</div>`;
+    return `<div class="${cls} parc-gap-leader">${icon('trophy', 11)} Líder</div>`;
   }
   return `<div class="${cls}">
     <span class="parc-gap-caption">atrás do ${p._aboveRank}º</span>
@@ -111,7 +112,7 @@ export async function onParceiroLogoChange(e) {
     });
     if (error) throw error;
     _logoCacheBust[slug] = Date.now();
-    toast('✅ Logo atualizada');
+    toast('Logo atualizada');
     renderParceiros();
   } catch (err) {
     toast('Erro ao enviar logo: ' + err.message, 'err');
@@ -155,7 +156,7 @@ export async function onParceirosFileChange(e) {
       try { localStorage.setItem('sc_parceiros_v1', JSON.stringify(state.parceiros)); } catch {}
       await saveParceiros(state.parceiros);
       renderParceiros();
-      toast(`✅ Ranking importado: ${result.partners.length} parceiros`);
+      toast(`Ranking importado: ${result.partners.length} parceiros`);
     } catch (err) {
       toast('Erro ao processar planilha: ' + err.message, 'err');
       console.error(err);
@@ -208,13 +209,13 @@ function importBar() {
   return `
     <div class="bsc-import-bar">
       <div>
-        <div class="bsc-import-period">🤝 Ranking Parceiros</div>
+        <div class="bsc-import-period">Ranking Parceiros</div>
         <div class="bsc-import-info">${updatedStr}</div>
       </div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        ${hasData ? `<button class="btn-sm btn-ghost" onclick="enterParceirosTop()">🏆 Top Parceiros</button>` : ''}
-        ${hasData ? `<button class="btn-sm btn-ghost" onclick="toggleParceirosValues()">${_showValues ? '🙈 Esconder valores' : '👁 Mostrar valores'}</button>` : ''}
-        <button class="btn-sm btn-ghost" onclick="importParceirosFile()">📥 Importar planilha</button>
+        ${hasData ? `<button class="btn-sm btn-ghost" onclick="enterParceirosTop()">${icon('trophy', 12)} Top Parceiros</button>` : ''}
+        ${hasData ? `<button class="btn-sm btn-ghost" onclick="toggleParceirosValues()">${_showValues ? 'Esconder valores' : 'Mostrar valores'}</button>` : ''}
+        <button class="btn-sm btn-ghost" onclick="importParceirosFile()">${icon('download', 12)} Importar planilha</button>
         <input type="file" id="parc-file-input" accept=".csv,.xlsx" style="display:none" onchange="onParceirosFileChange(event)">
         <input type="file" id="parc-logo-input" accept="image/*" style="display:none" onchange="onParceiroLogoChange(event)">
       </div>
@@ -256,7 +257,7 @@ export function renderParceiros() {
   if (!state.parceiros?.partners?.length) {
     el.innerHTML = importBar() + `
       <div class="empty" style="margin-top:48px">
-        <div class="empty-icon">🤝</div>
+        <div class="empty-icon">${icon('users')}</div>
         <div class="empty-title">Nenhum ranking importado</div>
         <div class="empty-desc">Importe a planilha de produção de parceiros para visualizar o ranking.</div>
       </div>`;

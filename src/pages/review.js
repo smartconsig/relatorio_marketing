@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { fmtBRL } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
@@ -29,7 +30,7 @@ export function renderReview(toReview, unknownStatuses) {
   h += sectionTitle('Vendas a Revisar');
 
   if (toReview.length === 0) {
-    h += `<div class="empty"><div class="empty-icon">✅</div>
+    h += `<div class="empty"><div class="empty-icon">${icon('check')}</div>
       <div class="empty-title">Nenhuma venda pendente</div>
       <div class="empty-desc">Todas as vendas foram identificadas automaticamente.</div></div>`;
   } else {

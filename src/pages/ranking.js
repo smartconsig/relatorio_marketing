@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { getHierarchy } from '../core/calcKPIs.js';
 import { filteredData } from '../core/calcKPIs.js';
@@ -94,7 +95,7 @@ export function renderRanking(entries) {
       <div class="table-header">
         <div class="table-header-title">Ordenado por vendas pagas</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <button class="btn-export-pdf" onclick="exportRankingPDF()">⬇ Exportar PDF</button>
+        <button class="btn-export-pdf" onclick="exportRankingPDF()">${icon('download', 12)} Exportar PDF</button>
         <div class="table-filters">
           ${filterButtonsHTML([
             { value: 'seller', label: 'Vendedor',   onclick: "setRankView('seller')" },
@@ -202,7 +203,7 @@ function _renderFunil() {
       <div class="table-header">
         <div class="table-header-title">Funil por ${colLabel.toLowerCase()}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button class="btn-export-pdf" onclick="exportRankingPDF()">⬇ Exportar PDF</button>
+          <button class="btn-export-pdf" onclick="exportRankingPDF()">${icon('download', 12)} Exportar PDF</button>
           ${_tabs}
           <div style="display:flex;align-items:center;gap:6px;margin-left:8px;border-left:1px solid var(--border);padding-left:8px">
             <span style="font-size:.78rem;color:var(--gray)">Agrupar:</span>

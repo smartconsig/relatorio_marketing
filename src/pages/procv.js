@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { fmtN, fmtBRL } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
@@ -77,8 +78,8 @@ export async function batchClassify(isMkt) {
   _selected.clear();
 
   toast(isMkt
-    ? `✅ ${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Marketing`
-    : `❌ ${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Não Marketing`
+    ? `${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Marketing`
+    : `${count} registro${count !== 1 ? 's' : ''} confirmado${count !== 1 ? 's' : ''} como Não Marketing`
   );
 
   const fd = filteredData();
@@ -106,12 +107,12 @@ export function procvPendingCount(entries) {
 }
 
 function signalBadge(e) {
-  if (e.reviewReason === 'manual')         return `<span class="badge badge-green">✔ Revisado</span>`;
-  if (e.reverseCandidate)                   return `<span class="badge badge-yellow">🟠 Smart confirma / Ecorban: ${e.ecorbanOrigem || 'sem origem'}</span>`;
-  if (e.smartSignal === 'confirmed')        return `<span class="badge badge-green">✅ Smart confirma</span>`;
-  if (e.smartSignal === 'contradiction')    return `<span class="badge badge-red">🔴 Smart contradiz</span>`;
-  if (e.smartSignal === 'not_found')        return `<span class="badge badge-yellow">🔍 Não encontrado</span>`;
-  return `<span class="badge badge-yellow">❓ Dúvida</span>`;
+  if (e.reviewReason === 'manual')         return `<span class="badge badge-green">${icon('check', 10)} Revisado</span>`;
+  if (e.reverseCandidate)                   return `<span class="badge badge-yellow">${icon('alert', 10)} Smart confirma / Ecorban: ${e.ecorbanOrigem || 'sem origem'}</span>`;
+  if (e.smartSignal === 'confirmed')        return `<span class="badge badge-green">${icon('check', 10)} Smart confirma</span>`;
+  if (e.smartSignal === 'contradiction')    return `<span class="badge badge-red">${icon('alert', 10)} Smart contradiz</span>`;
+  if (e.smartSignal === 'not_found')        return `<span class="badge badge-yellow">${icon('search', 10)} Não encontrado</span>`;
+  return `<span class="badge badge-yellow">? Dúvida</span>`;
 }
 
 function statusBadge(cat) {
@@ -192,7 +193,7 @@ function buildProcvResultsHTML(total, hasMore, capped) {
             ? `<input type="checkbox" data-batch-idx="${e._idx}" ${isChecked ? 'checked' : ''}
                  onchange="toggleBatchSelect(${e._idx},this.checked)"
                  style="cursor:pointer;accent-color:var(--red);width:14px;height:14px">`
-            : `<span style="color:var(--gray);font-size:10px">✔</span>`}
+            : `<span style="color:var(--gray)">${icon('check', 11)}</span>`}
         </td>
         <td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
@@ -207,13 +208,13 @@ function buildProcvResultsHTML(total, hasMore, capped) {
         <td>
           ${e.reviewReason === 'manual'
             ? e.isMarketing
-              ? `<span class="badge badge-green">✅ Confirmado: Marketing</span>`
-              : `<span class="badge badge-red">❌ Confirmado: Não é Marketing</span>`
+              ? `<span class="badge badge-green">${icon('check', 10)} Confirmado: Marketing</span>`
+              : `<span class="badge badge-red">${icon('x', 10)} Confirmado: Não é Marketing</span>`
             : `<div class="procv-actions-desktop" style="display:flex;gap:5px;flex-wrap:wrap">
-                <button class="btn-mkt"   onclick="askClassify(${e._idx},true)"  style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
-                <button class="btn-nomkt" onclick="askClassify(${e._idx},false)" style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
+                <button class="btn-mkt"   onclick="askClassify(${e._idx},true)"  style="font-size:11px;padding:4px 8px">${icon('check', 11)} É Marketing</button>
+                <button class="btn-nomkt" onclick="askClassify(${e._idx},false)" style="font-size:11px;padding:4px 8px">${icon('x', 11)} Não é Marketing</button>
                </div>
-               <button class="procv-actions-mobile btn-dots" onclick="openBottomSheet({title:'${safeName}',sub:'Confirmar classificação',actions:[{id:'mkt',label:'✅ É Marketing',cls:'ms-btn-mkt',onClick:()=>askClassify(${e._idx},true)},{id:'nomkt',label:'❌ Não é Marketing',cls:'ms-btn-nomkt',onClick:()=>askClassify(${e._idx},false)},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>`
+               <button class="procv-actions-mobile btn-dots" onclick="openBottomSheet({title:'${safeName}',sub:'Confirmar classificação',actions:[{id:'mkt',label:'É Marketing',cls:'ms-btn-mkt',onClick:()=>askClassify(${e._idx},true)},{id:'nomkt',label:'Não é Marketing',cls:'ms-btn-nomkt',onClick:()=>askClassify(${e._idx},false)},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>`
           }
         </td>
         <td>
@@ -268,7 +269,7 @@ export function renderProcv(entries) {
   document.getElementById('procv-body').innerHTML = `
     ${sectionTitle('PROCV — Revisão de Clientes de Marketing')}
     <div class="info-box" style="margin-bottom:16px">
-      Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>, mais os <strong>🟠 Marketing Perdido</strong> — clientes com outra origem no Ecorban (SMS, WhatsApp, Linha…) mas que o Smart confirma como marketing. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
+      Todos os registros que o <strong>Ecorban classifica como MARKETING</strong>, mais os <strong>Marketing Perdido</strong> — clientes com outra origem no Ecorban (SMS, WhatsApp, Linha…) mas que o Smart confirma como marketing. O sinal do Smart indica se há dúvida ou contradição — revise os pendentes e confirme ou negue cada um.
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
@@ -287,16 +288,16 @@ export function renderProcv(entries) {
       </div>
       <div class="table-filters">
         ${filterButtonsHTML([
-          { value: 'pending',       label: `⏳ Pendentes (${cPending})`,         onclick: "setProcvFilter('pending')",       style: 'color:#f59e0b' },
-          { value: 'doubt',         label: `❓ Dúvida (${cDoubt})`,               onclick: "setProcvFilter('doubt')",         style: 'color:#f59e0b' },
-          { value: 'contradiction', label: `🔴 Contradição (${cContradition})`,   onclick: "setProcvFilter('contradiction')", style: 'color:#ef4444' },
-          { value: 'reverse',       label: `🟠 Marketing Perdido (${cReverse})`,  onclick: "setProcvFilter('reverse')",       style: 'color:#f97316' },
-          { value: 'smart',         label: `✅ Smart confirma (${cConfirmedSmart})`, onclick: "setProcvFilter('smart')",      style: 'color:#22c55e' },
-          { value: 'manual',        label: `✔ Revisados (${cManual})`,            onclick: "setProcvFilter('manual')",       style: 'color:#22c55e' },
+          { value: 'pending',       label: `Pendentes (${cPending})`,         onclick: "setProcvFilter('pending')",       style: 'color:#f59e0b' },
+          { value: 'doubt',         label: `Dúvida (${cDoubt})`,               onclick: "setProcvFilter('doubt')",         style: 'color:#f59e0b' },
+          { value: 'contradiction', label: `Contradição (${cContradition})`,   onclick: "setProcvFilter('contradiction')", style: 'color:#ef4444' },
+          { value: 'reverse',       label: `Marketing Perdido (${cReverse})`,  onclick: "setProcvFilter('reverse')",       style: 'color:#f97316' },
+          { value: 'smart',         label: `Smart confirma (${cConfirmedSmart})`, onclick: "setProcvFilter('smart')",      style: 'color:#22c55e' },
+          { value: 'manual',        label: `Revisados (${cManual})`,            onclick: "setProcvFilter('manual')",       style: 'color:#22c55e' },
           { value: 'all',           label: `Todos (${cAll})`,                     onclick: "setProcvFilter('all')" },
         ], f)}
       </div>
-      <button class="btn-sm btn-ghost" onclick="exportProcvCSV()">⬇ Exportar CSV</button>
+      <button class="btn-sm btn-ghost" onclick="exportProcvCSV()">${icon('download', 12)} Exportar CSV</button>
     </div>
 
     <div id="procv-results">${buildProcvResultsHTML(total, hasMore, capped)}</div>
@@ -308,15 +309,15 @@ export function renderProcv(entries) {
       <span class="batch-count" style="color:var(--white);font-size:13px;font-family:var(--font-h);font-weight:700"></span>
       <button onclick="batchClassify(true)"
         style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-family:var(--font-b)">
-        ✅ Confirmar como Marketing
+        ${icon('check', 12)} Confirmar como Marketing
       </button>
       <button onclick="batchClassify(false)"
         style="background:#dc2626;color:#fff;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-family:var(--font-b)">
-        ❌ Rejeitar todos
+        ${icon('x', 12)} Rejeitar todos
       </button>
       <button onclick="clearBatchSelection()"
         style="background:transparent;color:var(--gray);border:1px solid var(--border);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:11px">
-        ✕
+        ${icon('x', 12)}
       </button>
     </div>
   `;
@@ -371,7 +372,7 @@ export function classifyFromProcv(idx, isMkt) {
   saveState();                              // salva ANTES das flags temporárias
   entry._justConfirmed     = true;          // flag só em memória — nunca chega ao storage
   entry._confirmedInFilter = state.procvFilter;
-  toast(isMkt ? '✅ Confirmado como Marketing — salvo!' : '❌ Confirmado como Não Marketing — salvo!');
+  toast(isMkt ? 'Confirmado como Marketing — salvo!' : 'Confirmado como Não Marketing — salvo!');
   saveClassificationToSupabase(entry.cpf, isMkt);
   logAction(entry.cpf, entry.cliente, isMkt ? 'classified_marketing' : 'classified_not_marketing');
   scheduleSaveSnapshot();
@@ -403,7 +404,7 @@ export function askClassify(idx, isMkt) {
     isMkt
       ? `Você confirma que "${name}" realmente é Marketing?`
       : `Você confirma que "${name}" não é Marketing?`,
-    isMkt ? '✅ Sim, é Marketing' : '❌ Sim, não é Marketing',
+    isMkt ? 'Sim, é Marketing' : 'Sim, não é Marketing',
     () => classifyFromProcv(idx, isMkt)
   );
 }

@@ -21,7 +21,7 @@ export function confirmDivergence(idx) {
   }
   saveState();
   scheduleSaveSnapshot();
-  toast('✅ Confirmado como Marketing');
+  toast('Confirmado como Marketing');
   const fd = filteredData();
   if (fd) {
     const k = calcKPIs(fd.entries, fd.facebook);
@@ -45,7 +45,7 @@ export async function rejectDivergence(idx) {
     localStorage.setItem('sc_overrides_v1', JSON.stringify(state.overrides));
   }
   saveState();
-  toast('❌ Removido do marketing');
+  toast('Removido do marketing');
   if (state.currentUser && entry.cpf) {
     await saveClassificationToSupabase(entry.cpf, false);
   }

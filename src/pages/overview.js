@@ -309,7 +309,7 @@ export function renderOverview(k, fd) {
         </div>
         <div style="margin-top:10px">
           <button onclick="exportNoDatesCSV()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
-            ⬇ Exportar lista completa (CSV)
+            ${icon('download', 12)} Exportar lista completa (CSV)
           </button>
         </div>
       </div>
@@ -372,8 +372,8 @@ export function renderOverview(k, fd) {
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
         <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.</div>
         <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
-          <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
-          <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);margin-right:4px"></span>Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px"></span>Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
         </div>
         <div style="margin-top:10px">
           <button id="no-value-toggle" onclick="

@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { normStr, toTitle } from '../utils/string.js';
 import { calcPerfil } from '../core/calcPerfil.js';
@@ -272,7 +273,7 @@ function _renderConteudo(filteredEntries) {
   const pctEstado = cobertura.totalMkt > 0 ? cobertura.comEstado / cobertura.totalMkt : 0;
   const warn = (pctIdade < 0.5 || pctEstado < 0.5) ? `
     <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#f59e0b;font-family:var(--font-h)">
-      ⚠ Cobertura parcial — as análises refletem apenas registros com os campos preenchidos.
+      ${icon('alert', 13)} Cobertura parcial — as análises refletem apenas registros com os campos preenchidos.
       <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px">
         <div><div style="margin-bottom:4px">Data de Nascimento</div>${_bar(cobertura.comIdade, cobertura.totalMkt)}</div>
         <div><div style="margin-bottom:4px">Estado (UF)</div>${_bar(cobertura.comEstado, cobertura.totalMkt)}</div>
