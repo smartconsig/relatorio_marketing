@@ -8,6 +8,7 @@ import { toTitle } from '../utils/string.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { sectionTitle } from '../components/ui.js';
 import { trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
+import { icon } from '../utils/icons.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -256,8 +257,8 @@ function renderDivergencias(entries) {
       <td class="muted">${toTitle(e.vendedor || '—')}</td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
-          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
-          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
+          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">${icon('check', 11)} É Marketing</button>
+          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">${icon('x', 11)} Não é Marketing</button>
         </div>
       </td>
     </tr>`).join('');
@@ -265,7 +266,7 @@ function renderDivergencias(entries) {
   return `
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:8px;padding:14px 18px;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:18px">⚠️</span>
+        <span style="color:var(--yellow);line-height:1">${icon('alert', 18)}</span>
         <div>
           <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b">
             ${fmtN(divs.length)} ENTRADAS CONFIRMADAS COMO MARKETING MAS COM ORIGEM DIFERENTE NO ECORBAN
@@ -298,7 +299,7 @@ export function renderOverview(k, fd) {
   if (semData.length > 0) {
     h += `
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="color:var(--danger);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px">ENTRADAS SEM DATA DE CADASTRO</div>
         <div style="font-size:13px;color:var(--white)">
@@ -366,7 +367,7 @@ export function renderOverview(k, fd) {
   const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
   if (semValorTotal.length > 0) {
     h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="color:var(--yellow);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
         <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.</div>
@@ -492,11 +493,11 @@ export function renderDiag(diag) {
     </div>
     ${matchPct < 50 && diag.smart.cpfIndexed === 0 ? `
     <div style="margin-top:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fca5a5">
-      ⚠️ <strong>Atenção:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
+      ${icon('alert', 13)} <strong>Atenção:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
     </div>` : ''}
     ${matchPct < 30 && diag.smart.cpfIndexed > 0 ? `
     <div style="margin-top:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fcd34d">
-      ⚠️ <strong>Taxa de match baixa (${matchPct}%).</strong> Possível causa: CPFs com zeros à esquerda perdidos ao exportar.
+      ${icon('alert', 13)} <strong>Taxa de match baixa (${matchPct}%).</strong> Possível causa: CPFs com zeros à esquerda perdidos ao exportar.
     </div>` : ''}
   `;
 }

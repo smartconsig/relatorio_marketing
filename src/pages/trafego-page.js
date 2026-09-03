@@ -7,6 +7,7 @@ import { perm } from '../services/permissions.js';
 import { loadTrafego, saveTrafegoDia, deleteTrafegoDia, trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
 import { renderAll } from '../navigation.js';
 import { showConfirm } from '../utils/confirm.js';
+import { icon } from '../utils/icons.js';
 
 const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
@@ -52,7 +53,7 @@ export async function renderTrafego() {
   const sec = document.getElementById('trafego-body');
   if (!sec) return;
   if (!perm.trafegoVisualizar()) {
-    sec.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">Sem acesso</div><div class="empty-desc">Peça a permissão de Tráfego ao administrador.</div></div>';
+    sec.innerHTML = `<div class="empty"><div class="empty-icon">${icon('lock')}</div><div class="empty-title">Sem acesso</div><div class="empty-desc">Peça a permissão de Tráfego ao administrador.</div></div>`;
     return;
   }
 
@@ -88,11 +89,11 @@ export async function renderTrafego() {
   </div>`;
 
   if (falta.length) {
-    h += `<div class="trafego-falta">⚠ ${falta.length} dia(s) do período sem lançamento: ${falta.map(_fmtDia).join(', ')}${podeEditar ? ' — clique em “Lançar dia” para preencher.' : ''}</div>`;
+    h += `<div class="trafego-falta">${icon('alert', 13)} ${falta.length} dia(s) do período sem lançamento: ${falta.map(_fmtDia).join(', ')}${podeEditar ? ' — clique em “Lançar dia” para preencher.' : ''}</div>`;
   }
 
   if (!rows.length) {
-    h += '<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">Nenhum dia digitado no período</div><div class="empty-desc">Use “Lançar dia” para registrar investimento, leads, cliques, impressões e alcance.</div></div>';
+    h += `<div class="empty"><div class="empty-icon">${icon('trend')}</div><div class="empty-title">Nenhum dia digitado no período</div><div class="empty-desc">Use “Lançar dia” para registrar investimento, leads, cliques, impressões e alcance.</div></div>`;
   } else {
     h += `<div class="trafego-table-wrap"><table class="trafego-table">
       <thead><tr>
@@ -115,8 +116,8 @@ export async function renderTrafego() {
         <td>${fmtN(r.alcance)}</td>
         <td class="trafego-imposto">${fmtBRL(inv * (1 + TAXA_IMPOSTO))}</td>
         ${podeEditar ? `<td class="trafego-acoes">
-          <button class="btn-sm btn-ghost" onclick="openTrafegoForm('${r.dia}')">✎</button>
-          <button class="btn-sm btn-ghost" onclick="askDeleteTrafego('${r.dia}')">🗑</button>
+          <button class="btn-sm btn-ghost" onclick="openTrafegoForm('${r.dia}')" title="Editar">${icon('edit', 13)}</button>
+          <button class="btn-sm btn-ghost" onclick="askDeleteTrafego('${r.dia}')" title="Excluir">${icon('trash', 13)}</button>
         </td>` : ''}
       </tr>`;
     }

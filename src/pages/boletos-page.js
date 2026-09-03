@@ -3,6 +3,7 @@
 // por empresa, bloqueio de CPF, transições de status) são garantidas no banco
 // (migration 006_quitacao_boletos.sql) — esta tela é a conveniência por cima.
 import { sb } from '../services/supabase.js';
+import { icon } from '../utils/icons.js';
 import { state } from '../state.js';
 import { toast, handleError } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
@@ -386,8 +387,8 @@ function _renderRow(r, admin) {
     statusBtns = `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_enviado')" title="Marcar como Boleto Enviado">Enviado →</button>`;
   } else if (dono && r.status === 'boleto_enviado') {
     statusBtns = `
-      <button class="bol-btn-quit" onclick="bolMarcarQuitado('${r.id}')" title="Marcar como Boleto Quitado">✓ Quitado</button>
-      <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">✕ Reprovar</button>`;
+      <button class="bol-btn-quit" onclick="bolMarcarQuitado('${r.id}')" title="Marcar como Boleto Quitado">${icon('check', 11)} Quitado</button>
+      <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">${icon('x', 11)} Reprovar</button>`;
   }
 
   // Documentos anexados pelos lotes (parceiro só recebe os dos próprios
@@ -397,8 +398,8 @@ function _renderRow(r, admin) {
   const nFat = docs.filter(d => d.tipo === 'fatura').length;
   const docsCell = docs.length
     ? `<span class="res-doc-chips" onmouseenter="bolPopShow(event,'${r.id}')" onmouseleave="bolPopLeave()" onclick="bolPopShow(event,'${r.id}',true)">
-         ${nBol ? `<span class="res-chip res-chip-ok">📄 ${nBol}</span>` : ''}
-         ${nFat ? `<span class="res-chip res-chip-ok">🧾 ${nFat}</span>` : ''}
+         ${nBol ? `<span class="res-chip res-chip-ok">${icon('file', 11)} ${nBol}</span>` : ''}
+         ${nFat ? `<span class="res-chip res-chip-ok">${icon('receipt', 11)} ${nFat}</span>` : ''}
        </span>`
     : `<span class="res-chip res-chip-none">—</span>`;
 
@@ -533,7 +534,7 @@ export function bolPopShow(ev, boletoId, fixo = false) {
   const admin = isAdmin();
   const linha = d => `
     <div class="res-pop-file">
-      <span class="res-pop-nm" title="${_esc(d.nome_arquivo)}">${d.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(d.nome_arquivo)}${d.contrato ? ` <em>· ${_esc(d.contrato)}</em>` : ''}</span>
+      <span class="res-pop-nm" title="${_esc(d.nome_arquivo)}">${d.tipo === 'boleto' ? icon('file', 11) : icon('receipt', 11)} ${_esc(d.nome_arquivo)}${d.contrato ? ` <em>· ${_esc(d.contrato)}</em>` : ''}</span>
       <span class="res-pop-ops">
         <a onclick="bolVerDoc('${d.id}')">ver</a>
         <a onclick="bolBaixarDoc('${d.id}')">baixar</a>
@@ -694,7 +695,7 @@ function _renderConferenciaLote(zipName) {
   const amostra = itens.slice(0, 60);
   const linhas = amostra.map(i => `
     <div class="res-mrow">
-      <span class="res-mfile" title="${_esc(i.nomeArquivo)}">${i.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(i.nomeArquivo)}</span>
+      <span class="res-mfile" title="${_esc(i.nomeArquivo)}">${i.tipo === 'boleto' ? icon('file', 11) : icon('receipt', 11)} ${_esc(i.nomeArquivo)}</span>
       <span class="res-mto">→</span>
       <span class="res-mwho" title="${_esc(i.alvo.nome)} · ${_esc(i.alvo.produto || '')}">${_esc(i.alvo.nome)}</span>
       <span class="res-mtag ${i.metodo === 'nome' ? 'res-mtag-nome' : 'res-mtag-cpf'}">${i.metodo === 'nome' ? 'nome ≈' : 'CPF ✓'}</span>
@@ -703,7 +704,7 @@ function _renderConferenciaLote(zipName) {
   const eleg = _elegiveis();
   const orfLinhas = orfaos.map((o, idx) => `
     <div class="res-orow">
-      <span class="res-mfile" title="${_esc(o.path)}">${o.tipo === 'boleto' ? '📄' : '🧾'} ${_esc(o.nomeArquivo)}<em class="res-omotivo">${_esc(o.motivo || '')}</em></span>
+      <span class="res-mfile" title="${_esc(o.path)}">${o.tipo === 'boleto' ? icon('file', 11) : icon('receipt', 11)} ${_esc(o.nomeArquivo)}<em class="res-omotivo">${_esc(o.motivo || '')}</em></span>
       <select class="res-osel" onchange="bolAtribuirOrfaoLote(${idx}, this.value)">
         <option value="">Ignorar este arquivo</option>
         ${eleg.map(r => `<option value="${r.id}">${_esc(r.nome)} · ${fmtCpf(r.cpf)} · ${_esc(r.produto || '')}</option>`).join('')}

@@ -30,6 +30,17 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(229,51,58,0.12);
 }
 
+/* Ícones SVG de traço (utils/icons.js) e o círculo dos estados vazios */
+.ic { vertical-align: -0.18em; flex-shrink: 0; }
+.empty-icon {
+  width: 60px; height: 60px; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--gray); font-size: 24px;
+}
+.empty-icon svg { width: 26px; height: 26px; }
+
 /* "R$" discreto ao lado de números grandes (padrão de app de banco) */
 .cur-sm {
   font-size: 0.5em; font-weight: 600; color: var(--gray-light);

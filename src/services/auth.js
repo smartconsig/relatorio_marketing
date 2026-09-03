@@ -7,6 +7,7 @@ import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestam
 import { shadowCompareImportData } from './propostas-store.js';
 import { loadTrafego } from './trafego-svc.js';
 import { syncPeriodBars } from '../components/period-bar.js';
+import { icon } from '../utils/icons.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
@@ -98,7 +99,7 @@ export function toggleTheme() {
   const next = isLight ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('sc_theme', next);
-  document.getElementById('theme-toggle').textContent = next === 'light' ? '🌙 Tema Escuro' : '☀ Tema Claro';
+  document.getElementById('theme-toggle').innerHTML = next === 'light' ? `${icon('moon', 12)} Tema Escuro` : `${icon('sun', 12)} Tema Claro`;
 }
 
 export async function onAuthenticated() {
@@ -255,7 +256,7 @@ export async function initAuth() {
   if (saved === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = '🌙 Tema Escuro';
+    if (btn) btn.innerHTML = `${icon('moon', 12)} Tema Escuro`;
   }
 
   // Detecta link de convite ou redefinição de senha (hash na URL)
