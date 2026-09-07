@@ -55,3 +55,15 @@ export async function deleteDoc(path) {
   if (!path) return;
   await sb.storage.from(BUCKET).remove([path]);
 }
+
+/** Grava os metadados do documento recém-enviado ao Storage no registro do
+ *  cliente (zera o legado doc_pdf) e devolve a linha atualizada. */
+export async function updateDocMeta(clienteId, path, nome) {
+  const { data } = await sb
+    .from('quitacoes_clientes')
+    .update({ doc_path: path, doc_nome: nome, doc_pdf: null })
+    .eq('id', clienteId)
+    .select()
+    .single();
+  return data;
+}

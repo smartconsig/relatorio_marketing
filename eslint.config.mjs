@@ -83,7 +83,6 @@ export default defineConfig([
             "src/pages/boletos-page.js", // 1359
             "src/pages/universidade.js", // 1134
             "src/pages/uni-admin.js", // 1041
-            "src/pages/quitacoes-page.js", // 1005
             "src/pages/bm-page.js", // 956
             "src/pages/conteudo-page.js", // 899
             "src/pages/uni-gamificacao.js", // 644
