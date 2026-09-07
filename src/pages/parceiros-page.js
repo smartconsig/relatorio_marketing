@@ -1,3 +1,7 @@
+// Ranking de Parceiros — página (import + pódio + lista + edição de logo).
+// O overlay "Top Parceiros" vive em src/pages/parceiros/parc-top.js e os
+// helpers em src/pages/parceiros/parc-shared.js. Este arquivo re-exporta os
+// nomes públicos originais — main.js e auth.js não mudaram uma linha.
 import { state }             from '../state.js';
 import { icon }              from '../utils/icons.js';
 import { toast }             from '../utils/ui.js';
@@ -6,74 +10,12 @@ import * as XLSX             from 'xlsx';
 import { parseParceiros, parseParceirosRows } from '../core/parseParceiros.js';
 import { saveParceiros, loadParceiros } from '../services/parceiros-svc.js';
 import { sb }                from '../services/supabase.js';
+import { normalizeName, rankColor, medalIcon, logoHtml, logoCacheBust, annotateGaps } from './parceiros/parc-shared.js';
 
-const STORAGE_BASE = 'https://gfxfuzmoywdsiyctkrux.supabase.co/storage/v1/object/public';
-const LOGO_URL     = `${STORAGE_BASE}/assets/logo.png`;
+export { enterParceirosTop, exitParceirosTop, setParceirosTopN, toggleParceirosTopValues } from './parceiros/parc-top.js';
 
 // Modo "mostrar valores" — desligado por padrão (tela limpa para print). Uso interno.
 let _showValues = false;
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function normalizeName(nome) {
-  return nome.trim().toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-}
-
-function initials(nome) {
-  const parts = nome.trim().split(/\s+/);
-  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2)).toUpperCase();
-}
-
-function rankColor(rank) {
-  if (rank === 1) return '#f59e0b'; // ouro
-  if (rank === 2) return '#9ca3af'; // prata
-  if (rank === 3) return '#b45309'; // bronze
-  return '#6b7280';
-}
-
-function medalIcon(rank) {
-  if (rank === 1) return '🥇';
-  if (rank === 2) return '🥈';
-  return '🥉';
-}
-
-const _logoCacheBust = {};
-
-function logoHtml(p, size, editable = false) {
-  const slug = normalizeName(p.nome);
-  const bust = _logoCacheBust[slug];
-  const url  = `${STORAGE_BASE}/avatars/parceiros/${slug}.jpg${bust ? '?t=' + bust : ''}`;
-  const rc   = rankColor(p.rank);
-  return `
-    <div class="parc-logo" style="width:${size}px;height:${size}px;border-color:${rc}">
-      <img src="${url}" alt="${p.nome}"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="parc-logo-fallback" style="display:none;background:${rc}">${initials(p.nome)}</div>
-      ${editable ? `<button type="button" class="parc-logo-edit" title="Editar logo"
-        onclick="event.stopPropagation();startEditParceiroLogo(${p._i})">${icon('edit', 11)}</button>` : ''}
-    </div>`;
-}
-
-// Anota em cada parceiro a diferença de INTEGRADO para o parceiro imediatamente
-// acima no ranking (`_gapAbove`) e o rank desse parceiro de cima (`_aboveRank`).
-// O líder fica com `_gapAbove = null`. Deve receber a lista completa.
-function annotateGaps(partners) {
-  const sorted = partners.slice()
-    .sort((a, b) => (a.rank - b.rank) || (b.integrado - a.integrado));
-  sorted.forEach((p, idx) => {
-    if (idx === 0) {
-      p._gapAbove = null;
-      p._aboveRank = null;
-    } else {
-      const above = sorted[idx - 1];
-      p._gapAbove = above.integrado - p.integrado;
-      p._aboveRank = above.rank;
-    }
-  });
-}
 
 // Número único em destaque: diferença de produção (Integrado) para o de cima.
 function gapHtml(p, compact = false) {
@@ -111,7 +53,7 @@ export async function onParceiroLogoChange(e) {
       contentType: file.type,
     });
     if (error) throw error;
-    _logoCacheBust[slug] = Date.now();
+    logoCacheBust[slug] = Date.now();
     toast('Logo atualizada');
     renderParceiros();
   } catch (err) {
@@ -283,123 +225,4 @@ export function renderParceiros() {
   }
 
   el.innerHTML = h;
-}
-
-// ── Top Parceiros (overlay tela cheia, estilo modo TV) ──────────────────────
-
-const PARC_TOP_OPTIONS = [10, 25, 50];
-let _topN          = 10;
-let _topShowValues = false; // valores ocultos por padrão (tela limpa para print)
-let _parcClock     = null;
-
-export function enterParceirosTop() {
-  if (!state.parceiros?.partners?.length) { toast('Importe o ranking antes de abrir o Top Parceiros', 'err'); return; }
-  _topN = 10;
-  document.getElementById('parc-tv-overlay').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  _renderParcTop();
-  updateParcClock();
-  _parcClock = setInterval(updateParcClock, 1000);
-  document.addEventListener('keydown', _parcEscHandler);
-}
-
-export function exitParceirosTop() {
-  document.getElementById('parc-tv-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-  clearInterval(_parcClock);
-  document.removeEventListener('keydown', _parcEscHandler);
-}
-
-export function setParceirosTopN(n) {
-  _topN = n;
-  _renderParcTop();
-}
-
-export function toggleParceirosTopValues() {
-  _topShowValues = !_topShowValues;
-  _renderParcTop();
-}
-
-function _parcEscHandler(e) {
-  if (e.key === 'Escape') exitParceirosTop();
-}
-
-function updateParcClock() {
-  const el = document.getElementById('parc-tv-clock');
-  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
-
-function parcTopPodiumCard(p) {
-  if (!p) return '<div></div>';
-  const rc  = rankColor(p.rank);
-  const is1 = p.rank === 1;
-  return `
-    <div class="parc-tv-podium-card ${is1 ? 'parc-tv-podium-1st' : ''}" style="border-top:5px solid ${rc}">
-      <div class="parc-tv-medal">${medalIcon(p.rank)}</div>
-      <div style="display:flex;justify-content:center;margin:10px 0">
-        ${logoHtml(p, is1 ? 120 : 96, false)}
-      </div>
-      <div class="parc-tv-podium-rank" style="color:${rc}">${p.rank}º lugar</div>
-      <div class="parc-tv-podium-name">${p.nome}</div>
-      ${_topShowValues ? tvGapHtml(p) : ''}
-    </div>`;
-}
-
-function tvGapHtml(p) {
-  if (p._gapAbove == null) {
-    return `<div class="parc-tv-gap parc-tv-gap-leader">🏆 Líder</div>`;
-  }
-  return `<div class="parc-tv-gap">
-    <span class="parc-tv-gap-caption">atrás do ${p._aboveRank}º</span>
-    <strong class="parc-tv-gap-value">${fmtBRL(p._gapAbove)}</strong>
-  </div>`;
-}
-
-function parcTopListCard(p) {
-  const rc = rankColor(p.rank);
-  return `
-    <div class="parc-tv-list-card" style="border-top:3px solid ${rc}">
-      <div class="parc-tv-list-rank" style="color:${rc}">${p.rank || '–'}</div>
-      ${logoHtml(p, 56, false)}
-      <div class="parc-tv-list-name">${p.nome}</div>
-      ${_topShowValues ? tvGapHtml(p) : ''}
-    </div>`;
-}
-
-function _renderParcTop() {
-  const all = (state.parceiros?.partners || [])
-    .slice()
-    .sort((a, b) => (a.rank - b.rank) || (b.integrado - a.integrado));
-  annotateGaps(all);
-  const shown = all.slice(0, _topN);
-
-  const top3   = shown.filter(p => p.rank >= 1 && p.rank <= 3).sort((a, b) => a.rank - b.rank);
-  const rest   = shown.filter(p => !(p.rank >= 1 && p.rank <= 3));
-  const podium = [top3[1], top3[0], top3[2]]; // 2º-1º-3º (mantém posições vazias)
-
-  const buttons = PARC_TOP_OPTIONS.map(n => {
-    const disabled = all.length < n && n !== PARC_TOP_OPTIONS[0];
-    return `<button class="parc-tv-qbtn ${n === _topN ? 'parc-tv-qbtn-on' : ''}"
-      ${disabled ? 'disabled' : ''} onclick="setParceirosTopN(${n})">Top ${n}</button>`;
-  }).join('');
-
-  document.getElementById('parc-tv-body').innerHTML = `
-    <div class="parc-tv-header">
-      <img src="${LOGO_URL}" class="parc-tv-logo" onerror="this.style.display='none'" alt="Smart Consig">
-      <div class="parc-tv-title">🏆 TOP PARCEIROS</div>
-      <div id="parc-tv-clock" class="parc-tv-clock"></div>
-    </div>
-    <div class="parc-tv-qbar">
-      ${buttons}
-      <button class="parc-tv-qbtn ${_topShowValues ? 'parc-tv-qbtn-on' : ''}"
-        onclick="toggleParceirosTopValues()">${_topShowValues ? '🙈 Ocultar valores' : '👁 Valores'}</button>
-    </div>
-    <div class="parc-tv-content">
-      <div class="parc-tv-podium">${podium.map(parcTopPodiumCard).join('')}</div>
-      ${rest.length ? `
-        <div class="parc-tv-strip-title">Top 4 – ${shown[shown.length - 1]?.rank || _topN}</div>
-        <div class="parc-tv-grid">${rest.map(parcTopListCard).join('')}</div>` : ''}
-    </div>
-    <button class="parc-tv-exit-btn" onclick="exitParceirosTop()" title="Sair (Esc)">✕</button>
-  `;
 }
