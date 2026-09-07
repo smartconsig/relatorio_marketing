@@ -90,7 +90,6 @@ export default defineConfig([
             "src/pages/conteudo-page.js", // 899
             "src/pages/uni-gamificacao.js", // 644
             "src/pages/bsc-page.js", // 585
-            "src/navigation.js", // 523
             "src/pages/procv.js", // 444
             "src/pages/parceiros-page.js", // 405
             "src/services/auth.js", // 396
