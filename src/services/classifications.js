@@ -3,6 +3,14 @@ import { state } from '../state.js';
 import { normCPF } from '../utils/cpf.js';
 import { toast } from '../utils/ui.js';
 
+// Este navegador classificou algo desde que a tela abriu? Um carregamento de
+// dados que termine DEPOIS de um clique não pode substituir o estado em
+// memória — era assim que confirmações feitas enquanto as fichas carregavam
+// se perdiam alguns segundos depois.
+let _localEdits = 0;
+export function markLocalEdit() { _localEdits++; }
+export function hasLocalEdits() { return _localEdits > 0; }
+
 export async function syncClassificationsFromSupabase() {
   let synced = 0;
   try {
@@ -34,6 +42,7 @@ export async function syncClassificationsFromSupabase() {
 
 export async function saveClassificationToSupabase(cpf, isMkt) {
   if (!cpf || !state.currentUser) return;
+  markLocalEdit();
   const normCpf = normCPF(cpf);
   try {
     const { error } = await sb.from('classifications').upsert(

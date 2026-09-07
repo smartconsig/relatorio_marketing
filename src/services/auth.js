@@ -2,9 +2,9 @@ import { sb } from './supabase.js';
 import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { loadAllGoals } from './goals-svc.js';
-import { syncClassificationsFromSupabase } from './classifications.js';
+import { syncClassificationsFromSupabase, hasLocalEdits } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
-import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts, resetManualMarks } from './propostas-store.js';
+import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts } from './propostas-store.js';
 import { loadTrafego } from './trafego-svc.js';
 import { syncPeriodBars } from '../components/period-bar.js';
 import { icon } from '../utils/icons.js';
@@ -190,9 +190,8 @@ export async function onAuthenticated() {
     if (dicts.confirmedDivergences) state.confirmedDivergences = dicts.confirmedDivergences;
     if (dicts.vendorMappings)       state.vendorMappings       = dicts.vendorMappings;
     applyUserDicts(state.result.entries, dicts);
-    // Mesma regra do caminho das fichas: a tabela classifications decide o que
-    // é manual, para que um "desfazer" feito em outro computador chegue aqui
-    resetManualMarks(state.result.entries);
+    // Aqui NÃO se apaga a marca 'manual' do cache: um clique cuja gravação
+    // ainda estivesse a caminho do banco sumiria da tela. O sync só acrescenta.
     await syncClassificationsFromSupabase();
     saveState();
     renderAll();
@@ -204,6 +203,16 @@ export async function onAuthenticated() {
 
   if (meta) {
     const fichas = await loadImportData();
+    if (fichas && hasLocalEdits()) {
+      // A leitura das fichas leva alguns segundos e a tela já está no ar nesse
+      // meio-tempo. Se o usuário classificou algo enquanto ela vinha, aplicar
+      // as fichas agora apagaria esses cliques — o próximo login as pega.
+      console.warn('[Fase3/B1] classificação feita durante o carregamento — fichas não aplicadas nesta sessão');
+      toast('Dados carregados ⚡');
+      syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+      syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
+      return;
+    }
     if (fichas) {
       const { _dicts, ...result } = fichas;
       state.result = result;
@@ -260,6 +269,15 @@ export async function onAuthenticated() {
 
   const result = await loadSnapshotFromSupabase();
   if (!result) return;
+
+  if (hasLocalEdits()) {
+    // Mesma proteção do caminho das fichas: o download do snapshot demora e a
+    // tela já está no ar; aplicá-lo agora apagaria o que foi classificado nesse
+    // meio-tempo (causa histórica de classificação que "some sozinha")
+    console.warn('[snapshot] classificação feita durante o download — snapshot não aplicado nesta sessão');
+    toast('Dados carregados ⚡');
+    return;
+  }
 
   const { snapshot, updatedAt } = result;
   // Restaura datas serializadas como string de volta para objetos Date

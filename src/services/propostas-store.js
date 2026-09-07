@@ -6,6 +6,7 @@
 import { sb } from './supabase.js';
 import { state } from '../state.js';
 import { logAction } from './action-log.js';
+import { markLocalEdit } from './classifications.js';
 
 const BATCH = 500;
 const PAGE  = 1000;
@@ -97,6 +98,7 @@ async function syncUserDicts() {
 /** Grava/remove uma divergência confirmada na hora do clique. */
 export function saveDivergencia(cpf, confirmada) {
   if (!cpf) return;
+  markLocalEdit();
   const op = confirmada
     ? sb.from('divergencias_confirmadas').upsert({ cpf, confirmado_por: state.currentUser?.email || null })
     : sb.from('divergencias_confirmadas').delete().eq('cpf', cpf);
@@ -106,6 +108,7 @@ export function saveDivergencia(cpf, confirmada) {
 /** Grava/remove um mapeamento de vendedor na hora da edição. */
 export function saveVendorMapping(ecorbanNome, smartNome) {
   if (!ecorbanNome) return;
+  markLocalEdit();
   const op = smartNome
     ? sb.from('vendor_mappings').upsert({ ecorban_nome: ecorbanNome, smart_nome: smartNome })
     : sb.from('vendor_mappings').delete().eq('ecorban_nome', ecorbanNome);

@@ -11,6 +11,7 @@ import { normCPF } from '../utils/cpf.js';
 import { saveSnapshotToSupabase, checkSnapshotTimestamp } from '../services/snapshot.js';
 import { saveSnapshotTimestamp } from '../core/storage.js';
 import { logAction } from '../services/action-log.js';
+import { markLocalEdit } from '../services/classifications.js';
 import { showConfirm } from '../utils/confirm.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
@@ -210,6 +211,7 @@ export async function undoFromClientes(idx) {
   // Marca essa proposta específica como reclassificada — NÃO apaga outras propostas
   // do mesmo CPF. 'reclassified' impede que o sync do banco reaplique a classificação
   // nessa entrada sem afetar outras propostas do mesmo cliente.
+  markLocalEdit();
   entry.isMarketing  = null;
   entry.reviewReason = 'reclassified';
 
