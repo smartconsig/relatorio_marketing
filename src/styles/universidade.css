@@ -638,7 +638,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-resultado-status { font-family: var(--font-h); font-size: 22px; font-weight: 800; }
 .uni-resultado-status.aprovado  { color: #4ade80; }
 .uni-resultado-status.reprovado { color: #f87171; }
-.uni-resultado-nota   { font-family: var(--font-h); font-size: 64px; font-weight: 900; color: #fff; line-height: 1; }
+.uni-resultado-nota   { font-family: var(--font-h); font-size: 64px; font-weight: 800; color: #fff; line-height: 1; }
 .uni-resultado-pct    { font-size: 28px; color: #555; }
 .uni-resultado-detalhe { font-size: 13px; color: #666; font-family: var(--font-b); }
 .uni-resultado-xp     { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
@@ -760,7 +760,7 @@ body.uni-mode #sec-universidade    { display: flex !important; flex-direction: c
 .uni-cert-logo-us {
   width: 36px; height: 36px; border-radius: 8px;
   background: #111; color: #fff;
-  font-family: var(--font-h); font-size: 14px; font-weight: 900;
+  font-family: var(--font-h); font-size: 14px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
 .uni-cert-logo-us em { color: var(--red); font-style: normal; }

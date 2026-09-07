@@ -6,6 +6,8 @@ import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
 import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts, resetManualMarks } from './propostas-store.js';
 import { loadTrafego } from './trafego-svc.js';
+import { syncPeriodBars } from '../components/period-bar.js';
+import { icon } from '../utils/icons.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp,
          saveImportStamp, loadImportStamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
@@ -98,17 +100,16 @@ export function toggleTheme() {
   const next = isLight ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('sc_theme', next);
-  document.getElementById('theme-toggle').textContent = next === 'light' ? '🌙 Tema Escuro' : '☀ Tema Claro';
+  document.getElementById('theme-toggle').innerHTML = next === 'light' ? `${icon('moon', 12)} Tema Escuro` : `${icon('sun', 12)} Tema Claro`;
 }
 
-/** Reaplica o filtro de datas salvo no navegador nos campos da barra superior. */
+/** Reaplica o filtro de período salvo no navegador nas barras de período das telas. */
 function restoreSavedFilter() {
   try {
     const savedFilter = localStorage.getItem('sc_filter_v1');
     if (!savedFilter) return;
     state.filterDates = JSON.parse(savedFilter);
-    if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-    if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+    syncPeriodBars();
   } catch {}
 }
 
@@ -133,7 +134,7 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','quitacoes','conteudo','liberacao','boletos','universidade']);
+  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','quitacoes','conteudo','liberacao','boletos','residuos','universidade']);
   const defaultSec = can('home')                                     ? 'home'
     : can('visao_geral')                                             ? 'overview'
     : (can('liberacao_margem') || perm.isAdmin())                    ? 'liberacao'
@@ -148,6 +149,7 @@ export async function onAuthenticated() {
     if (sec === 'universidade') return can('universidade_acessar') || perm.isAdmin();
     if (sec === 'liberacao')    return can('liberacao_margem') || perm.isAdmin();
     if (sec === 'boletos')      return can('quitacao_boleto') || perm.isAdmin();
+    if (sec === 'residuos')     return perm.residuosVisualizar();
     if (sec === 'conteudo')     return perm.conteudoVisualizar();
     if (sec === 'trafego')      return perm.trafegoVisualizar();
     if (sec === 'bms')          return perm.bmVisualizar();
@@ -309,7 +311,7 @@ export async function initAuth() {
   if (saved === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = '🌙 Tema Escuro';
+    if (btn) btn.innerHTML = `${icon('moon', 12)} Tema Escuro`;
   }
 
   // Detecta link de convite ou redefinição de senha (hash na URL)

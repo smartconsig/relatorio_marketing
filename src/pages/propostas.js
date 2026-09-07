@@ -1,4 +1,5 @@
 import { state }        from '../state.js';
+import { icon }         from '../utils/icons.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { fmtBRL, fmtN } from '../utils/currency.js';
 import { sectionTitle } from '../components/ui.js';
@@ -110,7 +111,7 @@ function propostaCard(e) {
             <span class="badge ${sb.cls}">${e.rawStatus || sb.label}</span>
             ${(e.statusObs || e.statusUpdatedAt) ? `
             <div class="status-tip">
-              ${e.statusUpdatedAt ? `<div class="status-tip-date">📅 ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
+              ${e.statusUpdatedAt ? `<div class="status-tip-date">${icon('calendar', 10)} ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
               ${e.statusObs ? `<div class="status-tip-obs">${e.statusObs}</div>` : ''}
             </div>` : ''}
           </div>
@@ -124,9 +125,9 @@ function propostaCard(e) {
         <div class="proposta-field"><span class="pf-label">Loja</span><span>${e.loja || '—'}</span></div>
       </div>
       <div class="proposta-footer">
-        <span class="pf-item">👤 <strong>${e.vendedor || '—'}</strong></span>
-        <span class="pf-item">📍 ${e.ecorbanOrigem || '—'}</span>
-        ${e.origem ? `<span class="pf-item">📱 ${e.origem}${e.audiencia ? ' / '+e.audiencia : ''}</span>` : ''}
+        <span class="pf-item">${icon('user', 11)} <strong>${e.vendedor || '—'}</strong></span>
+        <span class="pf-item">${e.ecorbanOrigem || '—'}</span>
+        ${e.origem ? `<span class="pf-item">${e.origem}${e.audiencia ? ' / '+e.audiencia : ''}</span>` : ''}
       </div>
     </div>`;
 }
@@ -180,7 +181,7 @@ export function renderPropostas(entries) {
   if (!el) return;
 
   if (!entries?.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${icon('clipboard')}</div>
       <div class="empty-title">Nenhum dado processado</div>
       <div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
     return;
@@ -227,7 +228,7 @@ export function renderPropostas(entries) {
   const cards = pageItems.length
     ? pageItems.map(propostaCard).join('')
     : `<div class="empty" style="margin-top:24px">
-        <div class="empty-icon">🔍</div>
+        <div class="empty-icon">${icon('search')}</div>
         <div class="empty-title">Nenhuma proposta encontrada</div>
         <div class="empty-desc">Tente ajustar os filtros.</div>
        </div>`;
@@ -290,7 +291,7 @@ export function renderPropostas(entries) {
       <span style="color:var(--gray);font-size:13px;white-space:nowrap">
         ${filtered.length ? `${pageStart}–${pageEnd} de ${fmtN(filtered.length)}` : '0 resultados'}
       </span>
-      <button class="btn-sm btn-primary" onclick="openExportModal()">⬇ Exportar CSV</button>
+      <button class="btn-sm btn-primary" onclick="openExportModal()">${icon('download', 12)} Exportar CSV</button>
     </div>
 
     <div class="propostas-grid">${cards}</div>
@@ -303,13 +304,13 @@ export function renderPropostas(entries) {
                   padding:28px;width:500px;max-height:80vh;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--white)">Selecionar Colunas para Exportar</div>
-          <button onclick="closeExportModal()" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px;line-height:1">✕</button>
+          <button onclick="closeExportModal()" style="background:none;border:none;color:var(--gray);cursor:pointer;line-height:1">${icon('x', 16)}</button>
         </div>
         <div id="export-cols-list"
              style="display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow-y:auto;max-height:340px;padding-right:4px"></div>
         <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:14px">
           <button class="btn-sm btn-ghost" onclick="closeExportModal()">Cancelar</button>
-          <button class="btn-sm btn-primary" onclick="doExportCSV()">⬇ Exportar</button>
+          <button class="btn-sm btn-primary" onclick="doExportCSV()">${icon('download', 12)} Exportar</button>
         </div>
       </div>
     </div>

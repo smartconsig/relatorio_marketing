@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CARBONO & RUBI — Fase 3c
+   Anatomia de luz das telas restantes, num lugar só. Importado por último
+   no main.js de propósito: re-seleciona classes das features para aplicar
+   o véu de luz sem tocar em cada arquivo. Telas de TV e Universidade têm
+   linguagem própria e ficam fora.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Cards e superfícies principais das features */
+.bm-kpi, .bm-card,
+.bsc-import-bar, .bsc-podium-card, .bsc-list-card,
+.parc-podium-card, .parc-list-card,
+.goal-card, .proposta-card,
+.cont-col,
+.lib-table-wrap,
+.confirm-box, .session-warning-box {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0) 46%), var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.goal-card, .lib-table-wrap, .proposta-card { border-radius: var(--r-md); }
+
+/* Cabeçalhos de dados das features seguem o padrão mono do sistema */
+.lib-table th, .trafego-table th { font-family: var(--font-mono); }
+
+/* Anel de foco padrão em todo campo de texto do sistema */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(229,51,58,0.12);
+}
+
+/* Ícones SVG de traço (utils/icons.js) e o círculo dos estados vazios */
+.ic { vertical-align: -0.18em; flex-shrink: 0; }
+.empty-icon {
+  width: 60px; height: 60px; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--gray); font-size: 24px;
+}
+.empty-icon svg { width: 26px; height: 26px; }
+
+/* "R$" discreto ao lado de números grandes (padrão de app de banco) */
+.cur-sm {
+  font-size: 0.5em; font-weight: 600; color: var(--gray-light);
+  vertical-align: 0.55em; margin-right: 3px; letter-spacing: 0;
+}
+
+/* Seleção de texto na cor da marca */
+::selection { background: rgba(148,11,16,0.45); color: #ffffff; }
+[data-theme="light"] ::selection { background: rgba(148,11,16,0.22); color: inherit; }
+
+/* ── FINANCEIRO (Liberação · Boletos · Resíduos — compartilham .lib-*) ── */
+
+/* Semáforo de status nos tokens do tema (antes: hexes fixos fora da paleta).
+   Chips de filtro com classe de status mantêm fundo neutro — as regras de
+   2 classes das features vencem estas. */
+.bol-st-sol, .res-st-sol  { color: var(--yellow); background: rgba(245,185,61,0.10); }
+.bol-st-ped, .res-st-pen  { color: var(--blue);   background: rgba(88,166,255,0.10); }
+.bol-st-env               { color: var(--purple); background: rgba(181,131,245,0.10); }
+.bol-st-quit, .res-st-pag { color: var(--green);  background: rgba(61,214,140,0.10); }
+.bol-st-rep               { color: var(--danger); background: rgba(242,85,90,0.10); }
+.res-chip-ok              { border-color: rgba(61,214,140,0.4); color: var(--green); }
+
+/* Tabelas do financeiro no padrão do sistema */
+.lib-table th { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gray); }
+.lib-table td { font-variant-numeric: tabular-nums; }
+.lib-table tbody tr:hover td { background: rgba(229,51,58,0.04); }
+
+/* Ferramentas (presets, chips, "Ver mais") nas interações do padrão */
+.lib-preset:hover, .lib-ver-mais:hover, .res-btn-anexo:hover { border-color: rgba(229,51,58,0.5); color: var(--white); }
+.lib-preset.active {
+  background: linear-gradient(180deg, #b01015, #8c0a0f);
+  border-color: rgba(255,255,255,0.14); color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.bol-chip.active { border-color: rgba(229,51,58,0.6); color: var(--red-bright); }
+.bol-chip.active span { background: linear-gradient(180deg, #b01015, #8c0a0f); color: #ffffff; }
+
+/* Modais do financeiro no raio padrão */
+#lib-modal-content, #bol-modal-content, .res-modal { border-radius: var(--r-lg); }
+
+/* Skeleton de carregamento — usar em blocos com altura definida via style */
+@keyframes cr-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.cr-skeleton {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: cr-shimmer 1.2s linear infinite;
+}
+[data-theme="light"] .cr-skeleton {
+  background: linear-gradient(90deg, rgba(23,15,17,0.05) 25%, rgba(23,15,17,0.10) 50%, rgba(23,15,17,0.05) 75%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-skeleton { animation: none; }
+  .login-box { animation: none; }
+}

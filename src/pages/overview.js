@@ -8,6 +8,7 @@ import { toTitle } from '../utils/string.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { sectionTitle } from '../components/ui.js';
 import { trafegoInRange, TAXA_IMPOSTO } from '../services/trafego-svc.js';
+import { icon } from '../utils/icons.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 export function pct(v, g) { return g ? (v / g) * 100 : null; }
@@ -48,17 +49,43 @@ function heroCard(label, count, value, sub, accentColor, p, inv, valueColor, goa
   const cls = p === null ? '' : inv
     ? (p <= 100 ? 'good' : p <= 120 ? 'warn' : 'bad')
     : (p >= 100 ? 'good' : p >= 70  ? 'warn' : 'bad');
-  const barColor = cls === 'good' ? 'var(--green)' : cls === 'warn' ? 'var(--yellow)' : cls === 'bad' ? 'var(--danger)' : accentColor;
+  const isNum = typeof value !== 'string';
+  const countUp = isNum ? ` data-cv="${value}" data-k="${label}"` : '';
   return `
-    <div class="hero-card" style="border-top:3px solid ${accentColor}">
+    <div class="hero-card">
       <div class="hero-label">${label}</div>
       ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
-      <div class="hero-value" style="color:${valueColor || accentColor}">${typeof value === 'string' ? value : fmtBRL(value)}</div>
+      <div class="hero-value" style="color:${valueColor || accentColor}"${countUp}>${isNum ? fmtHeroBRL(value) : value}</div>
       <div class="hero-sub">${sub}</div>
       ${p !== null ? `
-        <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%;background:${barColor}"></div></div>
+        <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar ${cls || 'accent'}" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%"></div></div>
         <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>` : ''}
     </div>`;
+}
+
+// "R$" discreto ao lado do número grande — o valor é o protagonista
+const fmtHeroBRL = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
+
+// Conta do valor anterior até o novo (só quando muda de verdade — clique de
+// classificação com o mesmo total não re-anima). Desliga com reduced-motion.
+const _lastHeroValues = {};
+function animateHeroValues() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('#overview-body .hero-value[data-cv]').forEach(el => {
+    const key    = el.dataset.k;
+    const target = parseFloat(el.dataset.cv) || 0;
+    const from   = _lastHeroValues[key] ?? 0;
+    _lastHeroValues[key] = target;
+    if (from === target) return;
+    const t0 = performance.now(), dur = 700;
+    const step = now => {
+      const t = Math.min((now - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - t, 3);
+      el.innerHTML = fmtHeroBRL(from + (target - from) * e);
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
 }
 
 // ── chart helper ───────────────────────────────────────────────────────────
@@ -99,6 +126,9 @@ function renderChart(fd) {
   if (!days.length) return;
   const ctx = document.getElementById('main-chart')?.getContext('2d');
   if (!ctx) return;
+  const gradValid = ctx.createLinearGradient(0, 0, 0, 260);
+  gradValid.addColorStop(0, 'rgba(61,214,140,0.20)');
+  gradValid.addColorStop(1, 'rgba(61,214,140,0)');
   state.chart = new Chart(ctx, {
     data: {
       labels: days.map(d => { const [, m, dd] = d.split('-'); return `${dd}/${m}`; }),
@@ -106,20 +136,21 @@ function renderChart(fd) {
         {
           type: 'bar', label: 'Investimento (R$)',
           data: days.map(d => dayMap[d]?.invest || 0),
-          backgroundColor: 'rgba(148,11,16,0.5)', borderColor: '#940b10', borderWidth: 1,
+          backgroundColor: 'rgba(229,51,58,0.30)', borderColor: 'rgba(229,51,58,0.85)', borderWidth: 1,
+          borderRadius: 4, borderSkipped: false,
           yAxisID: 'y',
         },
         {
           type: 'line', label: 'Válidos (Em Andamento + Pagas)',
           data: days.map(d => dayMap[d]?.valid || 0),
-          borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)',
-          pointBackgroundColor: '#22c55e', pointRadius: 4, tension: 0.3, yAxisID: 'y2',
+          borderColor: '#3dd68c', borderWidth: 2, backgroundColor: gradValid, fill: true,
+          pointBackgroundColor: '#3dd68c', pointRadius: 2, pointHoverRadius: 5, tension: 0.35, yAxisID: 'y2',
         },
         {
           type: 'line', label: 'Reprovados',
           data: days.map(d => dayMap[d]?.rejected || 0),
-          borderColor: '#f87171', backgroundColor: 'rgba(248,113,113,0.08)',
-          pointBackgroundColor: '#f87171', pointRadius: 4, tension: 0.3, yAxisID: 'y2',
+          borderColor: 'rgba(242,85,90,0.85)', borderWidth: 1.5, borderDash: [5, 5],
+          pointBackgroundColor: '#f2555a', pointRadius: 2, pointHoverRadius: 5, tension: 0.35, yAxisID: 'y2',
         },
       ],
     },
@@ -127,10 +158,12 @@ function renderChart(fd) {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels: { color: '#9ca3af', font: { family: 'Open Sans', size: 12 }, boxWidth: 12, padding: 16 } },
+        legend: { labels: { color: '#a8a1a3', font: { family: 'Instrument Sans', size: 11 }, usePointStyle: true, pointStyleWidth: 8, padding: 16 } },
         tooltip: {
-          backgroundColor: '#1e1e1e', borderColor: '#2a2a2a', borderWidth: 1,
-          titleColor: '#fff', bodyColor: '#9ca3af',
+          backgroundColor: 'rgba(19,16,17,0.94)', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          padding: 12, cornerRadius: 10,
+          titleFont: { family: 'Archivo', weight: 600 }, bodyFont: { family: 'Instrument Sans' },
+          titleColor: '#f4f1f2', bodyColor: '#a8a1a3',
           callbacks: {
             label: c => {
               if (c.datasetIndex === 0) return ` Investimento: ${fmtBRL(c.raw)}`;
@@ -141,15 +174,15 @@ function renderChart(fd) {
         },
       },
       scales: {
-        x: { ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        x: { ticks: { color: '#8b8286', font: { family: 'Instrument Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: {
           position: 'left',
-          ticks: { color: '#6b7280', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
+          ticks: { color: '#8b8286', font: { family: 'Instrument Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
           grid: { color: 'rgba(255,255,255,0.04)' },
         },
         y2: {
           position: 'right',
-          ticks: { color: '#9ca3af', font: { family: 'Open Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
+          ticks: { color: '#a8a1a3', font: { family: 'Instrument Sans', size: 11 }, callback: v => 'R$' + fmtN(v) },
           grid: { drawOnChartArea: false },
         },
       },
@@ -224,8 +257,8 @@ function renderDivergencias(entries) {
       <td class="muted">${toTitle(e.vendedor || '—')}</td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
-          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">✅ É Marketing</button>
-          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">❌ Não é Marketing</button>
+          <button class="btn-mkt"   onclick="confirmDivergence(${e._idx})" style="font-size:11px;padding:4px 8px">${icon('check', 11)} É Marketing</button>
+          <button class="btn-nomkt" onclick="rejectDivergence(${e._idx})"  style="font-size:11px;padding:4px 8px">${icon('x', 11)} Não é Marketing</button>
         </div>
       </td>
     </tr>`).join('');
@@ -233,7 +266,7 @@ function renderDivergencias(entries) {
   return `
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:8px;padding:14px 18px;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:18px">⚠️</span>
+        <span style="color:var(--yellow);line-height:1">${icon('alert', 18)}</span>
         <div>
           <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b">
             ${fmtN(divs.length)} ENTRADAS CONFIRMADAS COMO MARKETING MAS COM ORIGEM DIFERENTE NO ECORBAN
@@ -266,7 +299,7 @@ export function renderOverview(k, fd) {
   if (semData.length > 0) {
     h += `
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="color:var(--danger);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px">ENTRADAS SEM DATA DE CADASTRO</div>
         <div style="font-size:13px;color:var(--white)">
@@ -276,7 +309,7 @@ export function renderOverview(k, fd) {
         </div>
         <div style="margin-top:10px">
           <button onclick="exportNoDatesCSV()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:6px 14px;border-radius:6px;font-size:12px;font-family:var(--font-b);cursor:pointer">
-            ⬇ Exportar lista completa (CSV)
+            ${icon('download', 12)} Exportar lista completa (CSV)
           </button>
         </div>
       </div>
@@ -291,11 +324,11 @@ export function renderOverview(k, fd) {
   const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
   h += sectionTitle('Resultados de Marketing');
   h += `<div class="hero-grid">
-    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', '#22c55e', pct(k.valueValidMkt, g.approved), false, '#60a5fa', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
-    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', '#22c55e', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
-    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads', '#940b10', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
-    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', '#f59e0b', null, false, 'var(--white)', null)}
-    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#940b10', null, false, convProspeccao >= 15 ? '#22c55e' : convProspeccao >= 10 ? '#f59e0b' : '#f87171', null)}
+    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', 'var(--green)', pct(k.valueValidMkt, g.approved), false, 'var(--blue)', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
+    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', 'var(--green)', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
+    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads', 'var(--red-bright)', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
+    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', 'var(--yellow)', null, false, 'var(--white)', null)}
+    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--red-bright)', null, false, convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--danger)', null)}
   </div>`;
 
   // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
@@ -334,13 +367,13 @@ export function renderOverview(k, fd) {
   const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
   if (semValorTotal.length > 0) {
     h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="font-size:18px;line-height:1">⚠️</div>
+      <div style="color:var(--yellow);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
         <div style="font-size:13px;color:var(--white)"><strong>${semValorTotal.length}</strong> propostas não têm valor no campo Multiplicador — o sistema soma <strong>R$ 0,00</strong> para elas.</div>
         <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--gray)">
-          <span>🟡 Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
-          <span>🔴 Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow);margin-right:4px"></span>Válidas sem valor: <strong style="color:var(--white)">${semValorValidas.length}</strong></span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px"></span>Reprovadas sem valor: <strong style="color:var(--white)">${semValorReprov.length}</strong></span>
         </div>
         <div style="margin-top:10px">
           <button id="no-value-toggle" onclick="
@@ -403,6 +436,7 @@ export function renderOverview(k, fd) {
   </div>`;
 
   document.getElementById('overview-body').innerHTML = h;
+  animateHeroValues();
   renderChart(fd);
 }
 
@@ -459,11 +493,11 @@ export function renderDiag(diag) {
     </div>
     ${matchPct < 50 && diag.smart.cpfIndexed === 0 ? `
     <div style="margin-top:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fca5a5">
-      ⚠️ <strong>Atenção:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
+      ${icon('alert', 13)} <strong>Atenção:</strong> Nenhum CPF foi indexado do Sistema Smart. Verifique se a coluna se chama exatamente <code>CPF</code> no arquivo exportado.
     </div>` : ''}
     ${matchPct < 30 && diag.smart.cpfIndexed > 0 ? `
     <div style="margin-top:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#fcd34d">
-      ⚠️ <strong>Taxa de match baixa (${matchPct}%).</strong> Possível causa: CPFs com zeros à esquerda perdidos ao exportar.
+      ${icon('alert', 13)} <strong>Taxa de match baixa (${matchPct}%).</strong> Possível causa: CPFs com zeros à esquerda perdidos ao exportar.
     </div>` : ''}
   `;
 }

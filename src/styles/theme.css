@@ -2,15 +2,25 @@
    LIGHT THEME — cobertura completa
    ═══════════════════════════════════════════════ */
 
+/* Tema claro "Porcelana" — papel frio com nuance quente; semânticos ganham
+   par claro (antes eram iguais ao dark e o contraste era corrigido na mão). */
 [data-theme="light"] {
-  --bg:         #f1f5f9;
+  --bg:         #f4f2f3;
   --surface:    #ffffff;
-  --surface2:   #f8fafc;
-  --surface3:   #f1f5f9;
-  --white:      #0f172a;
-  --gray:       #64748b;
-  --gray-light: #475569;
-  --border:     #e2e8f0;
+  --surface2:   #f8f6f7;
+  --surface3:   #efebed;
+  --chrome:     #ffffff;
+  --white:      #1d171a;
+  --gray:       #786f73;
+  --gray-light: #554d51;
+  --border:     #e7e2e4;
+  --red-bright: #b4141a;
+  --glow:       rgba(148,11,16,0.20);
+  --green:      #0e9f6e;
+  --yellow:     #b45309;
+  --danger:     #dc2626;
+  --blue:       #2563eb;
+  --purple:     #7c3aed;
 }
 
 /* ── SIDEBAR ── */
@@ -39,7 +49,29 @@
   background: #ffffff; border-color: #e2e8f0; color: #0f172a;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
-[data-theme="light"] .nav-float-item .nf-badge { border-color: #f1f5f9; }
+[data-theme="light"] .nav-float-item .nf-badge { border-color: var(--bg); }
+[data-theme="light"] .content { background: radial-gradient(900px 260px at 50% -100px, rgba(148,11,16,0.04), transparent 70%); }
+[data-theme="light"] .kpi-progress { background: var(--surface3); }
+
+/* ── LOGIN (Porcelana) ── */
+[data-theme="light"] #login-screen,
+[data-theme="light"] #set-password-screen {
+  background:
+    radial-gradient(760px 380px at 70% -12%, rgba(148,11,16,0.10), transparent 62%),
+    radial-gradient(540px 320px at 6% 108%, rgba(148,11,16,0.06), transparent 62%),
+    var(--bg);
+}
+[data-theme="light"] #login-screen::before,
+[data-theme="light"] #set-password-screen::before {
+  background: repeating-linear-gradient(90deg, rgba(29,23,26,0.03) 0 1px, transparent 1px 72px);
+}
+[data-theme="light"] .login-box {
+  background: rgba(255,255,255,0.88);
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 #ffffff, 0 24px 60px rgba(23,15,17,0.14);
+}
+[data-theme="light"] .login-field input { background: var(--surface2); border-color: var(--border); }
+[data-theme="light"] .login-field input:focus { border-color: rgba(148,11,16,0.5); box-shadow: 0 0 0 3px rgba(148,11,16,0.10); }
 
 /* ── TOPBAR ── */
 [data-theme="light"] .topbar {

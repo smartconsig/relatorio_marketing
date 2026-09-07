@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { fmtN } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
@@ -69,10 +70,10 @@ function buildClientesResultsHTML(filtered) {
         <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
         <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
-        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? '✅ Marketing' : '❌ Não é Marketing'}</span></td>
+        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? 'Marketing' : 'Não é Marketing'}</span></td>
         <td style="display:flex;gap:6px;align-items:center">
-          <button class="btn-nomkt procv-actions-desktop" onclick="askUndo(${e._idx},'${safeName}')" style="font-size:11px;padding:4px 8px">↩ Reclassificar</button>
-          <button class="btn-dots procv-actions-mobile" onclick="openBottomSheet({title:'${safeName}',sub:'Reclassificar cliente',actions:[{id:'undo',label:'↩ Reclassificar',cls:'ms-btn-nomkt',onClick:()=>askUndo(${e._idx},'${safeName}')},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>
+          <button class="btn-nomkt procv-actions-desktop" onclick="askUndo(${e._idx},'${safeName}')" style="font-size:11px;padding:4px 8px">${icon('undo', 11)} Reclassificar</button>
+          <button class="btn-dots procv-actions-mobile" onclick="openBottomSheet({title:'${safeName}',sub:'Reclassificar cliente',actions:[{id:'undo',label:'Reclassificar',cls:'ms-btn-nomkt',onClick:()=>askUndo(${e._idx},'${safeName}')},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>
           <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
         </td>
       </tr>`;
@@ -111,7 +112,7 @@ export function renderClientes(entries) {
 
   if (confirmed.length === 0) {
     document.getElementById('clientes-body').innerHTML = `
-      <div class="empty"><div class="empty-icon">👥</div>
+      <div class="empty"><div class="empty-icon">${icon('users')}</div>
       <div class="empty-title">Nenhum cliente confirmado ainda</div>
       <div class="empty-desc">Confirme clientes no PROCV para eles aparecerem aqui.</div></div>`;
     return;
@@ -144,8 +145,8 @@ export function renderClientes(entries) {
       <div class="table-filters">
         ${filterButtonsHTML([
           { value: 'all', label: `Todos (${confirmed.length})`,      onclick: "setClientesFilter('all')" },
-          { value: 'mkt', label: `✅ Marketing (${cMkt})`,            onclick: "setClientesFilter('mkt')" },
-          { value: 'no',  label: `❌ Não Marketing (${cNo})`,         onclick: "setClientesFilter('no')" },
+          { value: 'mkt', label: `Marketing (${cMkt})`,            onclick: "setClientesFilter('mkt')" },
+          { value: 'no',  label: `Não Marketing (${cNo})`,         onclick: "setClientesFilter('no')" },
         ], f)}
       </div>
     </div>
@@ -196,7 +197,7 @@ export function askUndo(idx, clientName) {
   showConfirm(
     'Reclassificar cliente?',
     `"${clientName || 'Este cliente'}" voltará para o PROCV e precisará ser revisado novamente.`,
-    '↩ Sim, reclassificar',
+    'Sim, reclassificar',
     () => undoFromClientes(idx)
   );
 }
@@ -226,7 +227,7 @@ export async function undoFromClientes(idx) {
 
   saveState();
   logAction(entry.cpf, entry.cliente, 'reclassified');
-  toast('↩ Classificação desfeita — proposta voltou para o PROCV');
+  toast('Classificação desfeita — proposta voltou para o PROCV');
 
   if (state.currentUser) {
     if (!otherStillConfirmed && normCpf) {

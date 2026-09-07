@@ -65,7 +65,7 @@ export function renderHome() {
 
   sec.innerHTML = `
     <div class="home-hero">
-      <div class="home-greet">${_saudacao()}, ${nome}! 👋</div>
+      <div class="home-greet">${_saudacao()}, ${nome}!</div>
       <div class="home-date">${dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1)}</div>
     </div>
     <div class="section-title" style="margin-top:28px"><span class="bar"></span>Acesso rápido</div>

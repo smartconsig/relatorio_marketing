@@ -2,6 +2,8 @@ import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
 import { fmtN } from '../utils/currency.js';
 import { supportsGzip, gzipToBase64, gunzipFromBase64 } from '../utils/gzip.js';
+import { syncPeriodBars } from '../components/period-bar.js';
+import { icon } from '../utils/icons.js';
 
 const STORE_RESULT  = 'sc_result_v1';
 const STORE_FILTER  = 'sc_filter_v1';
@@ -81,8 +83,7 @@ export async function loadState() {
     const flt = localStorage.getItem(STORE_FILTER);
     if (flt) {
       state.filterDates = JSON.parse(flt);
-      if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-      if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+      syncPeriodBars();
     }
     return true;
   } catch (e) {
@@ -119,8 +120,7 @@ export function clearState() {
   state.confirmedDivergences = {};
   state.vendorMappings = {};
   state.filterDates = { start: null, end: null };
-  document.getElementById('date-start').value = '';
-  document.getElementById('date-end').value   = '';
+  syncPeriodBars();
   ['fb03', 'fb06', 'smart', 'ecorban', 'overrides'].forEach(k => {
     state.raw[k] = null;
     const card = document.getElementById(`card-${k}`);
@@ -130,9 +130,9 @@ export function clearState() {
   });
   document.getElementById('diag-panel').style.display = 'none';
   document.getElementById('btn-process').disabled = true;
-  document.getElementById('overview-body').innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>';
-  document.getElementById('ranking-body').innerHTML  = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>';
-  document.getElementById('review-body').innerHTML   = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>';
+  document.getElementById('overview-body').innerHTML = `<div class="empty"><div class="empty-icon">${icon('chart')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
+  document.getElementById('ranking-body').innerHTML  = `<div class="empty"><div class="empty-icon">${icon('trophy')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
+  document.getElementById('review-body').innerHTML   = `<div class="empty"><div class="empty-icon">${icon('search')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
   document.getElementById('review-badge').classList.add('hidden');
   setCacheIndicator(false);
   toast('Dados removidos com sucesso');
@@ -145,7 +145,7 @@ export function setCacheIndicator(on) {
     const n = state.result.entries.length;
     el.style.display = 'flex';
     el.querySelector('.ci-text').innerHTML =
-      `⚡ <strong>${fmtN(n)} propostas</strong> carregadas da última sessão. Reimporte os arquivos para atualizar os dados.`;
+      `${icon('zap', 12)} <strong>${fmtN(n)} propostas</strong> carregadas da última sessão. Reimporte os arquivos para atualizar os dados.`;
   } else {
     el.style.display = 'none';
   }

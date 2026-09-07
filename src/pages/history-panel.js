@@ -1,10 +1,11 @@
 import { getClientHistory } from '../services/action-log.js';
 import { normCPF } from '../utils/cpf.js';
+import { icon } from '../utils/icons.js';
 
 const ACTION_LABELS = {
-  classified_marketing:     { label: 'Confirmado como Marketing',     color: '#22c55e', icon: '✅' },
-  classified_not_marketing: { label: 'Confirmado como Não Marketing', color: '#ef4444', icon: '❌' },
-  reclassified:             { label: 'Reclassificado (voltou ao PROCV)', color: '#f59e0b', icon: '↩' },
+  classified_marketing:     { label: 'Confirmado como Marketing',     color: 'var(--green)',  icon: icon('check', 16) },
+  classified_not_marketing: { label: 'Confirmado como Não Marketing', color: 'var(--danger)', icon: icon('x', 16) },
+  reclassified:             { label: 'Reclassificado (voltou ao PROCV)', color: 'var(--yellow)', icon: icon('undo', 15) },
 };
 
 function fmtDate(iso) {
@@ -32,7 +33,7 @@ export async function openHistoryPanel(cpf, clientName) {
   if (logs.length === 0) {
     document.getElementById('history-panel-body').innerHTML = `
       <div style="text-align:center;padding:40px;color:var(--gray)">
-        <div style="font-size:32px;margin-bottom:12px">📋</div>
+        <div style="margin-bottom:12px">${icon('clipboard', 28)}</div>
         <div>Nenhuma ação registrada para este cliente.</div>
       </div>`;
     return;
@@ -42,11 +43,11 @@ export async function openHistoryPanel(cpf, clientName) {
     const info = ACTION_LABELS[log.action] || { label: log.action, color: 'var(--gray)', icon: '•' };
     return `
       <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:20px;line-height:1;margin-top:2px">${info.icon}</div>
+        <div style="line-height:1;margin-top:2px;color:${info.color}">${info.icon}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600;color:${info.color}">${info.label}</div>
           <div style="font-size:12px;color:var(--gray-light);margin-top:3px">
-            👤 ${log.user_name || '—'} &nbsp;·&nbsp; 🕐 ${fmtDate(log.created_at)}
+            ${icon('user', 11)} ${log.user_name || '—'} &nbsp;·&nbsp; ${icon('clock', 11)} ${fmtDate(log.created_at)}
           </div>
         </div>
       </div>`;

@@ -6,7 +6,7 @@
   <title>Smart RYC — Dashboard de Marketing</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles/admin.css">
   <!-- CDN libs exposed as globals (XLSX, Chart, supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -195,6 +195,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="17" y1="9" x2="17" y2="15"/></svg>
           <span class="nav-label">Quit. Boleto</span>
         </div>
+        <div class="nav-item" data-sec="residuos" data-title="Resíduos" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+          <span class="nav-label">Resíduos</span>
+        </div>
       </div>
     </div>
 
@@ -213,7 +217,7 @@
   <div class="sidebar-footer">
     <div class="user-chip" id="user-email"></div>
     <div class="version">v2.0 · Smart RYC</div>
-    <button class="btn-sm btn-ghost" id="theme-toggle" style="margin-top:8px;width:100%;font-size:10px" onclick="toggleTheme()">☀ Tema Claro</button>
+    <button class="btn-sm btn-ghost" id="theme-toggle" style="margin-top:8px;width:100%;font-size:10px" onclick="toggleTheme()"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Tema Claro</button>
     <button class="btn-sm btn-ghost" style="margin-top:6px;width:100%;font-size:10px" onclick="doSignOut()">Sair</button>
   </div>
 </aside>
@@ -222,26 +226,6 @@
 <main class="main">
   <div class="topbar">
     <div class="topbar-title" id="topbar-title">Importar Dados</div>
-    <div class="date-filter">
-      <div class="qf-wrap">
-        <button class="btn-sm btn-ghost" id="qf-btn" onclick="toggleQuickFilter()">Período ▾</button>
-        <div class="qf-menu" id="qf-menu">
-          <div class="qf-item" onclick="quickFilter('today')">Hoje</div>
-          <div class="qf-item" onclick="quickFilter('yesterday')">Ontem</div>
-          <div class="qf-item" onclick="quickFilter('this-month')">Esse Mês</div>
-          <div class="qf-item" onclick="quickFilter('last-month')">Último Mês</div>
-          <div class="qf-item" onclick="quickFilter('7d')">Últimos 7 dias</div>
-          <div class="qf-item" onclick="quickFilter('15d')">Últimos 15 dias</div>
-          <div class="qf-item" onclick="quickFilter('30d')">Últimos 30 dias</div>
-        </div>
-      </div>
-      <label>De</label>
-      <input type="date" id="date-start">
-      <label>Até</label>
-      <input type="date" id="date-end">
-      <button class="btn-sm btn-primary" onclick="applyFilter()">Filtrar</button>
-      <button class="btn-sm btn-ghost" onclick="clearFilter()">Limpar</button>
-    </div>
   </div>
 
   <div class="content">
@@ -254,7 +238,7 @@
 
         <div id="cache-indicator" style="display:none;grid-column:1/-1;align-items:center;justify-content:space-between;gap:12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:#86efac;flex-wrap:wrap">
           <div class="ci-text"></div>
-          <button class="btn-sm btn-ghost" style="white-space:nowrap;flex-shrink:0" onclick="clearState()">🗑 Limpar Dados</button>
+          <button class="btn-sm btn-ghost" style="white-space:nowrap;flex-shrink:0" onclick="clearState()"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Limpar Dados</button>
         </div>
 
 
@@ -291,14 +275,14 @@
     <!-- ── VISÃO GERAL ── -->
     <div class="section" id="sec-overview">
       <div id="overview-body">
-        <div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
       </div>
     </div>
 
     <!-- ── RANKING ── -->
     <div class="section" id="sec-ranking">
       <div id="ranking-body">
-        <div class="empty"><div class="empty-icon">🏆</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3a1 1 0 011 1 4 4 0 01-4 4"/><path d="M7 5H4a1 1 0 00-1 1 4 4 0 004 4"/></svg></div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
       </div>
     </div>
 
@@ -322,7 +306,7 @@
         <div class="empty"><div class="empty-icon">🔎</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
       </div>
       <div id="review-body" style="display:none">
-        <div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
       </div>
       <div id="clientes-body" style="display:none">
         <div class="empty"><div class="empty-icon">👥</div><div class="empty-title">Nenhum cliente confirmado ainda</div><div class="empty-desc">Confirme clientes no PROCV para eles aparecerem aqui.</div></div>
@@ -332,7 +316,7 @@
     <!-- ── PROPOSTAS ── -->
     <div class="section" id="sec-propostas">
       <div id="propostas-body">
-        <div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>
       </div>
     </div>
 
@@ -395,7 +379,7 @@
     <!-- ── RANKING BSC ── -->
     <div class="section" id="sec-bsc">
       <div id="bsc-body">
-        <div class="empty"><div class="empty-icon">🏆</div><div class="empty-title">Nenhum ranking importado</div><div class="empty-desc">Importe a planilha BSC para visualizar o ranking.</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3a1 1 0 011 1 4 4 0 01-4 4"/><path d="M7 5H4a1 1 0 00-1 1 4 4 0 004 4"/></svg></div><div class="empty-title">Nenhum ranking importado</div><div class="empty-desc">Importe a planilha BSC para visualizar o ranking.</div></div>
       </div>
     </div>
 
@@ -407,11 +391,11 @@
     </div>
 
     <!-- ── PERFIL DE CLIENTE ── -->
-    <div class="section" id="sec-perfil"></div>
+    <div class="section" id="sec-perfil"><div id="perfil-body"></div></div>
 
     <div class="section" id="sec-home"></div>
 
-    <div class="section" id="sec-trafego"></div>
+    <div class="section" id="sec-trafego"><div id="trafego-body"></div></div>
 
     <!-- ── QUITAÇÕES ── -->
     <div class="section" id="sec-quitacoes"></div>
@@ -444,7 +428,7 @@
     <div class="section" id="sec-admin">
       <div class="section-title"><span class="bar"></span>Administração</div>
       <div id="admin-body">
-        <div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">Carregando…</div></div>
+        <div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div class="empty-title">Carregando…</div></div>
       </div>
     </div>
 
@@ -493,7 +477,7 @@
       <div class="history-panel-name" id="history-panel-title">Cliente</div>
       <div class="history-panel-cpf" id="history-panel-cpf"></div>
     </div>
-    <button class="history-panel-close" onclick="closeHistoryPanel()">✕</button>
+    <button class="history-panel-close" onclick="closeHistoryPanel()"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="history-panel-body" id="history-panel-body"></div>
 </div>

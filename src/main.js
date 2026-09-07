@@ -15,11 +15,13 @@ import './styles/liberacao.css';
 import './styles/boletos.css';
 import './styles/ranking.css';
 import './styles/trafego.css';
+import './styles/period-bar.css';
 import './styles/modal-kit.css';
 import './styles/home.css';
 import './styles/residuos.css';
+import './styles/carbono.css'; // sempre por último — re-seleciona classes das features (Fase 3c)
 
-import { initNavigation, navigate, applyFilter, clearFilter, renderAll, quickFilter, toggleQuickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
+import { initNavigation, navigate, clearFilter, renderAll, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV, exportNoValueCSV } from './pages/overview.js';
@@ -37,6 +39,7 @@ import { renderConteudo } from './pages/conteudo-page.js';
 import { renderBMs } from './pages/bm-page.js';
 import { renderTrafego, openTrafegoForm, closeTrafegoForm, saveTrafegoForm, askDeleteTrafego } from './pages/trafego-page.js';
 import { renderHome } from './pages/home-page.js';
+import { initPeriodBars } from './components/period-bar.js';
 import { clearState } from './core/storage.js';
 import { toggleAccordion } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
@@ -49,10 +52,8 @@ import { renderResiduos, resSetSearch, resSetStatusFiltro, resVerMais, resSolici
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
-window.applyFilter       = applyFilter;
 window.clearFilter       = clearFilter;
 window.quickFilter       = quickFilter;
-window.toggleQuickFilter = toggleQuickFilter;
 window.switchGestaoTab   = switchGestaoTab;
 window.toggleSidebar     = toggleSidebar;
 window.doSignIn          = doSignIn;
@@ -225,5 +226,6 @@ window.closeTrafegoForm   = closeTrafegoForm;
 window.saveTrafegoForm    = saveTrafegoForm;
 window.askDeleteTrafego   = askDeleteTrafego;
 
+initPeriodBars();
 initNavigation();
 initAuth();

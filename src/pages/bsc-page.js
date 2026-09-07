@@ -1,4 +1,5 @@
 import { state }       from '../state.js';
+import { icon }        from '../utils/icons.js';
 import { toast }        from '../utils/ui.js';
 import { fmtBRL }       from '../utils/currency.js';
 import { parseBSC }     from '../core/parseBSC.js';
@@ -78,7 +79,7 @@ function avatarHtml(seller, size, editable = false) {
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="bsc-avatar-fallback" style="display:none;background:${tc}">${initials(seller.nome)}</div>
       ${editable ? `<button type="button" class="bsc-avatar-edit" title="Editar foto"
-        onclick="event.stopPropagation();startEditAvatar(${seller.rank})">✎</button>` : ''}
+        onclick="event.stopPropagation();startEditAvatar(${seller.rank})">${icon('edit', 11)}</button>` : ''}
     </div>`;
 }
 
@@ -107,7 +108,7 @@ export async function onAvatarFileChange(e) {
     });
     if (error) throw error;
     _avatarCacheBust[slug] = Date.now();
-    toast('✅ Foto atualizada');
+    toast('Foto atualizada');
     renderBSC();
   } catch (err) {
     toast('Erro ao enviar foto: ' + err.message, 'err');
@@ -139,7 +140,7 @@ export async function onBSCFileChange(e) {
       try { localStorage.setItem('sc_bsc_v1', JSON.stringify(state.bsc)); } catch {}
       await saveBSC(state.bsc);
       renderBSC();
-      toast(`✅ BSC importado: ${result.sellers.length} vendedores · ${result.monthYear}`);
+      toast(`BSC importado: ${result.sellers.length} vendedores · ${result.monthYear}`);
     } catch (err) {
       toast('Erro ao processar BSC: ' + err.message, 'err');
       console.error(err);
@@ -188,7 +189,7 @@ export function saveTVDurations() {
   TV_DURATIONS[1] = get('tv-dur-1');
   TV_DURATIONS[2] = get('tv-dur-2');
   try { localStorage.setItem('sc_tv_durations', JSON.stringify(TV_DURATIONS)); } catch {}
-  toast('✅ Durações salvas');
+  toast('Durações salvas');
 }
 
 // ── Normal mode render ─────────────────────────────────────────────────────
@@ -202,7 +203,7 @@ function importBar() {
   return `
     <div class="bsc-import-bar">
       <div>
-        <div class="bsc-import-period">${bsc?.monthYear ? '📅 ' + bsc.monthYear : 'Ranking BSC'}</div>
+        <div class="bsc-import-period">${bsc?.monthYear ? icon('calendar', 12) + ' ' + bsc.monthYear : 'Ranking BSC'}</div>
         <div class="bsc-import-info">${updatedStr}</div>
       </div>
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
@@ -221,10 +222,10 @@ function importBar() {
           <span>s</span>
           <button class="btn-sm btn-ghost" onclick="saveTVDurations()" style="margin-left:4px">Salvar</button>
         </div>
-        <button class="btn-sm btn-ghost" onclick="importBSCFile()">📥 Importar BSC</button>
+        <button class="btn-sm btn-ghost" onclick="importBSCFile()">${icon('download', 12)} Importar BSC</button>
         <input type="file" id="bsc-file-input" accept=".xlsx,.xls" style="display:none" onchange="onBSCFileChange(event)">
         <input type="file" id="bsc-avatar-input" accept="image/*" style="display:none" onchange="onAvatarFileChange(event)">
-        ${bsc ? `<button class="btn-sm btn-primary" onclick="enterTVMode()">📺 Modo TV</button>` : ''}
+        ${bsc ? `<button class="btn-sm btn-primary" onclick="enterTVMode()">${icon('tv', 12)} Modo TV</button>` : ''}
       </div>
     </div>`;
 }
@@ -281,7 +282,7 @@ export function renderBSC() {
   if (!state.bsc?.sellers?.length) {
     el.innerHTML = importBar() + `
       <div class="empty" style="margin-top:48px">
-        <div class="empty-icon">🏆</div>
+        <div class="empty-icon">${icon('trophy')}</div>
         <div class="empty-title">Nenhum ranking importado</div>
         <div class="empty-desc">Importe a planilha BSC para visualizar o ranking.</div>
       </div>`;

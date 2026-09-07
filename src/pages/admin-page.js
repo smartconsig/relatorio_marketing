@@ -1,5 +1,6 @@
 import { sb } from '../services/supabase.js';
 import { state } from '../state.js';
+import { icon } from '../utils/icons.js';
 import { toast } from '../utils/ui.js';
 import { perm } from '../services/permissions.js';
 import { normStr } from '../utils/string.js';
@@ -276,7 +277,7 @@ function _renderMapeamento() {
   wrap.innerHTML = `
     <div style="padding:24px;max-width:900px">
       ${noData ? `<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#f59e0b">
-        ⚠ Processe os dados primeiro para ver os nomes disponíveis para mapeamento.
+        ${icon('alert', 13)} Processe os dados primeiro para ver os nomes disponíveis para mapeamento.
       </div>` : ''}
 
       <div class="card" style="margin-bottom:20px">
@@ -403,7 +404,7 @@ export async function renderAdminPage() {
   if (!body) return;
 
   if (!perm.isAdmin()) {
-    body.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div><div class="empty-title">Acesso negado</div><div class="empty-desc">Você não tem permissão para acessar esta área.</div></div>';
+    body.innerHTML = `<div class="empty"><div class="empty-icon">${icon('lock')}</div><div class="empty-title">Acesso negado</div><div class="empty-desc">Você não tem permissão para acessar esta área.</div></div>`;
     return;
   }
 
@@ -470,7 +471,7 @@ async function loadUsers() {
   _users = data || [];
 
   if (!_users.length) {
-    wrap.innerHTML = '<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Nenhum usuário encontrado</div></div>';
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">${icon('user')}</div><div class="empty-title">Nenhum usuário encontrado</div></div>`;
     return;
   }
 
@@ -734,11 +735,11 @@ async function openInviteModal() {
     // Sucesso — mostra feedback antes de fechar
     let msg;
     if (mode === 'password') {
-      msg = `✅ Usuário ${email} criado. Informe a senha definida para ele acessar o sistema.`;
+      msg = `Usuário ${email} criado. Informe a senha definida para ele acessar o sistema.`;
     } else {
       msg = data.resent
-        ? `✅ ${email} já está cadastrado. Um link de redefinição de senha foi enviado.`
-        : `✅ Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`;
+        ? `${email} já está cadastrado. Um link de redefinição de senha foi enviado.`
+        : `Convite enviado para ${email}. O usuário receberá um e-mail com o link de acesso.`;
     }
     _showFeedback(feedback, msg, 'ok');
     btn.textContent = mode === 'password' ? 'Criado!' : 'Enviado!'; btn.disabled = true;
@@ -805,7 +806,7 @@ async function loadGrupos() {
   _grupos = data || [];
 
   if (!_grupos.length) {
-    wrap.innerHTML = '<div class="empty"><div class="empty-icon">🔐</div><div class="empty-title">Nenhum grupo cadastrado</div></div>';
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">${icon('lock')}</div><div class="empty-title">Nenhum grupo cadastrado</div></div>`;
     return;
   }
 
