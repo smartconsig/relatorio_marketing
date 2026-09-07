@@ -1,6 +1,8 @@
-// Fase 3 / Etapa A — dual-write do import em tabelas normalizadas.
-// Nesta etapa NADA lê estas tabelas: o snapshot continua sendo a fonte da
-// verdade. Toda falha aqui só gera console.warn — o import nunca quebra.
+// Fase 3 — tabelas normalizadas que substituem o snapshot.
+// Etapa A: o import grava aqui além do snapshot (toda falha só gera
+// console.warn — o import nunca quebra).
+// Etapa B1: estas tabelas são a FONTE DE LEITURA do login; o snapshot continua
+// sendo gravado, mas só é lido quando a leitura daqui falha (ver loadImportData).
 import { sb } from './supabase.js';
 import { state } from '../state.js';
 import { logAction } from './action-log.js';
@@ -67,7 +69,9 @@ export async function replaceImportData() {
 
     // Bootstrap dos dicionários de decisões (idempotente; mantém os das tabelas)
     await syncUserDicts();
-    return true;
+    // Devolve a linha como o servidor a gravou — o carimbo do cache local
+    // precisa ser byte a byte igual ao que o login vai ler de volta.
+    return (await checkImportMeta()) || true;
   } catch (e) {
     console.warn('replaceImportData (Etapa A, não-fatal):', e);
     return false;
@@ -108,7 +112,62 @@ export function saveVendorMapping(ecorbanNome, smartNome) {
   op.then(({ error }) => { if (error) console.warn('saveVendorMapping:', error); });
 }
 
-// ── Etapa B0: leitura das fichas + comparação sombra ─────────────────────────
+// ── Leitura das fichas (B0: sombra · B1: fonte oficial) ──────────────────────
+
+/** Lê das tabelas próprias as decisões que não vivem na ficha da proposta. */
+export async function loadUserDicts() {
+  const dicts = { confirmedDivergences: null, vendorMappings: null };
+  try {
+    const [divs, maps] = await Promise.all([
+      sb.from('divergencias_confirmadas').select('cpf'),
+      sb.from('vendor_mappings').select('ecorban_nome, smart_nome'),
+    ]);
+    if (!divs.error && divs.data) {
+      dicts.confirmedDivergences = {};
+      for (const r of divs.data) if (r.cpf) dicts.confirmedDivergences[r.cpf] = true;
+    }
+    if (!maps.error && maps.data) {
+      dicts.vendorMappings = {};
+      for (const r of maps.data) if (r.ecorban_nome) dicts.vendorMappings[r.ecorban_nome] = r.smart_nome;
+    }
+  } catch (e) { console.warn('loadUserDicts:', e); }
+  return dicts;
+}
+
+/** Consulta leve: só o ponteiro do import atual, sem baixar as fichas. */
+export async function checkImportMeta() {
+  try {
+    const { data, error } = await sb.from('import_meta')
+      .select('import_id, updated_at').eq('id', 1).maybeSingle();
+    if (error || !data?.import_id) return null;
+    return data;
+  } catch (e) { console.warn('checkImportMeta:', e); return null; }
+}
+
+/** Reaplica sobre as entradas as divergências confirmadas vindas da tabela. */
+export function applyUserDicts(entries, dicts) {
+  if (!dicts?.confirmedDivergences || !entries) return;
+  for (const e of entries) {
+    if (e.cpf) e.divergenceConfirmed = !!dicts.confirmedDivergences[e.cpf];
+  }
+}
+
+/**
+ * A ficha congela a entrada como ela estava no import. Uma confirmação manual
+ * feita ANTES do import viajou junto na ficha; se o usuário desfez a
+ * classificação DEPOIS, a ficha não sabe — quem sabe é a tabela
+ * `classifications`. Por isso a marca 'manual' da ficha é desfeita aqui e o
+ * isMarketing volta para a regra automática (Ecorban); logo em seguida
+ * syncClassificationsFromSupabase() reaplica as classificações que ainda valem.
+ */
+export function resetManualMarks(entries) {
+  if (!entries) return;
+  for (const e of entries) {
+    if (e.reviewReason !== 'manual') continue;
+    e.isMarketing  = String(e.ecorbanOrigem || '').toUpperCase() === 'MARKETING';
+    e.reviewReason = null;
+  }
+}
 
 /**
  * Monta um objeto no formato de state.result a partir das tabelas normalizadas.
@@ -138,13 +197,32 @@ export async function loadImportData() {
       return rows.map(r => r.data);
     };
 
-    const [entries, smartLeads] = await Promise.all([fetchAll('propostas'), fetchAll('smart_leads')]);
+    const [entries, smartLeads, dicts] = await Promise.all([
+      fetchAll('propostas'), fetchAll('smart_leads'), loadUserDicts(),
+    ]);
+
+    // Defesa contra import interrompido ou concorrente: se o que foi lido não
+    // bate com o que o import disse ter gravado, estas fichas não servem.
+    if (meta.propostas_count != null && meta.propostas_count !== entries.length) {
+      console.warn(`loadImportData: contagem não bate — esperadas ${meta.propostas_count}, lidas ${entries.length}`);
+      return null;
+    }
+    if (meta.smart_leads_count != null && meta.smart_leads_count !== smartLeads.length) {
+      console.warn(`loadImportData: smart_leads não bate — esperados ${meta.smart_leads_count}, lidos ${smartLeads.length}`);
+      return null;
+    }
+
     entries.sort((a, b) => (a._idx ?? 0) - (b._idx ?? 0));
     for (const e of entries) if (e.saleDate) e.saleDate = new Date(e.saleDate);
     for (const l of smartLeads) if (l.dataCriacao) l.dataCriacao = new Date(l.dataCriacao);
 
+    // Decisões humanas mandam sobre a ficha congelada no import
+    resetManualMarks(entries);
+    applyUserDicts(entries, dicts);
+
     return {
       entries,
+      _dicts: dicts,
       facebook:             meta.facebook || [],
       unknownStatuses:      meta.unknown_statuses || [],
       diag:                 meta.diag || null,

@@ -4,16 +4,17 @@ import { toast } from '../utils/ui.js';
 import { loadAllGoals } from './goals-svc.js';
 import { syncClassificationsFromSupabase } from './classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from './snapshot.js';
-import { shadowCompareImportData } from './propostas-store.js';
+import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts, resetManualMarks } from './propostas-store.js';
 import { loadTrafego } from './trafego-svc.js';
-import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp } from '../core/storage.js';
+import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp,
+         saveImportStamp, loadImportStamp } from '../core/storage.js';
 import { renderAll, applyPermissionsToUI } from '../navigation.js';
 import { renderDiag } from '../pages/overview.js';
 import { populateGoalsForm } from '../pages/goals-page.js';
 import { navigate } from '../navigation.js';
 import { initBSC } from '../pages/bsc-page.js';
 import { initParceiros } from '../pages/parceiros-page.js';
-import { renderLastSystemEvent } from './action-log.js';
+import { renderLastSystemEvent, logAction } from './action-log.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { syncMetaAds } from './meta-ads.js';
 import { syncKolmeya } from './kolmeya.js';
@@ -100,6 +101,17 @@ export function toggleTheme() {
   document.getElementById('theme-toggle').textContent = next === 'light' ? '🌙 Tema Escuro' : '☀ Tema Claro';
 }
 
+/** Reaplica o filtro de datas salvo no navegador nos campos da barra superior. */
+function restoreSavedFilter() {
+  try {
+    const savedFilter = localStorage.getItem('sc_filter_v1');
+    if (!savedFilter) return;
+    state.filterDates = JSON.parse(savedFilter);
+    if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
+    if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
+  } catch {}
+}
+
 export async function onAuthenticated() {
   // BSC — carrega em paralelo, não bloqueia o resto
   initBSC();
@@ -163,6 +175,58 @@ export async function onAuthenticated() {
   // Tráfego digitado: fonte oficial dos KPIs — carrega e re-renderiza quando chegar
   loadTrafego().then(ok => { if (ok && state.result) renderAll(); });
 
+  // ── Fase 3 / Etapa B1: as fichas são a fonte de leitura ────────────────────
+  // O snapshot continua sendo GRAVADO, mas só é lido se a leitura das fichas
+  // falhar (contagem não bate, tabela fora do ar, import pela metade).
+  const meta      = await checkImportMeta();
+  const metaStamp = meta ? `${meta.import_id}|${meta.updated_at}` : null;
+
+  if (meta && hasLocal && loadImportStamp() === metaStamp) {
+    // Cache local veio deste mesmo import — não precisa reler milhares de fichas.
+    // As decisões, essas sim, vêm sempre do servidor.
+    const dicts = await loadUserDicts();
+    if (dicts.confirmedDivergences) state.confirmedDivergences = dicts.confirmedDivergences;
+    if (dicts.vendorMappings)       state.vendorMappings       = dicts.vendorMappings;
+    applyUserDicts(state.result.entries, dicts);
+    // Mesma regra do caminho das fichas: a tabela classifications decide o que
+    // é manual, para que um "desfazer" feito em outro computador chegue aqui
+    resetManualMarks(state.result.entries);
+    await syncClassificationsFromSupabase();
+    saveState();
+    renderAll();
+    toast('Dados carregados ⚡');
+    syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
+    return;
+  }
+
+  if (meta) {
+    const fichas = await loadImportData();
+    if (fichas) {
+      const { _dicts, ...result } = fichas;
+      state.result = result;
+      if (_dicts.confirmedDivergences) state.confirmedDivergences = _dicts.confirmedDivergences;
+      if (_dicts.vendorMappings)       state.vendorMappings       = _dicts.vendorMappings;
+      restoreSavedFilter();
+      await syncClassificationsFromSupabase();
+      saveState();
+      saveImportStamp(metaStamp);
+      setCacheIndicator(true);
+      renderAll();
+      renderDiag(state.result.diag);
+      navigate(lastSection);
+      toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
+      syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
+      syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
+      return;
+    }
+  }
+
+  // Fichas indisponíveis — abre o paraquedas (snapshot) e registra para a
+  // conferência da semana, na mesma consulta de sempre (tipo fase3_sombra).
+  console.warn('[Fase3/B1] fichas indisponíveis — leitura caiu no snapshot');
+  logAction('__system__', 'Fase3 B1: fichas indisponíveis — leitura caiu no snapshot', 'fase3_sombra');
+
   // 2. Consulta leve ao Supabase: só o updated_at
   const serverTs = await checkSnapshotTimestamp();
   const localTs  = loadSnapshotTimestamp();
@@ -185,7 +249,6 @@ export async function onAuthenticated() {
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
     syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
-    shadowCompareImportData('login-cache'); // Fase 3 / B0: ensaio em segundo plano
     return;
   }
 
@@ -214,14 +277,7 @@ export async function onAuthenticated() {
   state.confirmedDivergences = snapshot.confirmedDivergences || {};
   state.vendorMappings       = snapshot.vendorMappings       || {};
 
-  try {
-    const savedFilter = localStorage.getItem('sc_filter_v1');
-    if (savedFilter) {
-      state.filterDates = JSON.parse(savedFilter);
-      if (state.filterDates.start) document.getElementById('date-start').value = state.filterDates.start;
-      if (state.filterDates.end)   document.getElementById('date-end').value   = state.filterDates.end;
-    }
-  } catch {}
+  restoreSavedFilter();
 
   const synced = await syncClassificationsFromSupabase();
   if (synced > 0) {
@@ -241,7 +297,6 @@ export async function onAuthenticated() {
   // Sincroniza Meta Ads e Kolmeya em background — re-renderiza quando chegar
   syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
   syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
-  shadowCompareImportData('login-servidor'); // Fase 3 / B0: ensaio em segundo plano
 }
 
 function loadGoalsFromStorage() {

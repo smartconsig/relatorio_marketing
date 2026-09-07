@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { toast } from '../utils/ui.js';
-import { saveState, setCacheIndicator } from '../core/storage.js';
+import { saveState, setCacheIndicator, saveImportStamp } from '../core/storage.js';
 import { buildResult } from '../core/buildResult.js';
 import { saveSnapshotToSupabase } from '../services/snapshot.js';
 import { replaceImportData, shadowCompareImportData } from '../services/propostas-store.js';
@@ -100,11 +100,13 @@ export async function processAll() {
     navigate('overview');
     saveSnapshotToSupabase();
     // Fase 3 / Etapa A: dual-write nas tabelas normalizadas (fundo, não-fatal)
-    replaceImportData().then(ok => {
-      if (ok) {
-        console.info('Fichas de propostas atualizadas no Supabase');
-        shadowCompareImportData('pós-import'); // Etapa B0: ensaio da leitura
-      }
+    replaceImportData().then(res => {
+      if (!res) return;
+      // Carimba o cache local com o import recém-gravado: o próximo login
+      // reconhece que já tem estas fichas e não precisa relê-las (Etapa B1)
+      if (res.import_id && res.updated_at) saveImportStamp(`${res.import_id}|${res.updated_at}`);
+      console.info('Fichas de propostas atualizadas no Supabase');
+      shadowCompareImportData('pós-import'); // confere o que foi gravado
     });
     logAction('__import__', 'Dados processados', 'imported_data').then(() =>
       renderLastSystemEvent('import-last-log', '__import__')

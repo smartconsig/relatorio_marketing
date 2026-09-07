@@ -7,6 +7,7 @@ const STORE_RESULT  = 'sc_result_v1';
 const STORE_FILTER  = 'sc_filter_v1';
 const STORE_OVR     = 'sc_overrides_v1';
 const STORE_SNAP_TS = 'sc_snap_ts_v1';
+const STORE_FICHAS  = 'sc_fichas_v1';
 
 // Cache antigo é JSON puro; o novo leva este prefixo (gzip + base64).
 // A leitura precisa aceitar os dois formatos.
@@ -98,8 +99,21 @@ export function loadSnapshotTimestamp() {
   return localStorage.getItem(STORE_SNAP_TS) || null;
 }
 
+/**
+ * Fase 3 / B1: carimbo do import que gerou o cache local ("<import_id>|<updated_at>").
+ * Se bater com o import_meta do servidor, o login reusa o cache em vez de
+ * reler as milhares de fichas.
+ */
+export function saveImportStamp(stamp) {
+  try { if (stamp) localStorage.setItem(STORE_FICHAS, stamp); } catch {}
+}
+
+export function loadImportStamp() {
+  return localStorage.getItem(STORE_FICHAS) || null;
+}
+
 export function clearState() {
-  [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS, 'sc_last_section'].forEach(k => localStorage.removeItem(k));
+  [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS, STORE_FICHAS, 'sc_last_section'].forEach(k => localStorage.removeItem(k));
   state.result = null;
   state.overrides = {};
   state.confirmedDivergences = {};
