@@ -93,7 +93,6 @@ export default defineConfig([
             "src/navigation.js", // 523
             "src/pages/procv.js", // 444
             "src/pages/parceiros-page.js", // 405
-            "src/pages/perfil.js", // 402
             "src/services/auth.js", // 396
             "src/pages/residuos-page.js", // 384
             "src/pages/propostas.js", // 352
