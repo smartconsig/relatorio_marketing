@@ -82,7 +82,6 @@ export default defineConfig([
           ignore: [
             "src/pages/boletos-page.js", // 1359
             "src/pages/universidade.js", // 1134
-            "src/pages/uni-admin.js", // 1041
             "src/pages/bm-page.js", // 956
             "src/pages/uni-gamificacao.js", // 644
             "src/pages/procv.js", // 444
@@ -102,14 +101,17 @@ export default defineConfig([
           logger: "handleError()/toast() de src/utils/ui.js",
         },
       ],
-      // baseline: 10 páginas importam `sb` direto (universidade 24 chamadas,
-      // uni-admin 24, uni-gamificacao 14, admin 9, boletos 3, liberacao 2,
-      // bsc/clientes/parceiros 1, quitacoes 0 = import morto). Vira "error"
-      // quando os serviços correspondentes existirem e a contagem zerar.
+      // baseline (recontado em 08/09/2026 após os lotes 1-4): 10 arquivos —
+      // universidade, uni-gamificacao, boletos-page, bsc-page, clientes,
+      // parceiros-page + os 4 módulos lib-* da Liberação (o serviço da
+      // Liberação é trabalho futuro). Os DOIS specifiers são necessários:
+      // páginas em src/pages/ importam '../services/…' e sub-módulos em
+      // src/pages/<área>/ importam '../../services/…'. Vira "error" quando
+      // os serviços correspondentes existirem e a contagem zerar.
       "quality/no-direct-data-access": [
         "warn",
         {
-          modules: ["../services/supabase.js"],
+          modules: ["../services/supabase.js", "../../services/supabase.js"],
           bindings: ["sb"],
           layers: ["/src/pages/", "/src/components/"],
         },

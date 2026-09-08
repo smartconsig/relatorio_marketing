@@ -7,7 +7,7 @@ import { toast, handleError } from '../../utils/ui.js';
 import { showConfirm } from '../../utils/confirm.js';
 import * as XLSX from 'xlsx';
 import { enviarParaResiduo } from '../../services/residuos-svc.js';
-import { S, isAdmin, fmtDate, filtered, loadData } from './lib-core.js';
+import { S, isAdmin, filtered, loadData } from './lib-core.js';
 import { render, updateTable } from './lib-tabela.js';
 
 // ── Enviar para Resíduos (transacional no banco: cria + esconde daqui) ────
