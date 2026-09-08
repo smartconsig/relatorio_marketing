@@ -82,7 +82,6 @@ export default defineConfig([
           ignore: [
             "src/pages/boletos-page.js", // 1359
             "src/pages/universidade.js", // 1134
-            "src/pages/bm-page.js", // 956
             "src/pages/uni-gamificacao.js", // 644
             "src/pages/procv.js", // 444
             "src/services/auth.js", // 396
