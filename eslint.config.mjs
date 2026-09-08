@@ -81,7 +81,6 @@ export default defineConfig([
           max: 350,
           ignore: [
             "src/pages/boletos-page.js", // 1359
-            "src/pages/procv.js", // 444
             "src/services/auth.js", // 396
             "src/pages/residuos-page.js", // 384
             "src/pages/propostas.js", // 352
