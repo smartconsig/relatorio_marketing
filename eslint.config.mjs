@@ -84,7 +84,6 @@ export default defineConfig([
             "src/pages/universidade.js", // 1134
             "src/pages/uni-admin.js", // 1041
             "src/pages/bm-page.js", // 956
-            "src/pages/conteudo-page.js", // 899
             "src/pages/uni-gamificacao.js", // 644
             "src/pages/procv.js", // 444
             "src/services/auth.js", // 396
