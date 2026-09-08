@@ -80,7 +80,6 @@ export default defineConfig([
         {
           max: 350,
           ignore: [
-            "src/services/auth.js", // 396
             // residuos-page: mantido acima do teto DE PROPÓSITO — a varredura
             // concluiu que não há costura natural (uma tabela + um modal,
             // já coeso); dividir só para passar no lint pioraria o código.
