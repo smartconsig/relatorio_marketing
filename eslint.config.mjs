@@ -80,7 +80,6 @@ export default defineConfig([
         {
           max: 350,
           ignore: [
-            "src/pages/boletos-page.js", // 1359
             "src/services/auth.js", // 396
             // residuos-page: mantido acima do teto DE PROPÓSITO — a varredura
             // concluiu que não há costura natural (uma tabela + um modal,
