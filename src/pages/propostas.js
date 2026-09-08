@@ -1,104 +1,20 @@
+// Propostas de Marketing — orquestrador. Filtros/helpers puros vivem em
+// src/pages/propostas/propostas-filtros.js e o modal de exportação em
+// propostas-export.js. Sem estado de módulo: tudo em state.propostas*.
 import { state }        from '../state.js';
 import { icon }         from '../utils/icons.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { fmtBRL, fmtN } from '../utils/currency.js';
 import { sectionTitle } from '../components/ui.js';
+import { statusBadge, fmtDate, fmtCPF, applyFilters, uniqueProducts, uniqueOrigens, uniqueAudiencias } from './propostas/propostas-filtros.js';
+
+export { openExportModal, closeExportModal, doExportCSV } from './propostas/propostas-export.js';
 
 const PAGE_SIZE = 12;
 
-// ── Column definitions ─────────────────────────────────────────────────────
-const COLS = [
-  { key: 'cliente',       label: 'Cliente'          },
-  { key: 'cpf',           label: 'CPF'              },
-  { key: 'saleDate',      label: 'Data'             },
-  { key: 'rawStatus',     label: 'Status'           },
-  { key: 'valor',         label: 'Valor (R$)'       },
-  { key: 'banco',         label: 'Banco'            },
-  { key: 'produto',       label: 'Produto'          },
-  { key: 'loja',          label: 'Loja'             },
-  { key: 'vendedor',      label: 'Vendedor'         },
-  { key: 'ecorbanOrigem', label: 'Origem Ecorban'   },
-  { key: 'origem',        label: 'Origem Smart'     },
-  { key: 'audiencia',     label: 'Audiência Smart'  },
-  { key: 'smartSignal',   label: 'Sinal Smart'      },
-  { key: 'phone',         label: 'Telefone'         },
-];
-
-function loadExportCols() {
-  try {
-    const s = localStorage.getItem('sc_propostas_export_cols');
-    if (s) return new Set(JSON.parse(s));
-  } catch {}
-  return new Set(['cliente','cpf','saleDate','rawStatus','valor','banco','produto','loja','vendedor']);
-}
-function saveExportCols(set) {
-  try { localStorage.setItem('sc_propostas_export_cols', JSON.stringify([...set])); } catch {}
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function statusBadge(cat) {
-  if (cat === 'pago')        return { cls: 'badge-green',  label: 'Pago'         };
-  if (cat === 'quase pago')  return { cls: 'badge-teal',   label: 'Quase Pago'   };
-  if (cat === 'aprovado')    return { cls: 'badge-yellow', label: 'Aprovado'     };
-  if (cat === 'reprovado')   return { cls: 'badge-red',    label: 'Reprovado'    };
-  return                            { cls: 'badge-gray',   label: 'Desconhecido' };
-}
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('pt-BR');
-}
-
-function fmtCPF(cpf) {
-  if (!cpf || cpf.length !== 11) return cpf || '—';
-  return `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`;
-}
-
-// ── Filters ────────────────────────────────────────────────────────────────
-function applyFilters(entries) {
-  let r = entries.filter(e => e.isMarketing === true);
-  const { status, produto, origem, audiencia, search } = state.propostasFilter;
-  if (status   !== 'all') r = r.filter(e => e.statusCat === status);
-  if (produto  !== 'all') r = r.filter(e => (e.produto  || '').trim() === produto);
-  if (origem   !== 'all') r = r.filter(e => (e.origem   || '').trim() === origem);
-  if (audiencia !== 'all') r = r.filter(e => (e.audiencia || '').trim() === audiencia);
-  const q = (search || '').trim().toLowerCase();
-  const qDigits = q.replace(/\D/g, '');
-  if (q) r = r.filter(e =>
-    (e.cliente || '').toLowerCase().includes(q) ||
-    (qDigits && (e.cpf || '').includes(qDigits)) ||
-    (qDigits && (e.smartPhone || '').replace(/\D/g, '').includes(qDigits))
-  );
-  const { col, dir } = state.propostasSort;
-  if (col) r = [...r].sort((a, b) => {
-    let va = a[col], vb = b[col];
-    if (va == null && vb == null) return 0;
-    if (va == null) return 1;
-    if (vb == null) return -1;
-    const cmp = typeof va === 'number' && typeof vb === 'number'
-      ? va - vb
-      : String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
-    return dir === 'desc' ? -cmp : cmp;
-  });
-  return r;
-}
-
-function uniqueProducts(entries) {
-  const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.produto||'').trim()).filter(Boolean));
-  return [...s].sort();
-}
-function uniqueOrigens(entries) {
-  const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.origem||'').trim()).filter(Boolean));
-  return [...s].sort();
-}
-function uniqueAudiencias(entries) {
-  const s = new Set(entries.filter(e => e.isMarketing === true).map(e => (e.audiencia||'').trim()).filter(Boolean));
-  return [...s].sort();
-}
-
 // ── Card ───────────────────────────────────────────────────────────────────
 function propostaCard(e) {
-  const sb = statusBadge(e.statusCat);
+  const badge = statusBadge(e.statusCat);
   return `
     <div class="proposta-card">
       <div class="proposta-header">
@@ -108,7 +24,7 @@ function propostaCard(e) {
         </div>
         <div class="proposta-header-right">
           <div class="status-tip-wrap">
-            <span class="badge ${sb.cls}">${e.rawStatus || sb.label}</span>
+            <span class="badge ${badge.cls}">${e.rawStatus || badge.label}</span>
             ${(e.statusObs || e.statusUpdatedAt) ? `
             <div class="status-tip">
               ${e.statusUpdatedAt ? `<div class="status-tip-date">${icon('calendar', 10)} ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
@@ -130,49 +46,6 @@ function propostaCard(e) {
         ${e.origem ? `<span class="pf-item">${e.origem}${e.audiencia ? ' / '+e.audiencia : ''}</span>` : ''}
       </div>
     </div>`;
-}
-
-// ── Export modal ───────────────────────────────────────────────────────────
-export function openExportModal() {
-  const sel = loadExportCols();
-  document.getElementById('export-cols-list').innerHTML = COLS.map(c => `
-    <label class="export-col-item">
-      <input type="checkbox" value="${c.key}" ${sel.has(c.key) ? 'checked' : ''}>
-      ${c.label}
-    </label>`).join('');
-  document.getElementById('propostas-export-modal').style.display = 'flex';
-}
-
-export function closeExportModal() {
-  document.getElementById('propostas-export-modal').style.display = 'none';
-}
-
-export function doExportCSV() {
-  const checked = [...document.querySelectorAll('#export-cols-list input:checked')].map(el => el.value);
-  if (!checked.length) { alert('Selecione ao menos uma coluna.'); return; }
-  saveExportCols(new Set(checked));
-
-  const fd = filteredData();
-  if (!fd) return;
-  const filtered = applyFilters(fd.entries);
-  const colDefs  = COLS.filter(c => checked.includes(c.key));
-
-  const header = colDefs.map(c => c.label).join(';');
-  const rows   = filtered.map(e => colDefs.map(c => {
-    let v = e[c.key];
-    if (c.key === 'saleDate') v = fmtDate(v);
-    else if (c.key === 'valor') v = v != null ? v.toFixed(2).replace('.', ',') : '';
-    else if (c.key === 'cpf')   v = fmtCPF(v);
-    return `"${String(v ?? '').replace(/"/g, '""')}"`;
-  }).join(';')).join('\n');
-
-  const csv  = '﻿' + header + '\n' + rows;
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `propostas_marketing_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  closeExportModal();
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────

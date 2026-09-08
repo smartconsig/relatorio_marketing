@@ -82,8 +82,10 @@ export default defineConfig([
           ignore: [
             "src/pages/boletos-page.js", // 1359
             "src/services/auth.js", // 396
+            // residuos-page: mantido acima do teto DE PROPÓSITO — a varredura
+            // concluiu que não há costura natural (uma tabela + um modal,
+            // já coeso); dividir só para passar no lint pioraria o código.
             "src/pages/residuos-page.js", // 384
-            "src/pages/propostas.js", // 352
           ],
         },
       ],
