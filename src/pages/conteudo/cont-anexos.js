@@ -53,16 +53,22 @@ export async function carregarAnexos(cardId) {
   });
 }
 
-export async function subirArquivos(files) {
-  if (!C.editId || !files.length) return;
-  if (!perm.conteudoEditar()) return;
-
+// Só imagens até o limite entram; as demais avisam e ficam de fora.
+function _filtrarImagensValidas(files) {
   const validos = [];
   for (const f of files) {
     if (!f.type.startsWith('image/')) { toast(`"${f.name}" não é imagem`, 'err'); continue; }
     if (f.size > ANEXO_MAX_BYTES)     { toast(`"${f.name}" passa de 10 MB`, 'err'); continue; }
     validos.push(f);
   }
+  return validos;
+}
+
+export async function subirArquivos(files) {
+  if (!C.editId || !files.length) return;
+  if (!perm.conteudoEditar()) return;
+
+  const validos = _filtrarImagensValidas(files);
   if (!validos.length) return;
 
   const btn = document.getElementById('cont-anexar');

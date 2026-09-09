@@ -94,16 +94,34 @@ export function renderBoard() {
     `${total} card${total === 1 ? '' : 's'}` + (atrasados ? ` · ${atrasados} atrasado${atrasados === 1 ? '' : 's'}` : '');
 }
 
+// Chips de canal e de ajuste do topo do card
+function _chipsCardHTML(c) {
+  const chips = [];
+  if (c.canal)     chips.push(`<span class="cont-chip">${esc(CANAL_LABEL[c.canal] || c.canal)}</span>`);
+  if (c.em_ajuste) chips.push(`<span class="cont-chip cont-chip-ajuste" title="${esc(c.ajuste_motivo || '')}">Ajuste</span>`);
+  return chips.length ? `<div class="cont-card-chips">${chips.join('')}</div>` : '';
+}
+
+// status de produção: select direto no card (sem abrir o modal);
+// cards antigos sem tipo não mostram nada
+function _statusCardHTML(c, podeEditar) {
+  if (!c.tipo) return '';
+  const atual = c.producao_status || 'roteiro';
+  const cor   = ` cont-status-${atual}`;    // roteiro=azul, gravacao=roxo, edicao=verde, feito=teal
+  return podeEditar
+    ? `<select class="cont-status-sel${cor}" data-status="${c.id}" title="Status de produção">
+           ${statusDoTipo(c.tipo).map(s =>
+             `<option value="${s.key}"${s.key === atual ? ' selected' : ''}>${s.label}</option>`).join('')}
+         </select>`
+    : `<span class="cont-status-chip${cor}">${esc(STATUS_LABEL[atual] || atual)}</span>`;
+}
+
 function _cardHTML(c, hoje) {
   const atrasado = c.data_alvo && c.data_alvo < hoje && c.coluna !== 'publicado';
   const dias     = diasDesde(c.coluna_desde);
   const nome     = nomeMembro(c.responsavel_id);
   const podeEditar  = perm.conteudoEditar();
   const podeAprovar = perm.conteudoAprovar();
-
-  const chips = [];
-  if (c.canal)     chips.push(`<span class="cont-chip">${esc(CANAL_LABEL[c.canal] || c.canal)}</span>`);
-  if (c.em_ajuste) chips.push(`<span class="cont-chip cont-chip-ajuste" title="${esc(c.ajuste_motivo || '')}">Ajuste</span>`);
 
   const acoes = (c.coluna === 'aprovacao' && podeAprovar)
     ? `<div class="cont-card-acoes">
@@ -112,23 +130,11 @@ function _cardHTML(c, hoje) {
        </div>`
     : '';
 
-  // status de produção: select direto no card (sem abrir o modal);
-  // cards antigos sem tipo não mostram nada
-  let statusHTML = '';
-  if (c.tipo) {
-    const atual = c.producao_status || 'roteiro';
-    const cor   = ` cont-status-${atual}`;    // roteiro=azul, gravacao=roxo, edicao=verde, feito=teal
-    statusHTML = podeEditar
-      ? `<select class="cont-status-sel${cor}" data-status="${c.id}" title="Status de produção">
-           ${statusDoTipo(c.tipo).map(s =>
-             `<option value="${s.key}"${s.key === atual ? ' selected' : ''}>${s.label}</option>`).join('')}
-         </select>`
-      : `<span class="cont-status-chip${cor}">${esc(STATUS_LABEL[atual] || atual)}</span>`;
-  }
+  const statusHTML = _statusCardHTML(c, podeEditar);
 
   return `
     <div class="cont-card${atrasado ? ' late' : ''}" data-id="${c.id}" draggable="${podeEditar}">
-      ${chips.length ? `<div class="cont-card-chips">${chips.join('')}</div>` : ''}
+      ${_chipsCardHTML(c)}
       <div class="cont-card-title">${esc(c.titulo)}</div>
       ${c.em_ajuste && c.ajuste_motivo ? `<div class="cont-card-ajuste">${esc(c.ajuste_motivo)}</div>` : ''}
       <div class="cont-card-foot">
@@ -194,6 +200,20 @@ function _cardDepoisDoPonto(body, y) {
   }) || null;
 }
 
+// ordem = média entre os vizinhos, para caber entre eles sem renumerar o resto
+function _ordemEntreVizinhos(id, paraColuna, ref) {
+  const naColuna = C.cards
+    .filter(c => c.coluna === paraColuna && c.id !== id)
+    .sort((a, b) => Number(a.ordem) - Number(b.ordem));
+  const idxDepois = ref ? naColuna.findIndex(c => c.id === ref.dataset.id) : naColuna.length;
+  const antes = naColuna[idxDepois - 1];
+  const depois = naColuna[idxDepois];
+  return antes && depois ? (Number(antes.ordem) + Number(depois.ordem)) / 2
+       : antes           ? Number(antes.ordem) + 1000
+       : depois          ? Number(depois.ordem) - 1000
+       : 1000;
+}
+
 async function _soltar(body, y) {
   const id = C.dragId;
   if (!id) return;
@@ -202,18 +222,7 @@ async function _soltar(body, y) {
 
   const paraColuna = body.dataset.col;
   const ref        = _cardDepoisDoPonto(body, y);
-
-  // ordem = média entre os vizinhos, para caber entre eles sem renumerar o resto
-  const naColuna = C.cards
-    .filter(c => c.coluna === paraColuna && c.id !== id)
-    .sort((a, b) => Number(a.ordem) - Number(b.ordem));
-  const idxDepois = ref ? naColuna.findIndex(c => c.id === ref.dataset.id) : naColuna.length;
-  const antes = naColuna[idxDepois - 1];
-  const depois = naColuna[idxDepois];
-  const ordem = antes && depois ? (Number(antes.ordem) + Number(depois.ordem)) / 2
-              : antes           ? Number(antes.ordem) + 1000
-              : depois          ? Number(depois.ordem) - 1000
-              : 1000;
+  const ordem      = _ordemEntreVizinhos(id, paraColuna, ref);
 
   if (card.coluna === paraColuna && Number(card.ordem) === ordem) return;
 
