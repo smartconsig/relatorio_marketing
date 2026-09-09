@@ -8,8 +8,7 @@ import { toast }             from '../utils/ui.js';
 import { fmtBRL }            from '../utils/currency.js';
 import * as XLSX             from 'xlsx';
 import { parseParceiros, parseParceirosRows } from '../core/parseParceiros.js';
-import { saveParceiros, loadParceiros } from '../services/parceiros-svc.js';
-import { sb }                from '../services/supabase.js';
+import { saveParceiros, loadParceiros, uploadLogoParceiro } from '../services/parceiros-svc.js';
 import { normalizeName, rankColor, medalIcon, logoHtml, logoCacheBust, annotateGaps } from './parceiros/parc-shared.js';
 
 export { enterParceirosTop, exitParceirosTop, setParceirosTopN, toggleParceirosTopValues } from './parceiros/parc-top.js';
@@ -48,10 +47,7 @@ export async function onParceiroLogoChange(e) {
 
   const slug = normalizeName(_editingLogoNome);
   try {
-    const { error } = await sb.storage.from('avatars').upload(`parceiros/${slug}.jpg`, file, {
-      upsert: true,
-      contentType: file.type,
-    });
+    const { error } = await uploadLogoParceiro(slug, file);
     if (error) throw error;
     logoCacheBust[slug] = Date.now();
     toast('Logo atualizada');

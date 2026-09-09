@@ -1,6 +1,6 @@
 // Importadores da Liberação de Margem: planilha de clientes (com detecção de
 // linha verde e normalização de empresa) e planilha de acerto (por CPF).
-import { sb } from '../../services/supabase.js';
+import { insertLiberacoes, updateLiberacao } from '../../services/liberacao-svc.js';
 import { toast, handleError } from '../../utils/ui.js';
 import * as XLSX from 'xlsx';
 import { S, isAdmin, empresaParceira, fmtDate } from './lib-core.js';
@@ -181,7 +181,7 @@ export async function libOnImportFile(input) {
   const BATCH = 500;
   let inserted = 0;
   for (let i = 0; i < valid.length; i += BATCH) {
-    const { error } = await sb.from('liberacao_margem_master').insert(valid.slice(i, i + BATCH));
+    const { error } = await insertLiberacoes(valid.slice(i, i + BATCH));
     if (error) { handleError('Erro ao importar planilha.', error); return; }
     inserted += valid.slice(i, i + BATCH).length;
   }
@@ -275,10 +275,7 @@ export async function libOnImportAcertoFile(input) {
   // Atualiza no Supabase em lote (um por um para segurança)
   let ok = 0;
   for (const reg of toUpdate) {
-    const { error } = await sb
-      .from('liberacao_margem_master')
-      .update({ acerto: hoje })
-      .eq('id', reg.id);
+    const { error } = await updateLiberacao(reg.id, { acerto: hoje });
     if (error) { pulados.push({ cpf: reg.cpf, nome: reg.nome, motivo: 'Erro ao salvar: ' + error.message }); }
     else { reg.acerto = hoje; ok++; }
   }

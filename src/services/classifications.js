@@ -40,6 +40,15 @@ export async function syncClassificationsFromSupabase() {
   return synced;
 }
 
+/**
+ * Remove a classificação de um CPF (usado pelo "desfazer" da tela Clientes
+ * quando nenhuma outra proposta do CPF continua confirmada).
+ * Devolve o { error } cru — quem decide o que fazer com ele é a tela.
+ */
+export function deleteClassificationFromSupabase(cpf) {
+  return sb.from('classifications').delete().eq('cpf', cpf);
+}
+
 export async function saveClassificationToSupabase(cpf, isMkt) {
   if (!cpf || !state.currentUser) return;
   markLocalEdit();

@@ -97,15 +97,15 @@ export default defineConfig([
           logger: "handleError()/toast() de src/utils/ui.js",
         },
       ],
-      // baseline (recontado em 08/09/2026 após os lotes 1-4): 10 arquivos —
-      // universidade, uni-gamificacao, boletos-page, bsc-page, clientes,
-      // parceiros-page + os 4 módulos lib-* da Liberação (o serviço da
-      // Liberação é trabalho futuro). Os DOIS specifiers são necessários:
-      // páginas em src/pages/ importam '../services/…' e sub-módulos em
-      // src/pages/<área>/ importam '../../services/…'. Vira "error" quando
-      // os serviços correspondentes existirem e a contagem zerar.
+      // ZERADO em 09/09/2026 (etapa 3, lote F2): criado liberacao-svc e
+      // wrappers de storage em bsc-svc/parceiros-svc + delete em
+      // classifications — nenhuma tela fala mais com o banco diretamente.
+      // Promovido a "error": daqui em diante é GATE, não conversa.
+      // Os DOIS specifiers são necessários: páginas em src/pages/ importam
+      // '../services/…' e sub-módulos em src/pages/<área>/ importam
+      // '../../services/…'.
       "quality/no-direct-data-access": [
-        "warn",
+        "error",
         {
           modules: ["../services/supabase.js", "../../services/supabase.js"],
           bindings: ["sb"],

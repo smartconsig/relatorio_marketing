@@ -2,7 +2,7 @@
 // Resíduos, exportar, excluir e limpar base.
 // ⚠ libToggleOk reescreve o próprio onclick via setAttribute com o nome
 // global "libToggleOk" — NÃO RENOMEAR (vigiado por scripts/verifica-handlers).
-import { sb } from '../../services/supabase.js';
+import { updateLiberacao, deleteLiberacao, limparBaseLiberacao } from '../../services/liberacao-svc.js';
 import { toast, handleError } from '../../utils/ui.js';
 import { showConfirm } from '../../utils/confirm.js';
 import * as XLSX from 'xlsx';
@@ -76,10 +76,7 @@ export function libLimparBase() {
     `Isso vai excluir TODOS os ${total} clientes permanentemente. Essa ação não pode ser desfeita.`,
     'Excluir tudo',
     async () => {
-      const { error } = await sb
-        .from('liberacao_margem_master')
-        .delete()
-        .not('id', 'is', null);
+      const { error } = await limparBaseLiberacao();
 
       if (error) { handleError('Erro ao limpar a base.', error); return; }
 
@@ -103,10 +100,7 @@ export function libDeletarCliente(id, nome) {
 }
 
 async function _confirmarDelete(id) {
-  const { error } = await sb
-    .from('liberacao_margem_master')
-    .delete()
-    .eq('id', id);
+  const { error } = await deleteLiberacao(id);
 
   if (error) { handleError('Erro ao excluir cliente.', error); return; }
 
@@ -118,10 +112,7 @@ async function _confirmarDelete(id) {
 // ── Marcar OK (admin) ──────────────────────────────────────────────────────
 export async function libToggleOk(id, atual) {
   const novoValor = !atual;
-  const { error } = await sb
-    .from('liberacao_margem_master')
-    .update({ aprovado: novoValor })
-    .eq('id', id);
+  const { error } = await updateLiberacao(id, { aprovado: novoValor });
 
   if (error) { handleError('Erro ao atualizar status.', error); return; }
 
@@ -155,10 +146,7 @@ export async function libToggleOk(id, atual) {
 
 // ── Salvar Acerto (admin) ──────────────────────────────────────────────────
 export async function libSalvarAcerto(id, valor) {
-  const { error } = await sb
-    .from('liberacao_margem_master')
-    .update({ acerto: valor || null })
-    .eq('id', id);
+  const { error } = await updateLiberacao(id, { acerto: valor || null });
 
   if (error) { handleError('Erro ao salvar data de acerto.', error); return; }
 

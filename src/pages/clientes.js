@@ -3,7 +3,6 @@ import { icon } from '../utils/icons.js';
 import { fmtN } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
-import { sb } from '../services/supabase.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from './overview.js';
 import { renderProcv } from './procv.js';
@@ -11,7 +10,7 @@ import { normCPF } from '../utils/cpf.js';
 import { saveSnapshotToSupabase, checkSnapshotTimestamp } from '../services/snapshot.js';
 import { saveSnapshotTimestamp } from '../core/storage.js';
 import { logAction } from '../services/action-log.js';
-import { markLocalEdit } from '../services/classifications.js';
+import { markLocalEdit, deleteClassificationFromSupabase } from '../services/classifications.js';
 import { showConfirm } from '../utils/confirm.js';
 import { badgeHTML } from '../components/Badge.jsx';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
@@ -233,7 +232,7 @@ export async function undoFromClientes(idx) {
 
   if (state.currentUser) {
     if (!otherStillConfirmed && normCpf) {
-      await sb.from('classifications').delete().eq('cpf', normCpf);
+      await deleteClassificationFromSupabase(normCpf);
     }
     // Salva snapshot imediatamente e busca o timestamp real do Supabase
     // para evitar mismatch de formato e re-download do snapshot antigo no F5

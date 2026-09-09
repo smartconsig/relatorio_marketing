@@ -39,3 +39,11 @@ export async function loadBSC() {
     return JSON.parse(data.data);
   } catch (e) { console.warn('loadBSC:', e); return null; }
 }
+
+/** Sobe/substitui a foto de um colaborador no bucket público de avatares. */
+export function uploadAvatarBSC(slug, file) {
+  return sb.storage.from('avatars').upload(`${slug}.jpg`, file, {
+    upsert: true,
+    contentType: file.type,
+  });
+}

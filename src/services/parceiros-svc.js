@@ -41,3 +41,11 @@ export async function loadParceiros() {
     return JSON.parse(data.data);
   } catch (e) { console.warn('loadParceiros:', e); return null; }
 }
+
+/** Sobe/substitui a logo de um parceiro no bucket público de avatares. */
+export function uploadLogoParceiro(slug, file) {
+  return sb.storage.from('avatars').upload(`parceiros/${slug}.jpg`, file, {
+    upsert: true,
+    contentType: file.type,
+  });
+}

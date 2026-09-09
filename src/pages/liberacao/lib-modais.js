@@ -2,7 +2,7 @@
 // cálculo. Os botões Salvar passam o nome da função como string
 // (onclick="libSalvarCliente()" / libSalvarEdicao) — NÃO RENOMEAR sem
 // atualizar main.js e scripts/verifica-handlers.mjs.
-import { sb } from '../../services/supabase.js';
+import { insertLiberacao, updateLiberacao } from '../../services/liberacao-svc.js';
 import { toast, handleError } from '../../utils/ui.js';
 import { parseBRL } from '../../utils/currency.js';
 import { S, empresaParceira, fmtBRL, fmtDate, esc } from './lib-core.js';
@@ -106,10 +106,7 @@ export async function libSalvarEdicao(id) {
   err.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Salvando…';
 
-  const { error } = await sb
-    .from('liberacao_margem_master')
-    .update({ cpf, nome, convenio, produto, saldo_devedor: sd, troco, obs })
-    .eq('id', id);
+  const { error } = await updateLiberacao(id, { cpf, nome, convenio, produto, saldo_devedor: sd, troco, obs });
 
   if (error) {
     handleError('Erro ao salvar.', error);
@@ -240,7 +237,7 @@ export async function libSalvarCliente() {
   btn.disabled = true;
   btn.textContent = 'Salvando…';
 
-  const { error } = await sb.from('liberacao_margem_master').insert({
+  const { error } = await insertLiberacao({
     cpf,
     nome,
     convenio,

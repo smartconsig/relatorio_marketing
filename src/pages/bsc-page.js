@@ -7,8 +7,7 @@ import { icon }        from '../utils/icons.js';
 import { toast }        from '../utils/ui.js';
 import { fmtBRL }       from '../utils/currency.js';
 import { parseBSC }     from '../core/parseBSC.js';
-import { saveBSC, loadBSC } from '../services/bsc-svc.js';
-import { sb }            from '../services/supabase.js';
+import { saveBSC, loadBSC, uploadAvatarBSC } from '../services/bsc-svc.js';
 import {
   normalizeName, teamColor, teamLabel, tempoInfo, quartilInfo,
   medalIcon, avatarHtml, avatarCacheBust,
@@ -36,10 +35,7 @@ export async function onAvatarFileChange(e) {
 
   const slug = normalizeName(_editingAvatarNome);
   try {
-    const { error } = await sb.storage.from('avatars').upload(`${slug}.jpg`, file, {
-      upsert: true,
-      contentType: file.type,
-    });
+    const { error } = await uploadAvatarBSC(slug, file);
     if (error) throw error;
     avatarCacheBust[slug] = Date.now();
     toast('Foto atualizada');

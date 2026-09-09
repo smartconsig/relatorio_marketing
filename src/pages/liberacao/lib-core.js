@@ -1,7 +1,7 @@
 // Núcleo da Liberação de Margem: estado compartilhado (store S), helpers e
 // carga de dados. Todos os outros módulos lib-* importam daqui — nunca o
 // contrário (sem ciclos).
-import { sb } from '../../services/supabase.js';
+import { fetchLiberacoesPage } from '../../services/liberacao-svc.js';
 import { state } from '../../state.js';
 import { handleError } from '../../utils/ui.js';
 import { perm } from '../../services/permissions.js';
@@ -96,12 +96,7 @@ export async function loadData() {
   let from = 0;
   const PAGE = 1000;
   while (true) {
-    const { data, error } = await sb
-      .from('liberacao_margem_master')
-      .select('*')
-      .order('data_quitado', { ascending: false })
-      .order('created_at', { ascending: false })
-      .range(from, from + PAGE - 1);
+    const { data, error } = await fetchLiberacoesPage(from, from + PAGE - 1);
     if (error) { handleError('Erro ao carregar dados.', error); S.registros = []; return; }
     if (data?.length) all.push(...data);
     if (!data || data.length < PAGE) break;
