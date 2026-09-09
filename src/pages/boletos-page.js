@@ -89,19 +89,33 @@ export function bolVerMais() {
 }
 
 // ── Exportar Excel (admin) ────────────────────────────────────────────────
+// Uma linha do export, na mesma ordem das colunas do cabeçalho.
+function _dadosClienteExport(r) {
+  return [
+    r.contrato || '', r.nome, fmtCpf(r.cpf), r.email || '',
+    r.valor_parcela, r.saldo_devedor, r.troco,
+    r.convenio || '', r.produto || '', r.empresa_parceira,
+  ];
+}
+
+function _dadosStatusExport(r) {
+  return [
+    STATUS_META[r.status]?.label || r.status,
+    r.data_solicitado || '', r.data_enviado || '', r.data_quitado || '', r.data_reprovado || '',
+    r.motivo_reprovacao || '', r.obs || '', (r.created_at || '').slice(0,10),
+  ];
+}
+
+function _linhaExport(r) {
+  return [..._dadosClienteExport(r), ..._dadosStatusExport(r)];
+}
+
 export function bolExportar() {
   const data = filtered();
   if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
 
   const headers = ['CONTRATO','NOME','CPF','EMAIL','VALOR PARCELA','SALDO DEVEDOR','TROCO','CONVÊNIO','PRODUTO','EMPRESA','STATUS','DATA SOLICITADO','DATA ENVIADO','DATA QUITADO','DATA REPROVADO','MOTIVO REPROVAÇÃO','OBS','CADASTRO'];
-  const rows = data.map(r => [
-    r.contrato || '', r.nome, fmtCpf(r.cpf), r.email || '',
-    r.valor_parcela, r.saldo_devedor, r.troco,
-    r.convenio || '', r.produto || '', r.empresa_parceira,
-    STATUS_META[r.status]?.label || r.status,
-    r.data_solicitado || '', r.data_enviado || '', r.data_quitado || '', r.data_reprovado || '',
-    r.motivo_reprovacao || '', r.obs || '', (r.created_at || '').slice(0,10),
-  ]);
+  const rows = data.map(_linhaExport);
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const wb = XLSX.utils.book_new();

@@ -64,15 +64,16 @@ export const PRESETS = [
 
 export function presetRange(key) {
   const t = new Date(); t.setHours(0,0,0,0);
-  const fmt = d => d.toISOString().slice(0,10);
+  const fmt   = d => d.toISOString().slice(0,10);
+  const atras = n => { const d = new Date(t); d.setDate(d.getDate() - n); return d; };
   switch (key) {
     case 'hoje':    return { from: fmt(t), to: fmt(t) };
-    case 'ontem':   { const d=new Date(t); d.setDate(d.getDate()-1); return { from:fmt(d), to:fmt(d) }; }
-    case '7d':      { const d=new Date(t); d.setDate(d.getDate()-6); return { from:fmt(d), to:fmt(t) }; }
-    case '15d':     { const d=new Date(t); d.setDate(d.getDate()-14); return { from:fmt(d), to:fmt(t) }; }
-    case '30d':     { const d=new Date(t); d.setDate(d.getDate()-29); return { from:fmt(d), to:fmt(t) }; }
-    case '60d':     { const d=new Date(t); d.setDate(d.getDate()-59); return { from:fmt(d), to:fmt(t) }; }
-    case '90d':     { const d=new Date(t); d.setDate(d.getDate()-89); return { from:fmt(d), to:fmt(t) }; }
+    case 'ontem':   { const d = atras(1); return { from: fmt(d), to: fmt(d) }; }
+    case '7d':      return { from: fmt(atras(6)),  to: fmt(t) };
+    case '15d':     return { from: fmt(atras(14)), to: fmt(t) };
+    case '30d':     return { from: fmt(atras(29)), to: fmt(t) };
+    case '60d':     return { from: fmt(atras(59)), to: fmt(t) };
+    case '90d':     return { from: fmt(atras(89)), to: fmt(t) };
     case 'mes':     return { from: fmt(new Date(t.getFullYear(), t.getMonth(), 1)), to: fmt(t) };
     case 'mes_ant': return {
       from: fmt(new Date(t.getFullYear(), t.getMonth()-1, 1)),
@@ -106,6 +107,22 @@ export const elegiveis = () =>
   BO.registros.filter(r => r.status === 'boleto_solicitado' || r.status === 'boleto_enviado');
 
 // ── Data ──────────────────────────────────────────────────────────────────
+// Documentos anexados (boletos/faturas dos lotes) — não-fatal: se a tabela
+// ainda não existir (migration 012 pendente), a tela funciona sem os chips
+async function _carregarDocs() {
+  try {
+    const docs = await loadBoletoDocs();
+    BO.docs = new Map();
+    for (const d of docs) {
+      if (!BO.docs.has(d.boleto_id)) BO.docs.set(d.boleto_id, []);
+      BO.docs.get(d.boleto_id).push(d);
+    }
+  } catch (e) {
+    console.warn('boleto_docs indisponível:', e?.message);
+    BO.docs = new Map();
+  }
+}
+
 export async function loadData() {
   const all = [];
   let from = 0;
@@ -119,19 +136,7 @@ export async function loadData() {
   }
   BO.registros = all;
 
-  // Documentos anexados (boletos/faturas dos lotes) — não-fatal: se a tabela
-  // ainda não existir (migration 012 pendente), a tela funciona sem os chips
-  try {
-    const docs = await loadBoletoDocs();
-    BO.docs = new Map();
-    for (const d of docs) {
-      if (!BO.docs.has(d.boleto_id)) BO.docs.set(d.boleto_id, []);
-      BO.docs.get(d.boleto_id).push(d);
-    }
-  } catch (e) {
-    console.warn('boleto_docs indisponível:', e?.message);
-    BO.docs = new Map();
-  }
+  await _carregarDocs();
 }
 
 export const spinner = () => `<div style="padding:48px;text-align:center;color:var(--muted)">Carregando…</div>`;

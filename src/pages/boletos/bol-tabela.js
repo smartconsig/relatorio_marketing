@@ -111,67 +111,60 @@ export function render(el) {
 }
 
 // ── Update dinâmico ───────────────────────────────────────────────────────
-export function updateTable() {
-  const admin    = isAdmin();
-  const list     = filtered();
-  const visible  = list.slice(0, BO.page * PAGE_SIZE);
-  const hasMore  = list.length > visible.length;
-  const cols     = admin ? 14 : 13;
-
-  // Contagem
+function _atualizarContagem(list) {
   const countEl = document.querySelector('.bol-count');
-  if (countEl) {
-    countEl.textContent = BO.search || BO.dateFrom || BO.dateTo || BO.statusFiltro || BO.empresaFiltro
-      ? `${list.length} resultado${list.length !== 1 ? 's' : ''} de ${BO.registros.length} total`
-      : `${BO.registros.length} cliente${BO.registros.length !== 1 ? 's' : ''} cadastrado${BO.registros.length !== 1 ? 's' : ''}`;
-  }
+  if (!countEl) return;
+  countEl.textContent = BO.search || BO.dateFrom || BO.dateTo || BO.statusFiltro || BO.empresaFiltro
+    ? `${list.length} resultado${list.length !== 1 ? 's' : ''} de ${BO.registros.length} total`
+    : `${BO.registros.length} cliente${BO.registros.length !== 1 ? 's' : ''} cadastrado${BO.registros.length !== 1 ? 's' : ''}`;
+}
 
-  // Chips de status (contadores respeitam os demais filtros, exceto o próprio status)
+// Chips de status (contadores respeitam os demais filtros, exceto o próprio
+// status — truque de salvar/restaurar BO.statusFiltro, NÃO SIMPLIFICAR)
+function _atualizarChips() {
   const chipsEl = document.getElementById('bol-status-chips');
-  if (chipsEl) {
-    const savedStatus = BO.statusFiltro;
-    BO.statusFiltro = '';
-    const base = filtered();
-    BO.statusFiltro = savedStatus;
-    const countBy = s => base.filter(r => r.status === s).length;
-    chipsEl.innerHTML = `
+  if (!chipsEl) return;
+  const savedStatus = BO.statusFiltro;
+  BO.statusFiltro = '';
+  const base = filtered();
+  BO.statusFiltro = savedStatus;
+  const countBy = s => base.filter(r => r.status === s).length;
+  chipsEl.innerHTML = `
       <button class="bol-chip${!BO.statusFiltro ? ' active' : ''}" onclick="bolSetStatusFiltro('')">Todos <span>${base.length}</span></button>
       ${STATUS_ORDER.map(s => `
         <button class="bol-chip ${STATUS_META[s].cls}${BO.statusFiltro === s ? ' active' : ''}" onclick="bolSetStatusFiltro('${s}')">
           ${STATUS_META[s].label} <span>${countBy(s)}</span>
         </button>`).join('')}
     `;
-  }
+}
 
-  // Tbody
+function _atualizarTbody(visible, cols, admin) {
   const tbody = document.getElementById('bol-tbody');
-  if (tbody) {
-    tbody.innerHTML = visible.length === 0
-      ? `<tr><td colspan="${cols}" class="lib-empty">
-           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-           <div>Nenhum cliente encontrado.</div>
-         </td></tr>`
-      : visible.map(r => _renderRow(r, admin)).join('');
-  }
+  if (!tbody) return;
+  tbody.innerHTML = visible.length === 0
+    ? `<tr><td colspan="${cols}" class="lib-empty">
+         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+         <div>Nenhum cliente encontrado.</div>
+       </td></tr>`
+    : visible.map(r => _renderRow(r, admin)).join('');
+}
 
-  // Ver mais
+function _atualizarVerMais(list, visible) {
   const vmWrap = document.getElementById('bol-ver-mais-wrap');
-  if (vmWrap) {
-    if (hasMore) {
-      const rest = list.length - visible.length;
-      const next = Math.min(PAGE_SIZE, rest);
-      vmWrap.innerHTML = `
+  if (!vmWrap) return;
+  if (list.length <= visible.length) { vmWrap.innerHTML = ''; return; }
+  const rest = list.length - visible.length;
+  const next = Math.min(PAGE_SIZE, rest);
+  vmWrap.innerHTML = `
         <div class="lib-ver-mais-wrap">
           <button class="lib-ver-mais" onclick="bolVerMais()">
             Mostrar mais ${next} cliente${next !== 1 ? 's' : ''}
             <span class="lib-ver-mais-sub">${rest} restante${rest !== 1 ? 's' : ''}</span>
           </button>
         </div>`;
-    } else {
-      vmWrap.innerHTML = '';
-    }
-  }
+}
 
+function _atualizarFiltrosUI() {
   const clearSearch = document.getElementById('bol-search-clear');
   if (clearSearch) clearSearch.style.display = BO.search ? '' : 'none';
 
@@ -186,45 +179,60 @@ export function updateTable() {
   const toEl   = document.getElementById('bol-date-to');
   if (fromEl) fromEl.value = BO.dateFrom || '';
   if (toEl)   toEl.value   = BO.dateTo   || '';
-
-  const empSelect = document.getElementById('bol-empresa-select');
-  if (empSelect) {
-    const empresas = [...new Set(BO.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
-    empSelect.innerHTML = `<option value="">Todas as empresas</option>` +
-      empresas.map(e => `<option value="${esc(e)}"${e === BO.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
-  }
 }
 
-function _renderRow(r, admin) {
-  const meta      = STATUS_META[r.status] || STATUS_META.solicitar_boleto;
-  const grupoNome = state.currentUser?.grupoNome || '';
-  const dono      = admin || r.empresa_parceira === grupoNome;
-  const final     = r.status === 'boleto_quitado' || r.status === 'boleto_reprovado';
+function _atualizarEmpresas() {
+  const empSelect = document.getElementById('bol-empresa-select');
+  if (!empSelect) return;
+  const empresas = [...new Set(BO.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
+  empSelect.innerHTML = `<option value="">Todas as empresas</option>` +
+    empresas.map(e => `<option value="${esc(e)}"${e === BO.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+}
 
-  // Botões de status conforme fase e papel (o banco revalida tudo)
-  let statusBtns = '';
+export function updateTable() {
+  const admin    = isAdmin();
+  const list     = filtered();
+  const visible  = list.slice(0, BO.page * PAGE_SIZE);
+  const cols     = admin ? 14 : 13;
+
+  _atualizarContagem(list);
+  _atualizarChips();
+  _atualizarTbody(visible, cols, admin);
+  _atualizarVerMais(list, visible);
+  _atualizarFiltrosUI();
+  _atualizarEmpresas();
+}
+
+// Botões de status conforme fase e papel (o banco revalida tudo)
+function _statusBtnsHTML(r, admin, dono) {
   if (admin && r.status === 'solicitar_boleto') {
-    statusBtns = `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_solicitado')" title="Marcar como Boleto Solicitado">Solicitado →</button>`;
-  } else if (admin && r.status === 'boleto_solicitado') {
-    statusBtns = `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_enviado')" title="Marcar como Boleto Enviado">Enviado →</button>`;
-  } else if (dono && r.status === 'boleto_enviado') {
-    statusBtns = `
+    return `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_solicitado')" title="Marcar como Boleto Solicitado">Solicitado →</button>`;
+  }
+  if (admin && r.status === 'boleto_solicitado') {
+    return `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_enviado')" title="Marcar como Boleto Enviado">Enviado →</button>`;
+  }
+  if (dono && r.status === 'boleto_enviado') {
+    return `
       <button class="bol-btn-quit" onclick="bolMarcarQuitado('${r.id}')" title="Marcar como Boleto Quitado">${icon('check', 11)} Quitado</button>
       <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">${icon('x', 11)} Reprovar</button>`;
   }
+  return '';
+}
 
-  // Documentos anexados pelos lotes (parceiro só recebe os dos próprios
-  // clientes — o RLS filtra no banco)
+// Documentos anexados pelos lotes (parceiro só recebe os dos próprios
+// clientes — o RLS filtra no banco)
+function _docsCellHTML(r) {
   const docs = BO.docs.get(r.id) || [];
+  if (!docs.length) return `<span class="res-chip res-chip-none">—</span>`;
   const nBol = docs.filter(d => d.tipo === 'boleto').length;
   const nFat = docs.filter(d => d.tipo === 'fatura').length;
-  const docsCell = docs.length
-    ? `<span class="res-doc-chips" onmouseenter="bolPopShow(event,'${r.id}')" onmouseleave="bolPopLeave()" onclick="bolPopShow(event,'${r.id}',true)">
+  return `<span class="res-doc-chips" onmouseenter="bolPopShow(event,'${r.id}')" onmouseleave="bolPopLeave()" onclick="bolPopShow(event,'${r.id}',true)">
          ${nBol ? `<span class="res-chip res-chip-ok">${icon('file', 11)} ${nBol}</span>` : ''}
          ${nFat ? `<span class="res-chip res-chip-ok">${icon('receipt', 11)} ${nFat}</span>` : ''}
-       </span>`
-    : `<span class="res-chip res-chip-none">—</span>`;
+       </span>`;
+}
 
+function _acoesRowHTML(r, admin, dono, final) {
   const canEdit = admin || (dono && !final);
   const editBtn = canEdit
     ? `<button class="lib-btn-edit" onclick="bolEditarCliente('${r.id}')" title="Editar">
@@ -234,7 +242,11 @@ function _renderRow(r, admin) {
     ? `<button class="lib-btn-del" onclick="bolDeletarCliente('${r.id}', '${esc(r.nome).replace(/'/g, "\\'")}')" title="Excluir">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       </button>` : '';
+  return `${_statusBtnsHTML(r, admin, dono)}${editBtn}${delBtn}`;
+}
 
+// Data da fase atual + link do motivo (só reprovado com motivo)
+function _statusCellHTML(r, meta) {
   const statusDate =
     r.status === 'boleto_quitado'    ? fmtDate(r.data_quitado)    :
     r.status === 'boleto_reprovado'  ? fmtDate(r.data_reprovado)  :
@@ -246,25 +258,38 @@ function _renderRow(r, admin) {
     : '';
 
   return `
-    <tr class="lib-tr bol-tr-${meta.cls}" data-id="${r.id}">
-      ${admin ? `<td><span class="lib-empresa-badge">${esc(r.empresa_parceira)}</span></td>` : ''}
-      <td>${esc(r.contrato || '—')}</td>
+        <span class="bol-badge ${meta.cls}">${meta.label}</span>
+        ${statusDate ? `<span class="bol-badge-date">${statusDate}</span>` : ''}
+        ${motivoBtn}`;
+}
+
+function _celulasIdentidadeHTML(r) {
+  return `<td>${esc(r.contrato || '—')}</td>
       <td>${fmtCpf(r.cpf)}</td>
       <td class="lib-nome" title="${esc(r.nome || '')}">${esc(r.nome || '—')}</td>
       <td class="lib-trunc" title="${esc(r.convenio || '')}">${esc(r.convenio || '—')}</td>
-      <td class="lib-trunc" title="${esc(r.produto || '')}">${esc(r.produto || '—')}</td>
+      <td class="lib-trunc" title="${esc(r.produto || '')}">${esc(r.produto || '—')}</td>`;
+}
+
+function _renderRow(r, admin) {
+  const meta      = STATUS_META[r.status] || STATUS_META.solicitar_boleto;
+  const grupoNome = state.currentUser?.grupoNome || '';
+  const dono      = admin || r.empresa_parceira === grupoNome;
+  const final     = r.status === 'boleto_quitado' || r.status === 'boleto_reprovado';
+
+  return `
+    <tr class="lib-tr bol-tr-${meta.cls}" data-id="${r.id}">
+      ${admin ? `<td><span class="lib-empresa-badge">${esc(r.empresa_parceira)}</span></td>` : ''}
+      ${_celulasIdentidadeHTML(r)}
       <td class="lib-val">${fmtBRL(r.valor_parcela)}</td>
       <td class="lib-val lib-val-destaque">${fmtBRL(r.saldo_devedor)}</td>
       <td class="lib-val">${fmtBRL(r.troco)}</td>
       <td>${fmtDate((r.created_at || '').slice(0,10))}</td>
-      <td>
-        <span class="bol-badge ${meta.cls}">${meta.label}</span>
-        ${statusDate ? `<span class="bol-badge-date">${statusDate}</span>` : ''}
-        ${motivoBtn}
+      <td>${_statusCellHTML(r, meta)}
       </td>
-      <td>${docsCell}</td>
+      <td>${_docsCellHTML(r)}</td>
       <td class="lib-obs" title="${esc(r.obs || '')}">${esc(r.obs || '—')}</td>
-      <td class="lib-td-actions bol-td-actions">${statusBtns}${editBtn}${delBtn}</td>
+      <td class="lib-td-actions bol-td-actions">${_acoesRowHTML(r, admin, dono, final)}</td>
     </tr>`;
 }
 

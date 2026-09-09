@@ -12,136 +12,169 @@ export function bolImportarPlanilha() {
   document.getElementById('bol-import-input')?.click();
 }
 
+// ── Helpers puros do parser (mesma lógica que vivia dentro da função) ──────
+const _normStrBol = s => String(s).toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[^a-z0-9\s/]/g, '').trim();
+
+const _padCpf   = v => String(v).replace(/\D/g, '').padStart(11, '0');
+const _cleanTxt = v => String(v ?? '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+
+const _parseMoney = v => {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+  return parseFloat(s) || 0;
+};
+
+const _getVal = (ws, r, colI) => {
+  if (colI < 0) return undefined;
+  return ws[XLSX.utils.encode_cell({ r, c: colI })]?.v;
+};
+
+function _lerCabecalhosBol(ws, range) {
+  const headers = [];
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    headers.push(cell?.v ? _normStrBol(cell.v) : '');
+  }
+  return headers;
+}
+
+// Aceita os cabeçalhos do template novo E os da planilha original de boletos
+function _mapearColunasBol(headers) {
+  const colIdx = (...names) => {
+    for (const n of names) {
+      const idx = headers.indexOf(_normStrBol(n));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  return {
+    iContrato: colIdx('contrato'),
+    iNome:     colIdx('nome', 'nome completo'),
+    iCpf:      colIdx('cpf', 'cpf/cnpj'),
+    iEmail:    colIdx('email', 'e-mail', 'proposta'),
+    iParcela:  colIdx('valor parcela', 'valor da parcela'),
+    iSaldo:    colIdx('saldo devedor', 'saldo'),
+    iTroco:    colIdx('troco'),
+    iConvenio: colIdx('convenio', 'convênio', 'promotora'),
+    iProduto:  colIdx('produto'),
+    iObs:      colIdx('obs', 'observacoes', 'observações', 'observacoes ultimo status', 'observações ultimo status'),
+    iEmp:      colIdx('empresa', 'empresa parceira'),
+  };
+}
+
+// Converte a linha r num candidato; null para linha vazia. cpfRaw/produtoRaw
+// ficam junto só para as mensagens de motivo — saem antes do insert.
+function _linhaParaCandidatoBol(plan, r) {
+  const { ws, cols } = plan;
+  const cpfRaw = _getVal(ws, r, cols.iCpf);
+  const nome   = _cleanTxt(_getVal(ws, r, cols.iNome));
+  if (!cpfRaw && !nome) return null;
+
+  const produtoRaw = _cleanTxt(_getVal(ws, r, cols.iProduto));
+  return {
+    cpfRaw, produtoRaw,
+    cpf:  _padCpf(cpfRaw),
+    nome,
+    email:    _cleanTxt(_getVal(ws, r, cols.iEmail)) || null,
+    contrato: _cleanTxt(_getVal(ws, r, cols.iContrato)) || null,
+    valor_parcela: _parseMoney(_getVal(ws, r, cols.iParcela)),
+    saldo_devedor: _parseMoney(_getVal(ws, r, cols.iSaldo)),
+    troco:         _parseMoney(_getVal(ws, r, cols.iTroco)),
+    convenio: _cleanTxt(_getVal(ws, r, cols.iConvenio)),
+    produto:  canonProduto(produtoRaw),
+    obs: _cleanTxt(_getVal(ws, r, cols.iObs)) || null,
+    empresa_parceira: plan.admin ? (_cleanTxt(_getVal(ws, r, cols.iEmp)) || 'Smart Consig') : plan.empresaParceiro,
+  };
+}
+
+// Mesmas regras e mensagens de descarte, na mesma ordem
+function _motivoInvalido(c) {
+  if (!c.cpf || c.cpf === '00000000000') return 'CPF ausente ou inválido';
+  if (!c.nome)              return 'Sem nome';
+  if (c.saldo_devedor <= 0) return 'Sem saldo devedor';
+  if (!c.convenio)          return 'Sem convênio';
+  if (!c.produtoRaw)        return 'Sem produto';
+  if (!c.produto)           return `Produto não reconhecido: "${c.produtoRaw}"`;
+  return null;
+}
+
+function _coletarLinhasBol(plan) {
+  const seen  = new Set();
+  const valid = [];
+  const invalidos = [];
+
+  for (let r = plan.range.s.r + 1; r <= plan.range.e.r; r++) {
+    const c = _linhaParaCandidatoBol(plan, r);
+    if (!c) continue;
+
+    const motivo = _motivoInvalido(c);
+    if (motivo) { invalidos.push({ cpf: c.cpfRaw || '—', nome: c.nome || '—', motivo }); continue; }
+
+    // Mesma regra do banco: CPF repetido no mesmo produto não entra
+    const dupKey = `${c.cpf}|${c.produto}`;
+    if (seen.has(dupKey)) { invalidos.push({ cpf: c.cpf, nome: c.nome, motivo: 'CPF duplicado no mesmo produto na planilha' }); continue; }
+    seen.add(dupKey);
+
+    const { cpfRaw: _1, produtoRaw: _2, ...reg } = c;
+    valid.push(reg);
+  }
+  return { valid, invalidos };
+}
+
+// Insere UM POR UM: o trigger de CPF pode recusar linhas específicas e
+// as demais precisam entrar mesmo assim, com relatório do que foi pulado
+async function _inserirUmAUm(valid) {
+  let inserted = 0;
+  const rejeitados = [];
+  for (const reg of valid) {
+    const { error } = await insertBoleto(reg);
+    if (error) rejeitados.push({ cpf: reg.cpf, nome: reg.nome, motivo: msgErroBanco(error) });
+    else inserted++;
+  }
+  return { inserted, rejeitados };
+}
+
+// Lê o Excel; null (com erro já mostrado) se o arquivo for ilegível.
+async function _lerWorkbookBol(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    return XLSX.read(buf, { type: 'array', cellDates: true });
+  } catch {
+    handleError('Erro ao ler o arquivo.', null);
+    return null;
+  }
+}
+
 export async function bolOnImportFile(input) {
   const file = input.files?.[0];
   if (!file) return;
   input.value = '';
 
-  const admin           = isAdmin();
-  const empresaParceiro = empresaParceira();
-
-  let wb;
-  try {
-    const buf = await file.arrayBuffer();
-    wb = XLSX.read(buf, { type: 'array', cellDates: true });
-  } catch {
-    handleError('Erro ao ler o arquivo.', null);
-    return;
-  }
+  const wb = await _lerWorkbookBol(file);
+  if (!wb) return;
 
   const ws    = wb.Sheets[wb.SheetNames[0]];
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  const cols  = _mapearColunasBol(_lerCabecalhosBol(ws, range));
 
-  const normStr = s => String(s).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s/]/g, '').trim();
-
-  const headers = [];
-  for (let c = range.s.c; c <= range.e.c; c++) {
-    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-    headers.push(cell?.v ? normStr(cell.v) : '');
-  }
-
-  const colIdx = (...names) => {
-    for (const n of names) {
-      const idx = headers.indexOf(normStr(n));
-      if (idx >= 0) return idx;
-    }
-    return -1;
-  };
-
-  // Aceita os cabeçalhos do template novo E os da planilha original de boletos
-  const iContrato = colIdx('contrato');
-  const iNome     = colIdx('nome', 'nome completo');
-  const iCpf      = colIdx('cpf', 'cpf/cnpj');
-  const iEmail    = colIdx('email', 'e-mail', 'proposta');
-  const iParcela  = colIdx('valor parcela', 'valor da parcela');
-  const iSaldo    = colIdx('saldo devedor', 'saldo');
-  const iTroco    = colIdx('troco');
-  const iConvenio = colIdx('convenio', 'convênio', 'promotora');
-  const iProduto  = colIdx('produto');
-  const iObs      = colIdx('obs', 'observacoes', 'observações', 'observacoes ultimo status', 'observações ultimo status');
-  const iEmp      = colIdx('empresa', 'empresa parceira');
-
-  if (iCpf < 0 || iNome < 0) {
+  if (cols.iCpf < 0 || cols.iNome < 0) {
     _mostrarErroModelo();
     return;
   }
 
-  const getVal = (r, colI) => {
-    if (colI < 0) return undefined;
-    return ws[XLSX.utils.encode_cell({ r, c: colI })]?.v;
-  };
-
-  const parseMoney = v => {
-    if (v == null || v === '') return 0;
-    if (typeof v === 'number') return v;
-    const s = String(v).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(s) || 0;
-  };
-
-  const padCpf   = v => String(v).replace(/\D/g, '').padStart(11, '0');
-  const cleanTxt = v => String(v ?? '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-
-  const seen  = new Set();
-  const valid = [];
-  const invalidos = [];
-
-  for (let r = range.s.r + 1; r <= range.e.r; r++) {
-    const cpfRaw = getVal(r, iCpf);
-    const nome   = cleanTxt(getVal(r, iNome));
-    if (!cpfRaw && !nome) continue;
-
-    const cpf      = padCpf(cpfRaw);
-    const contrato = cleanTxt(getVal(r, iContrato)) || null;
-    const email    = cleanTxt(getVal(r, iEmail)) || null;
-    const parcela  = parseMoney(getVal(r, iParcela));
-    const saldo    = parseMoney(getVal(r, iSaldo));
-    const troco    = parseMoney(getVal(r, iTroco));
-    const convenio    = cleanTxt(getVal(r, iConvenio));
-    const produtoRaw  = cleanTxt(getVal(r, iProduto));
-    const produto     = canonProduto(produtoRaw);
-    const obs      = cleanTxt(getVal(r, iObs)) || null;
-    const empresa  = admin ? (cleanTxt(getVal(r, iEmp)) || 'Smart Consig') : empresaParceiro;
-
-    let motivo = null;
-    if (!cpf || cpf === '00000000000') motivo = 'CPF ausente ou inválido';
-    else if (!nome)                    motivo = 'Sem nome';
-    else if (saldo <= 0)               motivo = 'Sem saldo devedor';
-    else if (!convenio)                motivo = 'Sem convênio';
-    else if (!produtoRaw)              motivo = 'Sem produto';
-    else if (!produto)                 motivo = `Produto não reconhecido: "${produtoRaw}"`;
-
-    if (motivo) { invalidos.push({ cpf: cpfRaw || '—', nome: nome || '—', motivo }); continue; }
-
-    // Mesma regra do banco: CPF repetido no mesmo produto não entra
-    const dupKey = `${cpf}|${produto}`;
-    if (seen.has(dupKey)) { invalidos.push({ cpf, nome, motivo: 'CPF duplicado no mesmo produto na planilha' }); continue; }
-    seen.add(dupKey);
-
-    valid.push({
-      cpf, nome, email, contrato,
-      valor_parcela: parcela, saldo_devedor: saldo, troco,
-      convenio, produto, obs, empresa_parceira: empresa,
-    });
-  }
+  const plan = { ws, range, cols, admin: isAdmin(), empresaParceiro: empresaParceira() };
+  const { valid, invalidos } = _coletarLinhasBol(plan);
 
   if (valid.length === 0 && invalidos.length === 0) {
     toast('Nenhum registro encontrado na planilha.', 'err');
     return;
   }
 
-  // Insere UM POR UM: o trigger de CPF pode recusar linhas específicas e
-  // as demais precisam entrar mesmo assim, com relatório do que foi pulado
-  let inserted = 0;
-  const rejeitados = [];
   toast(`Importando ${valid.length} cliente${valid.length !== 1 ? 's' : ''}…`);
-
-  for (const reg of valid) {
-    const { error } = await insertBoleto(reg);
-    if (error) rejeitados.push({ cpf: reg.cpf, nome: reg.nome, motivo: msgErroBanco(error) });
-    else inserted++;
-  }
+  const { inserted, rejeitados } = await _inserirUmAUm(valid);
 
   await reloadAndRender();
 

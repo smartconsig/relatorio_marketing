@@ -12,23 +12,18 @@ let _popTimer     = null;
 let _popFixo      = false;
 let _popListeners = false;
 
-export function bolPopShow(ev, boletoId, fixo = false) {
-  clearTimeout(_popTimer);
-  const pop = document.getElementById('bol-pop');
-  const r   = BO.registros.find(x => x.id === boletoId);
-  if (!pop || !r) return;
-  _popFixo = fixo;
+// Fecha o popover ao clicar fora (ligado uma única vez).
+function _ligarFechamentoPorClique(pop) {
+  if (_popListeners) return;
+  _popListeners = true;
+  document.addEventListener('click', e => {
+    if (e.target.closest('.res-pop') || e.target.closest('.res-doc-chips')) return;
+    _popFixo = false;
+    pop.style.display = 'none';
+  });
+}
 
-  if (!_popListeners) {
-    _popListeners = true;
-    document.addEventListener('click', e => {
-      if (e.target.closest('.res-pop') || e.target.closest('.res-doc-chips')) return;
-      _popFixo = false;
-      pop.style.display = 'none';
-    });
-  }
-
-  const docs  = BO.docs.get(boletoId) || [];
+function _popConteudoHTML(r, docs) {
   const admin = isAdmin();
   const linha = d => `
     <div class="res-pop-file">
@@ -42,13 +37,16 @@ export function bolPopShow(ev, boletoId, fixo = false) {
 
   const bols = docs.filter(d => d.tipo === 'boleto');
   const fats = docs.filter(d => d.tipo === 'fatura');
-  pop.innerHTML = `
+  return `
     <div class="res-pop-title">${esc(r.nome)}</div>
     ${bols.length ? `<div class="res-pop-grp">Boletos</div>${bols.map(linha).join('')}` : ''}
     ${fats.length ? `<div class="res-pop-grp">Faturas</div>${fats.map(linha).join('')}` : ''}
     ${!docs.length ? `<div class="res-pop-grp">Nenhum documento</div>` : ''}
   `;
+}
 
+// Posiciona junto ao chip, sem sair da janela (mesma matemática original).
+function _posicionarPop(pop, ev) {
   const rect = ev.currentTarget.getBoundingClientRect();
   pop.style.display = 'block';
   const popW = Math.min(380, window.innerWidth - 24);
@@ -59,6 +57,18 @@ export function bolPopShow(ev, boletoId, fixo = false) {
   if (top + popH > window.innerHeight - 12) top = Math.max(12, rect.top - popH - 6);
   pop.style.left = left + 'px';
   pop.style.top  = top + 'px';
+}
+
+export function bolPopShow(ev, boletoId, fixo = false) {
+  clearTimeout(_popTimer);
+  const pop = document.getElementById('bol-pop');
+  const r   = BO.registros.find(x => x.id === boletoId);
+  if (!pop || !r) return;
+  _popFixo = fixo;
+
+  _ligarFechamentoPorClique(pop);
+  pop.innerHTML = _popConteudoHTML(r, BO.docs.get(boletoId) || []);
+  _posicionarPop(pop, ev);
 }
 
 export function bolPopEnter() { clearTimeout(_popTimer); }
