@@ -45,14 +45,7 @@ export function renderNiveis(body) {
 
     try {
       for (const n of G.niveis) {
-        const nomeEl   = body.querySelector(`input[data-nid="${n.id}"][data-field="nome"]`);
-        const xpMinEl  = body.querySelector(`input[data-nid="${n.id}"][data-field="xp_min"]`);
-        const xpMaxEl  = body.querySelector(`input[data-nid="${n.id}"][data-field="xp_max"]`);
-        const nome     = nomeEl?.value?.trim() || n.nome;
-        const xp_min   = parseInt(xpMinEl?.value) || 0;
-        const xp_max   = xpMaxEl?.value ? parseInt(xpMaxEl.value) : null;
-        await updNivel(n.id, { nome, xp_min, xp_max });
-        n.nome = nome; n.xp_min = xp_min; n.xp_max = xp_max;
+        await _salvarNivelDaLinha(body, n);
       }
       btn.textContent = '✓ Salvo!';
       setTimeout(() => { btn.disabled = false; btn.textContent = 'Salvar níveis'; }, 2000);
@@ -62,6 +55,18 @@ export function renderNiveis(body) {
       btn.disabled = false; btn.textContent = 'Salvar níveis';
     }
   });
+}
+
+// Lê os campos da linha do nível, persiste e reflete no estado local.
+async function _salvarNivelDaLinha(body, n) {
+  const nomeEl   = body.querySelector(`input[data-nid="${n.id}"][data-field="nome"]`);
+  const xpMinEl  = body.querySelector(`input[data-nid="${n.id}"][data-field="xp_min"]`);
+  const xpMaxEl  = body.querySelector(`input[data-nid="${n.id}"][data-field="xp_max"]`);
+  const nome     = nomeEl?.value?.trim() || n.nome;
+  const xp_min   = parseInt(xpMinEl?.value) || 0;
+  const xp_max   = xpMaxEl?.value ? parseInt(xpMaxEl.value) : null;
+  await updNivel(n.id, { nome, xp_min, xp_max });
+  n.nome = nome; n.xp_min = xp_min; n.xp_max = xp_max;
 }
 
 function _nivelGradient(i) {

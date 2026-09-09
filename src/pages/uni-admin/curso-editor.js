@@ -43,6 +43,44 @@ export async function openEditor(cursoExistente, el) {
   _renderEditor(el);
 }
 
+// Slot de upload de imagem (capa retrato / hero paisagem) — mesmo markup dos
+// dois blocos originais, parametrizado.
+function _imgSlotHTML({ id, label, dim, klass, url, hint }) {
+  return `
+            <div class="uadm-img-slot">
+              <div class="uadm-img-label">${label} <span class="uadm-img-dim">${dim}</span></div>
+              <div class="uadm-img-preview ${klass}" id="preview-${id}"
+                   style="${url ? `background-image:url('${url}')` : ''}">
+                ${!url ? '<span class="uadm-img-placeholder">Nenhuma imagem</span>' : ''}
+              </div>
+              <div class="uadm-img-actions">
+                <label class="uadm-btn-upload" for="upload-${id}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Upload ${id}
+                </label>
+                <input type="file" id="upload-${id}" accept="image/*" style="display:none">
+                ${url ? `<button class="uadm-btn-sm-ghost" id="rm-${id}">Remover</button>` : ''}
+              </div>
+              <div class="uadm-img-hint">${hint}</div>
+            </div>
+`;
+}
+
+function _secaoImagensHTML() {
+  return `
+        <div class="uadm-card">
+          <div class="uadm-card-title">Imagens</div>
+          <div class="uadm-imagens-grid">
+${_imgSlotHTML({ id: 'capa', label: 'Capa do curso', dim: 'Retrato — 400×600px', klass: 'uadm-img-portrait', url: U.curso.capa_url, hint: 'Aparece nos cards dos cursos. Proporção 2:3 recomendada.' })}
+${_imgSlotHTML({ id: 'hero', label: 'Imagem Hero', dim: 'Paisagem — 1600×600px', klass: 'uadm-img-hero', url: U.curso.hero_img, hint: 'Aparece no banner grande ao abrir o curso.' })}
+          </div>
+        </div>
+`;
+}
+
 function _renderEditor(el) {
   const isNew = !U.curso.id;
 
@@ -113,52 +151,7 @@ function _renderEditor(el) {
         </div>
 
         <!-- Seção: Imagens -->
-        <div class="uadm-card">
-          <div class="uadm-card-title">Imagens</div>
-          <div class="uadm-imagens-grid">
-
-            <div class="uadm-img-slot">
-              <div class="uadm-img-label">Capa do curso <span class="uadm-img-dim">Retrato — 400×600px</span></div>
-              <div class="uadm-img-preview uadm-img-portrait" id="preview-capa"
-                   style="${U.curso.capa_url ? `background-image:url('${U.curso.capa_url}')` : ''}">
-                ${!U.curso.capa_url ? '<span class="uadm-img-placeholder">Nenhuma imagem</span>' : ''}
-              </div>
-              <div class="uadm-img-actions">
-                <label class="uadm-btn-upload" for="upload-capa">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  Upload capa
-                </label>
-                <input type="file" id="upload-capa" accept="image/*" style="display:none">
-                ${U.curso.capa_url ? `<button class="uadm-btn-sm-ghost" id="rm-capa">Remover</button>` : ''}
-              </div>
-              <div class="uadm-img-hint">Aparece nos cards dos cursos. Proporção 2:3 recomendada.</div>
-            </div>
-
-            <div class="uadm-img-slot">
-              <div class="uadm-img-label">Imagem Hero <span class="uadm-img-dim">Paisagem — 1600×600px</span></div>
-              <div class="uadm-img-preview uadm-img-hero" id="preview-hero"
-                   style="${U.curso.hero_img ? `background-image:url('${U.curso.hero_img}')` : ''}">
-                ${!U.curso.hero_img ? '<span class="uadm-img-placeholder">Nenhuma imagem</span>' : ''}
-              </div>
-              <div class="uadm-img-actions">
-                <label class="uadm-btn-upload" for="upload-hero">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  Upload hero
-                </label>
-                <input type="file" id="upload-hero" accept="image/*" style="display:none">
-                ${U.curso.hero_img ? `<button class="uadm-btn-sm-ghost" id="rm-hero">Remover</button>` : ''}
-              </div>
-              <div class="uadm-img-hint">Aparece no banner grande ao abrir o curso.</div>
-            </div>
-
-          </div>
-        </div>
+        ${_secaoImagensHTML()}
 
         <!-- Seção: Módulos e Aulas -->
         <div class="uadm-card">
@@ -252,7 +245,7 @@ function _renderEditor(el) {
 }
 
 // ── Listeners do editor ────────────────────────────────────────────────────
-function _attachEditorListeners(el) {
+function _attachAcoesPrincipais(el) {
   el.querySelector('#btn-voltar')?.addEventListener('click', () => showList(el));
   el.querySelector('#btn-cancelar')?.addEventListener('click', () => showList(el));
 
@@ -260,6 +253,10 @@ function _attachEditorListeners(el) {
   el.querySelector('#btn-publicar-2')?.addEventListener('click', () => salvar(true, el));
   el.querySelector('#btn-rascunho')?.addEventListener('click',   () => salvar(false, el));
   el.querySelector('#btn-rascunho-2')?.addEventListener('click', () => salvar(false, el));
+}
+
+function _attachEditorListeners(el) {
+  _attachAcoesPrincipais(el);
 
   el.querySelector('#btn-add-modulo')?.addEventListener('click', () => {
     U.modulos.push(emptyModulo(U.modulos.length + 1));

@@ -151,16 +151,7 @@ function _renderPremioEditor(body) {
     };
 
     try {
-      if (G.premio.id) {
-        await updPremio(G.premio.id, payload);
-        const idx = G.premios.findIndex(x => x.id === G.premio.id);
-        if (idx >= 0) G.premios[idx] = { ...G.premios[idx], ...payload };
-      } else {
-        const { data, error } = await insPremio(payload);
-        if (error) throw error;
-        G.premios.push(data);
-        G.premios.sort((a, b) => a.xp_necessario - b.xp_necessario);
-      }
+      await _persistirPremio(payload);
       G.editView = null;
       renderPremios(body);
     } catch (err) {
@@ -170,4 +161,17 @@ function _renderPremioEditor(body) {
       btn.textContent = G.premio.id ? 'Salvar alterações' : 'Criar prêmio';
     }
   });
+}
+
+async function _persistirPremio(payload) {
+  if (G.premio.id) {
+    await updPremio(G.premio.id, payload);
+    const idx = G.premios.findIndex(x => x.id === G.premio.id);
+    if (idx >= 0) G.premios[idx] = { ...G.premios[idx], ...payload };
+    return;
+  }
+  const { data, error } = await insPremio(payload);
+  if (error) throw error;
+  G.premios.push(data);
+  G.premios.sort((a, b) => a.xp_necessario - b.xp_necessario);
 }

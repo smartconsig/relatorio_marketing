@@ -180,26 +180,8 @@ function _renderConquistaEditor(body) {
 
     btn.disabled = true; btn.textContent = 'Salvando…';
 
-    const payload = {
-      nome,
-      descricao:      document.getElementById('cf-desc')?.value?.trim() || '',
-      icone:          document.getElementById('cf-icone')?.value || 'star',
-      condicao_tipo:  document.getElementById('cf-cond-tipo')?.value || 'cursos_concluidos',
-      condicao_valor: parseInt(document.getElementById('cf-cond-valor')?.value) || 1,
-      xp_bonus:       parseInt(document.getElementById('cf-xp-bonus')?.value) || 0,
-      ativo:          true,
-    };
-
     try {
-      if (G.conquista.id) {
-        await updConquista(G.conquista.id, payload);
-        const idx = G.conquistas.findIndex(x => x.id === G.conquista.id);
-        if (idx >= 0) G.conquistas[idx] = { ...G.conquistas[idx], ...payload };
-      } else {
-        const { data, error } = await insConquista(payload);
-        if (error) throw error;
-        G.conquistas.push(data);
-      }
+      await _persistirConquista(_coletarConquistaDoDOM(nome));
       G.editView = null;
       renderConquistas(body);
     } catch (err) {
@@ -209,6 +191,30 @@ function _renderConquistaEditor(body) {
       btn.textContent = G.conquista.id ? 'Salvar alterações' : 'Criar conquista';
     }
   });
+}
+
+function _coletarConquistaDoDOM(nome) {
+  return {
+    nome,
+    descricao:      document.getElementById('cf-desc')?.value?.trim() || '',
+    icone:          document.getElementById('cf-icone')?.value || 'star',
+    condicao_tipo:  document.getElementById('cf-cond-tipo')?.value || 'cursos_concluidos',
+    condicao_valor: parseInt(document.getElementById('cf-cond-valor')?.value) || 1,
+    xp_bonus:       parseInt(document.getElementById('cf-xp-bonus')?.value) || 0,
+    ativo:          true,
+  };
+}
+
+async function _persistirConquista(payload) {
+  if (G.conquista.id) {
+    await updConquista(G.conquista.id, payload);
+    const idx = G.conquistas.findIndex(x => x.id === G.conquista.id);
+    if (idx >= 0) G.conquistas[idx] = { ...G.conquistas[idx], ...payload };
+    return;
+  }
+  const { data, error } = await insConquista(payload);
+  if (error) throw error;
+  G.conquistas.push(data);
 }
 
 // ── Ícones SVG ─────────────────────────────────────────────────────────────
