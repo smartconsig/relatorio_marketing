@@ -29,24 +29,29 @@ export function canonProduto(v) {
   return null;
 }
 
-// Traduz os erros levantados pelos triggers/RPC do banco
+// Traduz os erros levantados pelos triggers/RPC do banco (primeira marca
+// que casar vence — mesma ordem da corrente de ifs original)
+const ERROS_BANCO = [
+  ['BOLETO_CPF_MESMO_PRODUTO',   'CPF já cadastrado neste produto pela sua empresa.'],
+  ['BOLETO_CPF_JA_LIBERACAO',    'CPF já está na Liberação de Margem neste produto.'],
+  ['BOLETO_PRODUTO_INVALIDO',    'Produto não reconhecido. Use Cartão Benefício ou Cartão Consignado.'],
+  ['BOLETO_CPF_INVALIDO',        'CPF inválido.'],
+  ['BOLETO_MOTIVO_OBRIGATORIO',  'Informe o motivo da reprovação.'],
+  ['BOLETO_TRANSICAO_INVALIDA',  'Mudança de status não permitida nesta fase.'],
+  ['BOLETO_SOMENTE_ADMIN',       'Apenas o admin pode executar esta ação.'],
+  ['BOLETO_SEM_PERMISSAO',       'Sem permissão para agir neste registro.'],
+  ['BOLETO_REGISTRO_FINALIZADO', 'Registro finalizado — somente admin pode editar.'],
+  ['BOLETO_STATUS_SOMENTE_RPC',  'Status não pode ser alterado diretamente.'],
+];
+
 export function msgErroBanco(error) {
   const m = error?.message || '';
   if (m.includes('BOLETO_CPF_OUTRA_EMPRESA')) {
     const emp = m.split('BOLETO_CPF_OUTRA_EMPRESA:')[1]?.split(/[\n"]/)[0]?.trim();
     return emp ? `CPF já cadastrado pela empresa ${emp}.` : 'CPF já cadastrado por outra empresa.';
   }
-  if (m.includes('BOLETO_CPF_MESMO_PRODUTO'))  return 'CPF já cadastrado neste produto pela sua empresa.';
-  if (m.includes('BOLETO_CPF_JA_LIBERACAO'))   return 'CPF já está na Liberação de Margem neste produto.';
-  if (m.includes('BOLETO_PRODUTO_INVALIDO'))   return 'Produto não reconhecido. Use Cartão Benefício ou Cartão Consignado.';
-  if (m.includes('BOLETO_CPF_INVALIDO'))       return 'CPF inválido.';
-  if (m.includes('BOLETO_MOTIVO_OBRIGATORIO')) return 'Informe o motivo da reprovação.';
-  if (m.includes('BOLETO_TRANSICAO_INVALIDA')) return 'Mudança de status não permitida nesta fase.';
-  if (m.includes('BOLETO_SOMENTE_ADMIN'))      return 'Apenas o admin pode executar esta ação.';
-  if (m.includes('BOLETO_SEM_PERMISSAO'))      return 'Sem permissão para agir neste registro.';
-  if (m.includes('BOLETO_REGISTRO_FINALIZADO'))return 'Registro finalizado — somente admin pode editar.';
-  if (m.includes('BOLETO_STATUS_SOMENTE_RPC')) return 'Status não pode ser alterado diretamente.';
-  return m || 'Erro inesperado.';
+  const hit = ERROS_BANCO.find(([marca]) => m.includes(marca));
+  return hit ? hit[1] : (m || 'Erro inesperado.');
 }
 
 // ── Acesso a dados (wrappers finos — call sites checam { error }) ─────────

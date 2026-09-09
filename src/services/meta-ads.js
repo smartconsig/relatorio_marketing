@@ -1,6 +1,12 @@
 import { sb } from './supabase.js';
 import { state } from '../state.js';
 
+/** Data do filtro (string ou Date) no formato YYYY-MM-DD, ou null. */
+function isoDate(d) {
+  if (!d) return null;
+  return typeof d === 'string' ? d : d.toISOString().slice(0, 10);
+}
+
 /**
  * Busca dados do Meta Ads via Edge Function e armazena em state.metaAds.
  * Retorna true se dados foram obtidos com sucesso, false caso contrário.
@@ -10,12 +16,8 @@ export async function syncMetaAds() {
   if (!state.currentUser) return false;
 
   const { start, end } = state.filterDates;
-  const date_start = start
-    ? (typeof start === 'string' ? start : start.toISOString().slice(0, 10))
-    : null;
-  const date_stop = end
-    ? (typeof end === 'string' ? end : end.toISOString().slice(0, 10))
-    : null;
+  const date_start = isoDate(start);
+  const date_stop  = isoDate(end);
 
   try {
     const { data, error } = await sb.functions.invoke('meta-ads', {

@@ -25,13 +25,15 @@ export async function syncKolmeya() {
     // A API retorna um array de jobs — agrega os totais
     const jobs = Array.isArray(data) ? data : (data.jobs ?? []);
 
+    // Cada campo pode vir com nome PT ou EN — pega o primeiro que existir
+    const num = (pt, en) => Number(pt ?? en ?? 0);
     const totais = jobs.reduce((acc, job) => {
-      acc.enviados      += Number(job.enviados      ?? job.sent       ?? 0);
-      acc.entregues     += Number(job.entregues     ?? job.delivered  ?? 0);
-      acc.naoEntregues  += Number(job.nao_entregues ?? job.undelivered ?? 0);
-      acc.respostas     += Number(job.respostas     ?? job.replies    ?? 0);
-      acc.acessos       += Number(job.acessos       ?? job.accesses   ?? 0);
-      acc.valorPago     += Number(job.valor_pago    ?? job.amount     ?? 0);
+      acc.enviados      += num(job.enviados,      job.sent);
+      acc.entregues     += num(job.entregues,     job.delivered);
+      acc.naoEntregues  += num(job.nao_entregues, job.undelivered);
+      acc.respostas     += num(job.respostas,     job.replies);
+      acc.acessos       += num(job.acessos,       job.accesses);
+      acc.valorPago     += num(job.valor_pago,    job.amount);
       return acc;
     }, { enviados: 0, entregues: 0, naoEntregues: 0, respostas: 0, acessos: 0, valorPago: 0 });
 

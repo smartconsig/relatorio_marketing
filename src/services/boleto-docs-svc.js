@@ -150,6 +150,90 @@ async function _extrairCpfsDoPdf(pdfjs, bytes) {
  * @param {Function} onProgress - (feitos, total, etapa) para a barra do modal
  * @returns {{ itens, orfaos, jaAnexados, clientesSemArquivo }}
  */
+// Índices dos clientes elegíveis: por CPF normalizado e por tokens do nome.
+function _indexarAlvos(alvos) {
+  const porCpf = new Map();
+  for (const r of alvos) {
+    const cpf = normCPF(r.cpf);
+    if (!porCpf.has(cpf)) porCpf.set(cpf, []);
+    porCpf.get(cpf).push(r);
+  }
+  const nomes = alvos.map(r => ({ r, tokens: _normNome(r.nome).split(' ') }));
+  return { porCpf, nomes };
+}
+
+async function _carregarPdfjs() {
+  const pdfjs = await import('pdfjs-dist');
+  const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  return pdfjs;
+}
+
+// ── Boleto: pasta raiz é o CPF ── (metodo é 'cpf' mesmo quando órfão,
+// igual ao fluxo original — órfão não usa o campo)
+function _identificarBoleto(parts, porCpf) {
+  const contrato = parts.length >= 3 ? parts[1] : null;
+  if (porCpf.has(parts[0])) return { cpf: parts[0], contrato, metodo: 'cpf', motivo: null };
+  return { cpf: null, contrato, metodo: 'cpf', motivo: 'CPF não está em Boleto Solicitado/Enviado' };
+}
+
+// ── Fatura: CPF só existe DENTRO do PDF; fallback pelo nome do arquivo ──
+async function _identificarFatura(pdfjs, bytes, nomeArquivo, ctx) {
+  const { porCpf, nomes } = ctx;
+  const achados = await _extrairCpfsDoPdf(pdfjs, bytes.slice());
+  const validos = [...new Set(achados)].filter(c => porCpf.has(c));
+  if (validos.length === 1) return { cpf: validos[0], metodo: 'cpf-pdf', motivo: null };
+  if (validos.length > 1)   return { cpf: null, metodo: null, motivo: 'PDF cita mais de um cliente elegível' };
+
+  // Fallback: nome do arquivo ("NOME DO CLIENTE - 9999.pdf")
+  const nomeFatura = _normNome(nomeArquivo.replace(/\.pdf$/i, '').replace(/\s*-\s*\d{3,4}\s*$/, ''));
+  const abrev = nomeFatura.split(' ');
+  const cands = nomes.filter(n => _nomeCompativel(abrev, n.tokens));
+  const cpfsCand = [...new Set(cands.map(c => normCPF(c.r.cpf)))];
+  if (cpfsCand.length === 1) return { cpf: cpfsCand[0], metodo: 'nome', motivo: null };
+
+  const motivo = achados.length
+    ? 'CPF do PDF não está em Boleto Solicitado/Enviado'
+    : (cpfsCand.length > 1 ? 'Nome bate com mais de um cliente' : 'Sem CPF legível e nome não encontrado');
+  return { cpf: null, metodo: null, motivo };
+}
+
+// Distribui o PDF identificado em itens / jaAnexados / orfaos.
+function _classificar(ctx, ident, extras) {
+  const { cpf, tipo, contrato, metodo, motivo } = ident;
+  const { path, nomeArquivo, blob, tamanho } = extras;
+
+  if (!cpf) {
+    ctx.orfaos.push({ path, nomeArquivo, tipo, contrato, blob, tamanho, motivo });
+    return;
+  }
+  // Mesmo CPF pode ter mais de um registro elegível (produtos diferentes);
+  // anexa em todos — o documento é do cliente, não da linha.
+  for (const r of ctx.porCpf.get(cpf)) {
+    const item = { alvo: r, nomeArquivo, tipo, contrato, blob, tamanho, metodo };
+    if (ctx.jaTem.has(`${r.id}|${tipo}|${nomeArquivo}`)) ctx.jaAnexados.push(item);
+    else ctx.itens.push(item);
+  }
+}
+
+// Analisa um PDF do ZIP: identifica o dono e classifica no destino certo.
+async function _analisarEntrada(path, bytes, ctx) {
+  const parts = path.split('/').filter(Boolean);
+  const nomeArquivo = parts[parts.length - 1];
+
+  let ident;
+  if (/^\d{11}$/.test(parts[0])) {
+    ident = { tipo: 'boleto', ..._identificarBoleto(parts, ctx.porCpf) };
+  } else {
+    ctx.onProgress(ctx.feitos, ctx.total, `Lendo fatura ${nomeArquivo}…`);
+    if (!ctx.pdfjs) ctx.pdfjs = await _carregarPdfjs();
+    ident = { tipo: 'fatura', contrato: null, ...(await _identificarFatura(ctx.pdfjs, bytes, nomeArquivo, ctx)) };
+  }
+
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  _classificar(ctx, ident, { path, nomeArquivo, blob, tamanho: bytes.length });
+}
+
 export async function analisarZipBoletos(file, alvos, docsExistentes, onProgress = () => {}) {
   const { unzip } = await import('fflate');
 
@@ -158,91 +242,27 @@ export async function analisarZipBoletos(file, alvos, docsExistentes, onProgress
     unzip(buf, (err, data) => err ? reject(err) : resolve(data));
   });
 
-  const porCpf = new Map();
-  for (const r of alvos) {
-    const cpf = normCPF(r.cpf);
-    if (!porCpf.has(cpf)) porCpf.set(cpf, []);
-    porCpf.get(cpf).push(r);
-  }
-  const nomes = alvos.map(r => ({ r, tokens: _normNome(r.nome).split(' ') }));
-
-  const jaTem = new Set((docsExistentes || []).map(d => `${d.boleto_id}|${d.tipo}|${d.nome_arquivo}`));
-
   const pdfEntries = Object.entries(entries).filter(([path, bytes]) =>
     !path.endsWith('/') && bytes?.length > 0 && /\.pdf$/i.test(path));
 
-  const itens = [], orfaos = [], jaAnexados = [];
-  let pdfjs = null;
-  let feitos = 0;
+  const ctx = {
+    ..._indexarAlvos(alvos),
+    jaTem: new Set((docsExistentes || []).map(d => `${d.boleto_id}|${d.tipo}|${d.nome_arquivo}`)),
+    itens: [], orfaos: [], jaAnexados: [],
+    pdfjs: null, feitos: 0, total: pdfEntries.length, onProgress,
+  };
 
   for (const [path, bytes] of pdfEntries) {
-    feitos++;
-    const parts = path.split('/').filter(Boolean);
-    const nomeArquivo = parts[parts.length - 1];
-
-    let tipo, cpf = null, contrato = null, metodo = null, motivo = null;
-
-    if (/^\d{11}$/.test(parts[0])) {
-      // ── Boleto: pasta raiz é o CPF ──
-      tipo     = 'boleto';
-      contrato = parts.length >= 3 ? parts[1] : null;
-      metodo   = 'cpf';
-      if (porCpf.has(parts[0])) cpf = parts[0];
-      else motivo = 'CPF não está em Boleto Solicitado/Enviado';
-    } else {
-      // ── Fatura: CPF só existe DENTRO do PDF ──
-      tipo = 'fatura';
-      onProgress(feitos, pdfEntries.length, `Lendo fatura ${nomeArquivo}…`);
-      if (!pdfjs) {
-        pdfjs = await import('pdfjs-dist');
-        const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-      }
-      const achados = await _extrairCpfsDoPdf(pdfjs, bytes.slice());
-      const validos = [...new Set(achados)].filter(c => porCpf.has(c));
-      if (validos.length === 1) {
-        cpf    = validos[0];
-        metodo = 'cpf-pdf';
-      } else if (validos.length > 1) {
-        motivo = 'PDF cita mais de um cliente elegível';
-      } else {
-        // Fallback: nome do arquivo ("NOME DO CLIENTE - 9999.pdf")
-        const nomeFatura = _normNome(nomeArquivo.replace(/\.pdf$/i, '').replace(/\s*-\s*\d{3,4}\s*$/, ''));
-        const abrev = nomeFatura.split(' ');
-        const cands = nomes.filter(n => _nomeCompativel(abrev, n.tokens));
-        const cpfsCand = [...new Set(cands.map(c => normCPF(c.r.cpf)))];
-        if (cpfsCand.length === 1) {
-          cpf    = cpfsCand[0];
-          metodo = 'nome';
-        } else {
-          motivo = achados.length
-            ? 'CPF do PDF não está em Boleto Solicitado/Enviado'
-            : (cpfsCand.length > 1 ? 'Nome bate com mais de um cliente' : 'Sem CPF legível e nome não encontrado');
-        }
-      }
-    }
-
-    const blob = new Blob([bytes], { type: 'application/pdf' });
-
-    if (!cpf) {
-      orfaos.push({ path, nomeArquivo, tipo, contrato, blob, tamanho: bytes.length, motivo });
-    } else {
-      // Mesmo CPF pode ter mais de um registro elegível (produtos diferentes);
-      // anexa em todos — o documento é do cliente, não da linha.
-      for (const r of porCpf.get(cpf)) {
-        const item = { alvo: r, nomeArquivo, tipo, contrato, blob, tamanho: bytes.length, metodo };
-        if (jaTem.has(`${r.id}|${tipo}|${nomeArquivo}`)) jaAnexados.push(item);
-        else itens.push(item);
-      }
-    }
-    onProgress(feitos, pdfEntries.length, `Analisando ${feitos}/${pdfEntries.length}…`);
+    ctx.feitos++;
+    await _analisarEntrada(path, bytes, ctx);
+    onProgress(ctx.feitos, pdfEntries.length, `Analisando ${ctx.feitos}/${pdfEntries.length}…`);
   }
 
-  const cpfsComArquivo = new Set([...itens, ...jaAnexados].map(i => normCPF(i.alvo.cpf)));
+  const cpfsComArquivo = new Set([...ctx.itens, ...ctx.jaAnexados].map(i => normCPF(i.alvo.cpf)));
   const clientesSemArquivo = alvos.filter(r =>
     r.status === 'boleto_solicitado' && !cpfsComArquivo.has(normCPF(r.cpf)));
 
-  return { itens, orfaos, jaAnexados, clientesSemArquivo };
+  return { itens: ctx.itens, orfaos: ctx.orfaos, jaAnexados: ctx.jaAnexados, clientesSemArquivo };
 }
 
 /**

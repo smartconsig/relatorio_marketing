@@ -54,6 +54,30 @@ function fieldFor(h) {
   return null; // colunas desconhecidas (ex.: "Diferença p/ 1º Lugar") são ignoradas
 }
 
+// Monta o mapa índice da coluna → nome do campo a partir da linha de cabeçalho.
+function _mapearCabecalho(cols) {
+  const colMap = {};
+  cols.forEach((h, i) => {
+    const f = fieldFor(normHeader(h));
+    if (f) colMap[i] = f;
+  });
+  return colMap;
+}
+
+// Converte uma linha de dados em objeto parceiro usando o mapa de colunas.
+function _linhaParaParceiro(nome, cols, colMap) {
+  const p = {
+    nome,
+    reprovado: 0, clienteDesistiu: 0, pendencia: 0, riscoPerda: 0,
+    emAndamento: 0, integrado: 0, projecao: 0, rank: 0,
+  };
+  for (const [i, f] of Object.entries(colMap)) {
+    const v = cols[i];
+    p[f] = f === 'rank' ? (parseInt(String(v == null ? '' : v).trim()) || 0) : parseMoney(v);
+  }
+  return p;
+}
+
 /**
  * Parse a partir de linhas já tabuladas (array de arrays) — usado pelo XLSX.
  */
@@ -66,13 +90,7 @@ export function parseParceirosRows(rows) {
     const first = String(cols[0] == null ? '' : cols[0]).trim();
 
     if (!colMap) {
-      if (normHeader(first).startsWith('PARCEIRO')) {
-        colMap = {};
-        cols.forEach((h, i) => {
-          const f = fieldFor(normHeader(h));
-          if (f) colMap[i] = f;
-        });
-      }
+      if (normHeader(first).startsWith('PARCEIRO')) colMap = _mapearCabecalho(cols);
       continue;
     }
 
@@ -81,16 +99,7 @@ export function parseParceirosRows(rows) {
     const up = nome.toUpperCase();
     if (up === 'TOTAL' || up.startsWith('STATUS')) continue;
 
-    const p = {
-      nome,
-      reprovado: 0, clienteDesistiu: 0, pendencia: 0, riscoPerda: 0,
-      emAndamento: 0, integrado: 0, projecao: 0, rank: 0,
-    };
-    for (const [i, f] of Object.entries(colMap)) {
-      const v = cols[i];
-      p[f] = f === 'rank' ? (parseInt(String(v == null ? '' : v).trim()) || 0) : parseMoney(v);
-    }
-    partners.push(p);
+    partners.push(_linhaParaParceiro(nome, cols, colMap));
   }
 
   // Ordena pela posição da planilha; desempate por integrado desc, depois nome

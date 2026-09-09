@@ -9,25 +9,8 @@
 
 const FAIXAS_ORDER = ['18–30', '31–40', '41–50', '51–60', '61+'];
 
-/**
- * @param {Array} filteredEntries - entries já filtrados por data (para análises do período)
- * @param {Array} allEntries      - todos os entries acumulados (para LTV histórico)
- */
-export function calcPerfil(filteredEntries, allEntries) {
-  // filteredEntries já vem pré-filtrado pelo caller (marketing ou geral)
-  const entries = filteredEntries;
-  const pagos   = entries.filter(e => e.statusCat === 'pago');
-
-  // ── Cobertura dos dados ────────────────────────────────────────────────────
-  const cobertura = {
-    totalMkt:      entries.length,
-    comIdade:      entries.filter(e => e.faixaEtaria).length,
-    comEstado:     entries.filter(e => e.estado).length,
-    pagoComDias:   pagos.filter(e => e.diasConversao !== null).length,
-    totalPagos:    pagos.length,
-  };
-
-  // ── Por faixa etária ───────────────────────────────────────────────────────
+// ── Por faixa etária ─────────────────────────────────────────────────────────
+function _calcFaixas(entries) {
   const faixaMap = {};
   entries.forEach(e => {
     if (!e.faixaEtaria) return;
@@ -38,7 +21,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       faixaMap[e.faixaEtaria].valor += e.valor || 0;
     }
   });
-  const faixas = FAIXAS_ORDER
+  return FAIXAS_ORDER
     .filter(f => faixaMap[f])
     .map(f => ({
       label:       f,
@@ -49,8 +32,10 @@ export function calcPerfil(filteredEntries, allEntries) {
       ticketMedio: faixaMap[f].pagos > 0 ? faixaMap[f].valor / faixaMap[f].pagos : 0,
     }))
     .sort((a, b) => b.pagos - a.pagos || b.taxa - a.taxa);
+}
 
-  // ── Por estado ─────────────────────────────────────────────────────────────
+// ── Por estado ───────────────────────────────────────────────────────────────
+function _calcEstados(entries) {
   const estadoMap = {};
   entries.forEach(e => {
     if (!e.estado) return;
@@ -61,7 +46,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       estadoMap[e.estado].valor += e.valor || 0;
     }
   });
-  const estados = Object.entries(estadoMap)
+  return Object.entries(estadoMap)
     .map(([uf, d]) => ({
       uf,
       regiao:      d.regiao,
@@ -72,8 +57,10 @@ export function calcPerfil(filteredEntries, allEntries) {
       ticketMedio: d.pagos > 0 ? d.valor / d.pagos : 0,
     }))
     .sort((a, b) => b.pagos - a.pagos || b.taxa - a.taxa);
+}
 
-  // ── Por região ─────────────────────────────────────────────────────────────
+// ── Por região ───────────────────────────────────────────────────────────────
+function _calcRegioes(entries) {
   const regiaoMap = {};
   entries.forEach(e => {
     const r = e.regiao || '';
@@ -85,7 +72,7 @@ export function calcPerfil(filteredEntries, allEntries) {
       regiaoMap[r].valor += e.valor || 0;
     }
   });
-  const regioes = Object.entries(regiaoMap)
+  return Object.entries(regiaoMap)
     .map(([nome, d]) => ({
       nome,
       leads:      d.leads,
@@ -94,8 +81,10 @@ export function calcPerfil(filteredEntries, allEntries) {
       valorTotal: d.valor,
     }))
     .sort((a, b) => b.pagos - a.pagos);
+}
 
-  // ── Tempo de conversão ─────────────────────────────────────────────────────
+// ── Tempo de conversão ───────────────────────────────────────────────────────
+function _calcConversao(pagos) {
   const diasArr = pagos
     .filter(e => e.diasConversao !== null && e.diasConversao >= 0 && e.diasConversao <= 365)
     .map(e => e.diasConversao);
@@ -104,8 +93,11 @@ export function calcPerfil(filteredEntries, allEntries) {
     : null;
   const sorted = [...diasArr].sort((a, b) => a - b);
   const medianaDias = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : null;
+  return { mediaDias, medianaDias };
+}
 
-  // ── LTV — histórico completo (ignora filtro de datas) ─────────────────────
+// ── LTV — histórico completo (ignora filtro de datas) ────────────────────────
+function _calcLtv(allEntries) {
   const cpfMap = {};
   allEntries
     .filter(e => e.statusCat === 'pago' && e.cpf && e.cpf !== '00000000000')
@@ -135,17 +127,37 @@ export function calcPerfil(filteredEntries, allEntries) {
     : null;
 
   return {
-    faixas,
-    estados,
-    regioes,
-    conversao: { mediaDias, medianaDias },
-    ltv: {
-      totalClientes:    clientesLtv.length,
-      recorrentes:      recorrentes.length,
-      taxaRecorrencia:  clientesLtv.length > 0 ? recorrentes.length / clientesLtv.length * 100 : 0,
-      topClientes:      topLtv,
-      tempMedioRecompra,
-    },
+    totalClientes:    clientesLtv.length,
+    recorrentes:      recorrentes.length,
+    taxaRecorrencia:  clientesLtv.length > 0 ? recorrentes.length / clientesLtv.length * 100 : 0,
+    topClientes:      topLtv,
+    tempMedioRecompra,
+  };
+}
+
+/**
+ * @param {Array} filteredEntries - entries já filtrados por data (para análises do período)
+ * @param {Array} allEntries      - todos os entries acumulados (para LTV histórico)
+ */
+export function calcPerfil(filteredEntries, allEntries) {
+  // filteredEntries já vem pré-filtrado pelo caller (marketing ou geral)
+  const entries = filteredEntries;
+  const pagos   = entries.filter(e => e.statusCat === 'pago');
+
+  const cobertura = {
+    totalMkt:      entries.length,
+    comIdade:      entries.filter(e => e.faixaEtaria).length,
+    comEstado:     entries.filter(e => e.estado).length,
+    pagoComDias:   pagos.filter(e => e.diasConversao !== null).length,
+    totalPagos:    pagos.length,
+  };
+
+  return {
+    faixas:    _calcFaixas(entries),
+    estados:   _calcEstados(entries),
+    regioes:   _calcRegioes(entries),
+    conversao: _calcConversao(pagos),
+    ltv:       _calcLtv(allEntries),
     cobertura,
   };
 }
