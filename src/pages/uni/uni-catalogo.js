@@ -15,30 +15,30 @@ const TRILHAS_CFG = [
   { nome: 'Backoffice & Operações',  cor: '#8020e0' },
 ];
 
-export function renderHome() {
-  if (!UV.cursosDB.length) {
-    return renderComingSoon('default', 'Nenhum curso disponível', 'Em breve novos cursos serão publicados aqui.', '');
-  }
+function _heroMetaHTML(heroSrc, heroAulas, heroMin) {
+  return `
+        <div class="uni-hero-meta">
+          <span class="uni-nivel-badge ${NIVEL_CLASS[heroSrc.nivel] || ''}">${NIVEL_LABEL[heroSrc.nivel] || heroSrc.nivel}</span>
+          ${heroAulas ? `<span class="uni-hero-meta-item">${svg(ICONS.book, 13, 13)} ${heroAulas} aulas</span>` : ''}
+          ${heroMin   ? `<span class="uni-hero-meta-item">${svg(ICONS.clock, 13, 13)} ${fmtDur(heroMin)}</span>` : ''}
+        </div>`;
+}
 
-  const heroSrc        = UV.cursosDB.find(c => c.destaque) || UV.cursosDB[0];
+function _heroHTML(heroSrc) {
   const heroCor        = heroSrc.uni_trilhas?.cor || '#E02020';
   const heroImg        = heroSrc.hero_img || heroSrc.capa_url || '';
   const heroAulas      = heroSrc.total_aulas || 0;
   const heroMin        = heroSrc.duracao_minutos || 0;
   const heroTrilhaNome = heroSrc.uni_trilhas?.nome || '';
 
-  const heroHtml = `
+  return `
     <div class="uni-hero" style="background-image:url('${heroImg}')">
       <div class="uni-hero-gradient"></div>
       <div class="uni-hero-content">
         <div class="uni-hero-eyebrow" style="color:${heroCor}">${heroTrilhaNome.toUpperCase()}</div>
         <h1 class="uni-hero-title">${heroSrc.titulo}</h1>
         <p class="uni-hero-desc">${heroSrc.descricao}</p>
-        <div class="uni-hero-meta">
-          <span class="uni-nivel-badge ${NIVEL_CLASS[heroSrc.nivel] || ''}">${NIVEL_LABEL[heroSrc.nivel] || heroSrc.nivel}</span>
-          ${heroAulas ? `<span class="uni-hero-meta-item">${svg(ICONS.book, 13, 13)} ${heroAulas} aulas</span>` : ''}
-          ${heroMin   ? `<span class="uni-hero-meta-item">${svg(ICONS.clock, 13, 13)} ${fmtDur(heroMin)}</span>` : ''}
-        </div>
+        ${_heroMetaHTML(heroSrc, heroAulas, heroMin)}
         <div class="uni-hero-actions">
           <button class="uni-btn-primary" onclick="uniOpenCurso('${heroSrc.id}')">
             ${svg(ICONS.play, 15, 15, 'fill="currentColor"')} Começar
@@ -50,8 +50,10 @@ export function renderHome() {
       </div>
     </div>
   `;
+}
 
-  const rowsHtml = TRILHAS_CFG.map(trilha => {
+function _rowsHTML() {
+  return TRILHAS_CFG.map(trilha => {
     const cursos = UV.cursosDB.filter(c => c.uni_trilhas?.nome === trilha.nome);
     if (!cursos.length) return '';
     return `
@@ -67,8 +69,34 @@ export function renderHome() {
       </div>
     `;
   }).join('');
+}
 
-  return heroHtml + `<div class="uni-rows">${rowsHtml}</div>`;
+export function renderHome() {
+  if (!UV.cursosDB.length) {
+    return renderComingSoon('default', 'Nenhum curso disponível', 'Em breve novos cursos serão publicados aqui.', '');
+  }
+  const heroSrc = UV.cursosDB.find(c => c.destaque) || UV.cursosDB[0];
+  return _heroHTML(heroSrc) + `<div class="uni-rows">${_rowsHTML()}</div>`;
+}
+
+// "N aulas · Xh" com as mesmas omissões de sempre (só o que existir).
+function _cardMetaHTML(aulas, minutos) {
+  return `${aulas ? `${aulas} aulas` : ''}${aulas && minutos ? ' · ' : ''}${minutos ? fmtDur(minutos) : ''}`;
+}
+
+// Barra de progresso + selo "Concluído" sobre a capa do card.
+function _cardProgressoHTML(c) {
+  const prog = UV.progresso[c.id] || null;
+  const pct  = prog?.pct_concluido ?? 0;
+  const concl = prog?.concluido ?? false;
+
+  const progressBar = pct > 0 ? `
+    <div class="uni-card-progress-bar">
+      <div class="uni-card-progress-fill" style="width:${pct}%"></div>
+    </div>
+  ` : '';
+  const badge = concl ? `<span class="uni-card-concluido-badge">${svg(ICONS.check, 9, 9)} Concluído</span>` : '';
+  return badge + progressBar;
 }
 
 export function buildCard(c) {
@@ -76,17 +104,6 @@ export function buildCard(c) {
   const nivel   = c.nivel || 'basico';
   const aulas   = c.total_aulas || 0;
   const minutos = c.duracao_minutos || 0;
-  const prog    = UV.progresso[c.id] || null;
-  const pct     = prog?.pct_concluido ?? 0;
-  const concl   = prog?.concluido ?? false;
-
-  const progressBar = pct > 0 ? `
-    <div class="uni-card-progress-bar">
-      <div class="uni-card-progress-fill" style="width:${pct}%"></div>
-    </div>
-  ` : '';
-
-  const badge = concl ? `<span class="uni-card-concluido-badge">${svg(ICONS.check, 9, 9)} Concluído</span>` : '';
 
   return `
     <div class="uni-card" onclick="uniOpenCurso('${c.id}')">
@@ -97,12 +114,11 @@ export function buildCard(c) {
           </div>
         </div>
         <span class="uni-card-nivel uni-nivel-badge ${NIVEL_CLASS[nivel]}">${NIVEL_LABEL[nivel]}</span>
-        ${badge}
-        ${progressBar}
+        ${_cardProgressoHTML(c)}
       </div>
       <div class="uni-card-info">
         <div class="uni-card-title">${c.titulo}</div>
-        <div class="uni-card-meta">${aulas ? `${aulas} aulas` : ''}${aulas && minutos ? ' · ' : ''}${minutos ? fmtDur(minutos) : ''}</div>
+        <div class="uni-card-meta">${_cardMetaHTML(aulas, minutos)}</div>
       </div>
     </div>
   `;

@@ -3,33 +3,25 @@
 import { fetchCertificadoDoc } from '../../services/uni-svc.js';
 import { UV, spinnerHTML, showToast } from './uni-core.js';
 
-export async function uniVerCertificado(certId) {
-  // Remove modal anterior se existir
-  document.getElementById('uni-cert-modal')?.remove();
+// Campos do documento com os mesmos fallbacks + URL do QR de verificação.
+function _dadosDoCertificado(cert, profile) {
+  const nome   = profile?.nome || 'Colaborador';
+  const curso  = cert.uni_cursos?.titulo || 'Curso';
+  const codigo = cert.codigo;
+  const qrData = encodeURIComponent(`Smart Consig - Universidade Smart\nCertificado: ${codigo}\nCurso: ${curso}\nNome: ${nome}`);
+  return {
+    nome,
+    curso,
+    codigo,
+    trilha:    cert.uni_cursos?.uni_trilhas?.nome || '',
+    trilhaCor: cert.uni_cursos?.uni_trilhas?.cor || '#E02020',
+    emitidoEm: new Date(cert.emitido_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+    qrUrl:     `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&bgcolor=ffffff&color=111111&margin=8`,
+  };
+}
 
-  // Cria overlay com spinner enquanto carrega
-  const overlay = document.createElement('div');
-  overlay.id = 'uni-cert-modal';
-  overlay.className = 'uni-cert-overlay';
-  overlay.innerHTML = `<div class="uni-cert-modal">${spinnerHTML()}</div>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-
-  try {
-    const [{ data: cert }, { data: profile }] = await fetchCertificadoDoc(certId, UV.userId);
-
-    if (!cert) { overlay.remove(); showToast('Certificado não encontrado'); return; }
-
-    const nome       = profile?.nome || 'Colaborador';
-    const curso      = cert.uni_cursos?.titulo || 'Curso';
-    const trilha     = cert.uni_cursos?.uni_trilhas?.nome || '';
-    const trilhaCor  = cert.uni_cursos?.uni_trilhas?.cor || '#E02020';
-    const codigo     = cert.codigo;
-    const emitidoEm  = new Date(cert.emitido_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-    const qrData     = encodeURIComponent(`Smart Consig - Universidade Smart\nCertificado: ${codigo}\nCurso: ${curso}\nNome: ${nome}`);
-    const qrUrl      = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&bgcolor=ffffff&color=111111&margin=8`;
-
-    overlay.querySelector('.uni-cert-modal').innerHTML = `
+function _certDocHTML({ nome, curso, codigo, trilha, trilhaCor, emitidoEm, qrUrl }) {
+  return `
       <button class="uni-cert-close" onclick="document.getElementById('uni-cert-modal').remove()">✕</button>
 
       <div class="uni-cert-doc" id="uni-cert-print-area">
@@ -75,6 +67,26 @@ export async function uniVerCertificado(certId) {
         </button>
       </div>
     `;
+}
+
+export async function uniVerCertificado(certId) {
+  // Remove modal anterior se existir
+  document.getElementById('uni-cert-modal')?.remove();
+
+  // Cria overlay com spinner enquanto carrega
+  const overlay = document.createElement('div');
+  overlay.id = 'uni-cert-modal';
+  overlay.className = 'uni-cert-overlay';
+  overlay.innerHTML = `<div class="uni-cert-modal">${spinnerHTML()}</div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  try {
+    const [{ data: cert }, { data: profile }] = await fetchCertificadoDoc(certId, UV.userId);
+
+    if (!cert) { overlay.remove(); showToast('Certificado não encontrado'); return; }
+
+    overlay.querySelector('.uni-cert-modal').innerHTML = _certDocHTML(_dadosDoCertificado(cert, profile));
   } catch (_e) {
     overlay.remove();
     showToast('Erro ao carregar certificado. Tente novamente.');

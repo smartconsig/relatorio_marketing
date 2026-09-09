@@ -7,6 +7,64 @@ const BUNNY_LIB_ID = 670540;
 // CDN usado para thumbnails: https://{BUNNY_CDN}/{videoId}/thumbnail.jpg
 // const BUNNY_CDN = 'vz-1236dc06-5dd.b-cdn.net'; // reservado para Fase 2
 
+// Iframe do Bunny quando a aula tem vídeo; senão o cartão "em preparação".
+function _stageHTML(aula, concluida) {
+  if (aula.bunny_video_id) {
+    return `<iframe
+         id="bunny-player-iframe"
+         class="uni-player-iframe"
+         src="https://iframe.mediadelivery.net/embed/${BUNNY_LIB_ID}/${aula.bunny_video_id}?autoplay=true&responsive=true&captions=false&preload=true"
+         frameborder="0"
+         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+         allowfullscreen>
+       </iframe>`;
+  }
+  return `<div class="uni-player-no-video">
+         ${svg(ICONS.clock, 48, 48, 'style="color:#333;margin-bottom:16px"')}
+         <div style="font-family:var(--font-h);font-size:17px;color:#555;margin-bottom:8px">Vídeo em preparação</div>
+         <div style="font-size:12px;color:#3a3a3a;font-family:var(--font-b)">O conteúdo desta aula será disponibilizado em breve.</div>
+         ${!concluida ? `<button class="uni-btn-ghost" style="margin-top:24px" id="btn-marcar-concluida">
+           ${svg(ICONS.check, 13, 13)} Marcar como lida
+         </button>` : `<div style="margin-top:24px;color:#4ade80;font-size:13px;display:flex;align-items:center;gap:6px">${svg(ICONS.check, 14, 14, 'style="color:#4ade80"')} Aula concluída</div>`}
+       </div>`;
+}
+
+// Barra "assista 90%" (só com vídeo).
+function _trackingHTML(aula, concluida) {
+  if (!aula.bunny_video_id) return '';
+  return `
+          <div class="uni-player-progress-track">
+            <div class="uni-player-progress-fill" id="uni-player-progress-bar" style="width:${concluida ? '100' : '0'}%"></div>
+          </div>
+          <div class="uni-player-progress-label" id="uni-player-progress-label">
+            ${concluida ? 'Aula já concluída' : 'Assista 90% para concluir'}
+          </div>
+        `;
+}
+
+// Cartão "Próxima aula" (bloqueado até concluir) ou o de fim de curso.
+function _proximaHTML(nextAula, aula, concluida) {
+  if (!nextAula) {
+    return `
+        <div class="uni-player-next uni-player-fim" id="uni-player-fim-block">
+          ${svg(ICONS.check, 16, 16, 'style="color:#4ade80"')}
+          <div style="flex:1">
+            <div class="uni-player-next-label">Última aula do curso</div>
+            <div class="uni-player-next-title" id="uni-player-fim-sub">Parabéns! Você concluiu todas as aulas.</div>
+          </div>
+        </div>
+      `;
+  }
+  return `
+        <div class="uni-player-next" id="uni-player-next" onclick="uniPlayAula('${nextAula.id}')"
+             ${!concluida && aula.bunny_video_id ? 'style="opacity:.4;pointer-events:none"' : ''}>
+          <div class="uni-player-next-label">Próxima aula</div>
+          <div class="uni-player-next-title">${nextAula.titulo}</div>
+          ${svg(ICONS.next, 16, 16)}
+        </div>
+      `;
+}
+
 export function renderPlayerView(main, { aula }) {
   if (!UV.currentDetail) return;
   const { curso, aulas } = UV.currentDetail;
@@ -16,24 +74,6 @@ export function renderPlayerView(main, { aula }) {
 
   const trilhaCor = curso.uni_trilhas?.cor || '#E02020';
   const durSec    = aula.duracao_segundos || 0;
-
-  const iframeHtml = aula.bunny_video_id
-    ? `<iframe
-         id="bunny-player-iframe"
-         class="uni-player-iframe"
-         src="https://iframe.mediadelivery.net/embed/${BUNNY_LIB_ID}/${aula.bunny_video_id}?autoplay=true&responsive=true&captions=false&preload=true"
-         frameborder="0"
-         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-         allowfullscreen>
-       </iframe>`
-    : `<div class="uni-player-no-video">
-         ${svg(ICONS.clock, 48, 48, 'style="color:#333;margin-bottom:16px"')}
-         <div style="font-family:var(--font-h);font-size:17px;color:#555;margin-bottom:8px">Vídeo em preparação</div>
-         <div style="font-size:12px;color:#3a3a3a;font-family:var(--font-b)">O conteúdo desta aula será disponibilizado em breve.</div>
-         ${!concluida ? `<button class="uni-btn-ghost" style="margin-top:24px" id="btn-marcar-concluida">
-           ${svg(ICONS.check, 13, 13)} Marcar como lida
-         </button>` : `<div style="margin-top:24px;color:#4ade80;font-size:13px;display:flex;align-items:center;gap:6px">${svg(ICONS.check, 14, 14, 'style="color:#4ade80"')} Aula concluída</div>`}
-       </div>`;
 
   main.innerHTML = `
     <div class="uni-player-wrap">
@@ -47,7 +87,7 @@ export function renderPlayerView(main, { aula }) {
       </div>
 
       <div class="uni-player-stage">
-        ${iframeHtml}
+        ${_stageHTML(aula, concluida)}
       </div>
 
       <div class="uni-player-info">
@@ -60,32 +100,10 @@ export function renderPlayerView(main, { aula }) {
             ${svg(ICONS.check, 13, 13)} Concluída
           </div>
         </div>
-        ${aula.bunny_video_id ? `
-          <div class="uni-player-progress-track">
-            <div class="uni-player-progress-fill" id="uni-player-progress-bar" style="width:${concluida ? '100' : '0'}%"></div>
-          </div>
-          <div class="uni-player-progress-label" id="uni-player-progress-label">
-            ${concluida ? 'Aula já concluída' : 'Assista 90% para concluir'}
-          </div>
-        ` : ''}
+        ${_trackingHTML(aula, concluida)}
       </div>
 
-      ${nextAula ? `
-        <div class="uni-player-next" id="uni-player-next" onclick="uniPlayAula('${nextAula.id}')"
-             ${!concluida && aula.bunny_video_id ? 'style="opacity:.4;pointer-events:none"' : ''}>
-          <div class="uni-player-next-label">Próxima aula</div>
-          <div class="uni-player-next-title">${nextAula.titulo}</div>
-          ${svg(ICONS.next, 16, 16)}
-        </div>
-      ` : `
-        <div class="uni-player-next uni-player-fim" id="uni-player-fim-block">
-          ${svg(ICONS.check, 16, 16, 'style="color:#4ade80"')}
-          <div style="flex:1">
-            <div class="uni-player-next-label">Última aula do curso</div>
-            <div class="uni-player-next-title" id="uni-player-fim-sub">Parabéns! Você concluiu todas as aulas.</div>
-          </div>
-        </div>
-      `}
+      ${_proximaHTML(nextAula, aula, concluida)}
     </div>
   `;
 
@@ -148,11 +166,8 @@ async function _initBunnyPlayer(aulaId, cursoId, aulas) {
   });
 }
 
-async function _markAulaComplete(aulaId, cursoId, aulas) {
-  if (UV.progrAulas[aulaId] || !UV.userId) return;
-  UV.progrAulas[aulaId] = true;
-
-  // UI imediata
+// UI imediata da conclusão: badge, barra cheia, label verde e próxima aula.
+function _refletirConclusaoNaUI() {
   const badge = document.getElementById('uni-player-complete-badge');
   if (badge) { badge.style.display = 'flex'; }
   const bar = document.getElementById('uni-player-progress-bar');
@@ -162,8 +177,38 @@ async function _markAulaComplete(aulaId, cursoId, aulas) {
   // Desbloqueia "próxima aula"
   const nxt = document.getElementById('uni-player-next');
   if (nxt) { nxt.style.opacity = '1'; nxt.style.pointerEvents = 'auto'; }
+}
 
-  // Toast
+// Recalcula e persiste o progresso do curso; XP extra ao completar tudo.
+async function _persistirProgressoCurso(cursoId, aulas) {
+  const aulasConcl = aulas.filter(a => UV.progrAulas[a.id]).length;
+  const totalAulas = aulas.length;
+  const pct        = totalAulas > 0 ? Math.round((aulasConcl / totalAulas) * 100) : 0;
+  const concluido  = aulasConcl >= totalAulas;
+
+  await upsertProgressoCurso({
+    user_id: UV.userId, curso_id: cursoId,
+    aulas_concluidas: aulasConcl, total_aulas: totalAulas,
+    pct_concluido: pct, concluido,
+    ...(concluido ? { concluido_em: new Date().toISOString() } : {}),
+  });
+
+  UV.progresso[cursoId] = { aulas_concluidas: aulasConcl, total_aulas: totalAulas, pct_concluido: pct, concluido };
+
+  // XP extra: curso completo
+  if (concluido) {
+    await insertXpLog({
+      user_id: UV.userId, tipo: 'curso_concluido', referencia_id: cursoId, xp: 100,
+    });
+    showToast(`+100 XP — Curso concluído! Parabéns!`, true);
+  }
+}
+
+async function _markAulaComplete(aulaId, cursoId, aulas) {
+  if (UV.progrAulas[aulaId] || !UV.userId) return;
+  UV.progrAulas[aulaId] = true;
+
+  _refletirConclusaoNaUI();
   showToast(`+10 XP — Aula concluída!`);
 
   // Persiste no Supabase
@@ -178,28 +223,7 @@ async function _markAulaComplete(aulaId, cursoId, aulas) {
       user_id: UV.userId, tipo: 'aula_concluida', referencia_id: aulaId, xp: 10,
     });
 
-    // Atualiza progresso do curso
-    const aulasConcl = aulas.filter(a => UV.progrAulas[a.id]).length;
-    const totalAulas = aulas.length;
-    const pct        = totalAulas > 0 ? Math.round((aulasConcl / totalAulas) * 100) : 0;
-    const concluido  = aulasConcl >= totalAulas;
-
-    await upsertProgressoCurso({
-      user_id: UV.userId, curso_id: cursoId,
-      aulas_concluidas: aulasConcl, total_aulas: totalAulas,
-      pct_concluido: pct, concluido,
-      ...(concluido ? { concluido_em: new Date().toISOString() } : {}),
-    });
-
-    UV.progresso[cursoId] = { aulas_concluidas: aulasConcl, total_aulas: totalAulas, pct_concluido: pct, concluido };
-
-    // XP extra: curso completo
-    if (concluido) {
-      await insertXpLog({
-        user_id: UV.userId, tipo: 'curso_concluido', referencia_id: cursoId, xp: 100,
-      });
-      showToast(`+100 XP — Curso concluído! Parabéns!`, true);
-    }
+    await _persistirProgressoCurso(cursoId, aulas);
   } catch (_e) {
     // falha silenciosa — XP será recalculado na próxima carga
   }

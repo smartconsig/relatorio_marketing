@@ -46,19 +46,11 @@ export async function renderDetailAsync(main, courseId) {
   _attachDetailListeners(main);
 }
 
-function _renderDetailHTML({ curso, modulos, aulas, prova, tentativas, certificado }) {
-  const trilhaCor  = curso.uni_trilhas?.cor || '#E02020';
-  const trilhaNome = curso.uni_trilhas?.nome || '';
-  const img        = curso.hero_img || curso.capa_url || curso.img || '';
-  const nivel      = curso.nivel || 'basico';
-  const totalAulas = aulas.length || curso.total_aulas || 0;
-  const totalMin   = curso.duracao_minutos || 0;
-
-  const concluidas = aulas.filter(a => UV.progrAulas[a.id]).length;
-  const pct        = totalAulas > 0 ? Math.round((concluidas / totalAulas) * 100) : 0;
-
-  // Barra de progresso geral do curso
-  const progressBar = totalAulas > 0 ? `
+// Barra de progresso geral do curso
+function _progressBarHTML(concluidas, totalAulas, trilhaCor) {
+  if (!(totalAulas > 0)) return '';
+  const pct = Math.round((concluidas / totalAulas) * 100);
+  return `
     <div class="uni-detail-progress">
       <div class="uni-detail-progress-label">
         <span>${concluidas} de ${totalAulas} aulas concluídas</span>
@@ -68,34 +60,32 @@ function _renderDetailHTML({ curso, modulos, aulas, prova, tentativas, certifica
         <div class="uni-detail-progress-fill" style="width:${pct}%;background:${trilhaCor}"></div>
       </div>
     </div>
-  ` : '';
+  `;
+}
 
-  // Primeira aula incompleta (para botão Continuar)
+// Botões Continuar/Começar (primeira aula incompleta vira o destino)
+function _actionsHTML(aulas, concluidas) {
   const primeiraAula = aulas.find(a => !UV.progrAulas[a.id]) || aulas[0];
-
   const btnLabel   = concluidas > 0 ? 'Continuar' : 'Começar curso';
   // ⚠ código-em-string: uniPlayAula PRECISA continuar global (main.js)
   const btnOnClick = primeiraAula ? `uniPlayAula('${primeiraAula.id}')` : '';
+  return `
+      <div class="uni-detail-actions">
+        <button class="uni-btn-primary" onclick="${btnOnClick}">
+          ${svg(ICONS.play, 15, 15, 'fill="currentColor" stroke="none"')} ${btnLabel}
+        </button>
+        <button class="uni-btn-ghost">+ Minha Lista</button>
+      </div>
+  `;
+}
 
-  // Módulos e aulas
-  let aulaNum = 0;
-  const modulosHtml = modulos.map(m => {
-    const mAulas = m.aulas || [];
-    return `
-      <div class="uni-modulo-item">
-        <div class="uni-modulo-header">
-          <span>${m.titulo}</span>
-          <span style="font-size:11px;color:#555;font-weight:400">${mAulas.length} aulas</span>
-        </div>
-        <div class="uni-modulo-aulas">
-          ${mAulas.map(a => {
-            aulaNum++;
-            const concluida = !!UV.progrAulas[a.id];
-            const temVideo  = !!a.bunny_video_id;
-            const durSec    = a.duracao_segundos || 0;
-            const durStr    = durSec ? fmtDur(Math.round(durSec / 60)) : '—';
+function _aulaItemHTML(a, aulaNum) {
+  const concluida = !!UV.progrAulas[a.id];
+  const temVideo  = !!a.bunny_video_id;
+  const durSec    = a.duracao_segundos || 0;
+  const durStr    = durSec ? fmtDur(Math.round(durSec / 60)) : '—';
 
-            return `
+  return `
               <div class="uni-aula-item ${concluida ? 'uni-aula-concluida' : ''} uni-aula-clicavel"
                    data-aula-id="${a.id}">
                 <span class="uni-aula-num">${aulaNum}</span>
@@ -107,11 +97,42 @@ function _renderDetailHTML({ curso, modulos, aulas, prova, tentativas, certifica
                 <span class="uni-aula-dur">${durStr}</span>
               </div>
             `;
-          }).join('')}
+}
+
+// Módulos e aulas (numeração das aulas corre através dos módulos)
+function _modulosHTML(modulos) {
+  let aulaNum = 0;
+  return modulos.map(m => {
+    const mAulas = m.aulas || [];
+    return `
+      <div class="uni-modulo-item">
+        <div class="uni-modulo-header">
+          <span>${m.titulo}</span>
+          <span style="font-size:11px;color:#555;font-weight:400">${mAulas.length} aulas</span>
+        </div>
+        <div class="uni-modulo-aulas">
+          ${mAulas.map(a => { aulaNum++; return _aulaItemHTML(a, aulaNum); }).join('')}
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Campos derivados do curso com os mesmos fallbacks de sempre.
+function _metaDoCurso(curso, aulas) {
+  return {
+    trilhaCor:  curso.uni_trilhas?.cor || '#E02020',
+    trilhaNome: curso.uni_trilhas?.nome || '',
+    img:        curso.hero_img || curso.capa_url || curso.img || '',
+    nivel:      curso.nivel || 'basico',
+    totalAulas: aulas.length || curso.total_aulas || 0,
+    totalMin:   curso.duracao_minutos || 0,
+    concluidas: aulas.filter(a => UV.progrAulas[a.id]).length,
+  };
+}
+
+function _renderDetailHTML({ curso, modulos, aulas, prova, tentativas, certificado }) {
+  const { trilhaCor, trilhaNome, img, nivel, totalAulas, totalMin, concluidas } = _metaDoCurso(curso, aulas);
 
   return `
     <div class="uni-detail-hero" style="background-image:url('${img}')">
@@ -129,16 +150,11 @@ function _renderDetailHTML({ curso, modulos, aulas, prova, tentativas, certifica
       </div>
       <div class="uni-detail-title">${curso.titulo}</div>
       <p class="uni-detail-desc">${curso.descricao}</p>
-      ${progressBar}
-      <div class="uni-detail-actions">
-        <button class="uni-btn-primary" onclick="${btnOnClick}">
-          ${svg(ICONS.play, 15, 15, 'fill="currentColor" stroke="none"')} ${btnLabel}
-        </button>
-        <button class="uni-btn-ghost">+ Minha Lista</button>
-      </div>
-      ${prova ? provaSection(prova, tentativas || [], certificado, concluidas, totalAulas, trilhaCor) : ''}
+      ${_progressBarHTML(concluidas, totalAulas, trilhaCor)}
+      ${_actionsHTML(aulas, concluidas)}
+      ${prova ? provaSection(prova, tentativas || [], certificado, { concluidas, totalAulas }) : ''}
       <div class="uni-modulos-title">Conteúdo do curso</div>
-      <div class="uni-modulos">${modulosHtml}</div>
+      <div class="uni-modulos">${_modulosHTML(modulos)}</div>
     </div>
   `;
 }

@@ -7,22 +7,9 @@ import {
 import { UV, ICONS, svg, renderComingSoon, spinnerHTML } from './uni-core.js';
 import { uniVerCertificado } from './uni-certificado.js';
 
-export function provaSection(prova, tentativas, certificado, concluidas, totalAulas, _cor) {
-  const todasConcluidas = totalAulas > 0 && concluidas >= totalAulas;
-  const jaPassou        = tentativas.some(t => t.aprovado);
-  const ultimaTentativa = tentativas[0] || null;
-  const numTentativas   = tentativas.length;
-  const podeRefazer     = !jaPassou && numTentativas < prova.max_tentativas;
-
-  // Verificar cooldown (dias_para_retry)
-  let emCooldown = false;
-  if (!jaPassou && ultimaTentativa && prova.dias_para_retry > 0) {
-    const diasPassados = (Date.now() - new Date(ultimaTentativa.criado_em).getTime()) / 86400000;
-    if (diasPassados < prova.dias_para_retry) emCooldown = true;
-  }
-
-  if (jaPassou) {
-    return `
+// ── Os 5 estados da seção de prova (um template por estado) ────────────────
+function _provaAprovadaHTML(prova, ultimaTentativa, certificado) {
+  return `
       <div class="uni-prova-section uni-prova-aprovado">
         <div class="uni-prova-icon">🏆</div>
         <div class="uni-prova-info">
@@ -37,10 +24,10 @@ export function provaSection(prova, tentativas, certificado, concluidas, totalAu
         ` : ''}
       </div>
     `;
-  }
+}
 
-  if (!todasConcluidas) {
-    return `
+function _provaBloqueadaHTML(totalAulas) {
+  return `
       <div class="uni-prova-section uni-prova-bloqueada">
         <div class="uni-prova-icon">📝</div>
         <div class="uni-prova-info">
@@ -49,11 +36,11 @@ export function provaSection(prova, tentativas, certificado, concluidas, totalAu
         </div>
       </div>
     `;
-  }
+}
 
-  if (emCooldown) {
-    const diasRestantes = Math.ceil(prova.dias_para_retry - (Date.now() - new Date(ultimaTentativa.criado_em).getTime()) / 86400000);
-    return `
+function _provaCooldownHTML(prova, ultimaTentativa) {
+  const diasRestantes = Math.ceil(prova.dias_para_retry - (Date.now() - new Date(ultimaTentativa.criado_em).getTime()) / 86400000);
+  return `
       <div class="uni-prova-section uni-prova-bloqueada">
         <div class="uni-prova-icon">⏳</div>
         <div class="uni-prova-info">
@@ -62,10 +49,10 @@ export function provaSection(prova, tentativas, certificado, concluidas, totalAu
         </div>
       </div>
     `;
-  }
+}
 
-  if (!podeRefazer && numTentativas >= prova.max_tentativas) {
-    return `
+function _provaEsgotadaHTML(prova) {
+  return `
       <div class="uni-prova-section uni-prova-bloqueada">
         <div class="uni-prova-icon">❌</div>
         <div class="uni-prova-info">
@@ -74,8 +61,9 @@ export function provaSection(prova, tentativas, certificado, concluidas, totalAu
         </div>
       </div>
     `;
-  }
+}
 
+function _provaDisponivelHTML(prova, numTentativas, ultimaTentativa) {
   const labelBtn = numTentativas === 0 ? 'Fazer prova final' : `Tentar novamente (${numTentativas}/${prova.max_tentativas})`;
   const subText  = numTentativas > 0
     ? `Última nota: ${ultimaTentativa.nota}% · Mínimo para passar: ${prova.nota_minima}%`
@@ -93,6 +81,33 @@ export function provaSection(prova, tentativas, certificado, concluidas, totalAu
       </button>
     </div>
   `;
+}
+
+// Cooldown (dias_para_retry): bloqueia nova tentativa por N dias após reprovar.
+function _estaEmCooldown(prova, jaPassou, ultimaTentativa) {
+  if (jaPassou || !ultimaTentativa || !(prova.dias_para_retry > 0)) return false;
+  const diasPassados = (Date.now() - new Date(ultimaTentativa.criado_em).getTime()) / 86400000;
+  return diasPassados < prova.dias_para_retry;
+}
+
+/**
+ * Seção de status da prova no detalhe do curso.
+ * `progresso` = { concluidas, totalAulas } (agrupado para caber no teto de parâmetros).
+ */
+export function provaSection(prova, tentativas, certificado, progresso) {
+  const { concluidas, totalAulas } = progresso;
+  const todasConcluidas = totalAulas > 0 && concluidas >= totalAulas;
+  const jaPassou        = tentativas.some(t => t.aprovado);
+  const ultimaTentativa = tentativas[0] || null;
+  const numTentativas   = tentativas.length;
+  const podeRefazer     = !jaPassou && numTentativas < prova.max_tentativas;
+  const emCooldown      = _estaEmCooldown(prova, jaPassou, ultimaTentativa);
+
+  if (jaPassou)         return _provaAprovadaHTML(prova, ultimaTentativa, certificado);
+  if (!todasConcluidas) return _provaBloqueadaHTML(totalAulas);
+  if (emCooldown)       return _provaCooldownHTML(prova, ultimaTentativa);
+  if (!podeRefazer && numTentativas >= prova.max_tentativas) return _provaEsgotadaHTML(prova);
+  return _provaDisponivelHTML(prova, numTentativas, ultimaTentativa);
 }
 
 export async function uniStartProva(provaId) {
@@ -190,50 +205,85 @@ function _renderProvaView(main, prova, questoes) {
   });
 }
 
+async function _emitirCertificado(prova) {
+  if (!prova.tem_certificado || !UV.currentDetail?.curso?.id) return { certCodigo: null, certId: null };
+  const { data: cert } = await upsertCertificado(UV.userId, UV.currentDetail.curso.id);
+  return { certCodigo: cert?.codigo || null, certId: cert?.id || null };
+}
+
+// XP de aprovação + emissão do certificado; devolve o que foi concedido.
+async function _processarAprovacao(prova, nota, primeiraT) {
+  const xpBase = primeiraT ? 50 : 0;
+  const xpMax  = nota === 100 ? 30 : 0;
+
+  if (xpBase > 0) await insertXpLog({ user_id: UV.userId, tipo: 'prova_primeira_tentativa', referencia_id: prova.id, xp: xpBase });
+  if (xpMax  > 0) await insertXpLog({ user_id: UV.userId, tipo: 'prova_nota_maxima',        referencia_id: prova.id, xp: xpMax });
+
+  const { certCodigo, certId } = await _emitirCertificado(prova);
+  return { xpBase, xpMax, certCodigo, certId };
+}
+
 async function _submitProva(main, prova, questoes, respostas) {
   const acertos   = questoes.filter((q, i) => respostas[i] === q.correta).length;
   const nota      = Math.round((acertos / questoes.length) * 100);
   const aprovado  = nota >= prova.nota_minima;
   const primeiraT = !UV.userId ? false : !(await fetchPrimeiraTentativa(prova.id, UV.userId)).data?.length;
+  const base      = { nota, acertos, total: questoes.length, prova };
 
   try {
-    if (UV.userId) {
-      await insertTentativa({
-        user_id: UV.userId, prova_id: prova.id,
-        nota, aprovado, respostas,
-      });
+    if (!UV.userId) return;
+    await insertTentativa({
+      user_id: UV.userId, prova_id: prova.id,
+      nota, aprovado, respostas,
+    });
 
-      if (aprovado) {
-        // XP: aprovação
-        const xpBase = primeiraT ? 50 : 0;
-        const xpMax  = nota === 100 ? 30 : 0;
-
-        if (xpBase > 0) await insertXpLog({ user_id: UV.userId, tipo: 'prova_primeira_tentativa', referencia_id: prova.id, xp: xpBase });
-        if (xpMax  > 0) await insertXpLog({ user_id: UV.userId, tipo: 'prova_nota_maxima',        referencia_id: prova.id, xp: xpMax });
-
-        // Certificado
-        let certCodigo = null;
-        let certId     = null;
-        if (prova.tem_certificado && UV.currentDetail?.curso?.id) {
-          const { data: cert } = await upsertCertificado(UV.userId, UV.currentDetail.curso.id);
-          certCodigo = cert?.codigo || null;
-          certId     = cert?.id     || null;
-        }
-
-        _renderProvaResultado(main, { aprovado: true, nota, acertos, total: questoes.length, prova, primeiraT, xpBase, xpMax, certCodigo, certId });
-      } else {
-        _renderProvaResultado(main, { aprovado: false, nota, acertos, total: questoes.length, prova });
-      }
+    if (aprovado) {
+      const premios = await _processarAprovacao(prova, nota, primeiraT);
+      _renderProvaResultado(main, { aprovado: true, ...base, primeiraT, ...premios });
+    } else {
+      _renderProvaResultado(main, { aprovado: false, ...base });
     }
   } catch (err) {
     console.error(err);
-    _renderProvaResultado(main, { aprovado, nota, acertos, total: questoes.length, prova, erro: true });
+    _renderProvaResultado(main, { aprovado, ...base, erro: true });
   }
 }
 
-function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, xpBase = 0, xpMax = 0, certCodigo, certId }) {
-  const xpTotal = xpBase + xpMax;
+function _xpPillsHTML(aprovado, xpBase, xpMax) {
+  if (!aprovado || xpBase + xpMax <= 0) return '';
+  return `
+            <div class="uni-resultado-xp">
+              ${xpBase > 0 ? `<span class="uni-xp-pill">+${xpBase} XP — Aprovado na prova</span>` : ''}
+              ${xpMax  > 0 ? `<span class="uni-xp-pill">+${xpMax} XP — Nota máxima!</span>` : ''}
+            </div>
+          `;
+}
 
+function _certificadoHTML(aprovado, certCodigo, certId) {
+  if (!aprovado || !certId) return '';
+  return `
+            <div class="uni-resultado-cert">
+              <div class="uni-resultado-cert-label">🎓 Certificado emitido!</div>
+              <div class="uni-resultado-cert-code">Código: <strong>${certCodigo}</strong></div>
+            </div>
+            <button class="uni-btn-primary" style="width:100%;background:#4ade80;color:#000"
+                    onclick="uniVerCertificado('${certId}')">
+              🎓 Ver meu certificado
+            </button>
+          `;
+}
+
+function _dicaReprovadoHTML(aprovado, prova) {
+  if (aprovado) return '';
+  return `
+            <div class="uni-resultado-dica">
+              Mínimo para aprovação: <strong>${prova.nota_minima}%</strong><br>
+              ${prova.dias_para_retry > 0 ? `Você poderá tentar novamente em <strong>${prova.dias_para_retry} dia${prova.dias_para_retry !== 1 ? 's' : ''}</strong>.` : 'Você pode tentar novamente a qualquer momento.'}
+            </div>
+          `;
+}
+
+function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, xpBase = 0, xpMax = 0, certCodigo, certId }) {
   main.innerHTML = `
     <div class="uni-prova-wrap">
       <div class="uni-prova-topbar">
@@ -253,30 +303,11 @@ function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, xp
           <div class="uni-resultado-nota">${nota}<span class="uni-resultado-pct">%</span></div>
           <div class="uni-resultado-detalhe">${acertos} de ${total} questões corretas</div>
 
-          ${aprovado && xpTotal > 0 ? `
-            <div class="uni-resultado-xp">
-              ${xpBase > 0 ? `<span class="uni-xp-pill">+${xpBase} XP — Aprovado na prova</span>` : ''}
-              ${xpMax  > 0 ? `<span class="uni-xp-pill">+${xpMax} XP — Nota máxima!</span>` : ''}
-            </div>
-          ` : ''}
+          ${_xpPillsHTML(aprovado, xpBase, xpMax)}
 
-          ${aprovado && certId ? `
-            <div class="uni-resultado-cert">
-              <div class="uni-resultado-cert-label">🎓 Certificado emitido!</div>
-              <div class="uni-resultado-cert-code">Código: <strong>${certCodigo}</strong></div>
-            </div>
-            <button class="uni-btn-primary" style="width:100%;background:#4ade80;color:#000"
-                    onclick="uniVerCertificado('${certId}')">
-              🎓 Ver meu certificado
-            </button>
-          ` : ''}
+          ${_certificadoHTML(aprovado, certCodigo, certId)}
 
-          ${!aprovado ? `
-            <div class="uni-resultado-dica">
-              Mínimo para aprovação: <strong>${prova.nota_minima}%</strong><br>
-              ${prova.dias_para_retry > 0 ? `Você poderá tentar novamente em <strong>${prova.dias_para_retry} dia${prova.dias_para_retry !== 1 ? 's' : ''}</strong>.` : 'Você pode tentar novamente a qualquer momento.'}
-            </div>
-          ` : ''}
+          ${_dicaReprovadoHTML(aprovado, prova)}
 
           <button class="uni-btn-ghost" style="margin-top:8px;width:100%" onclick="uniGoBack()">
             Voltar ao curso
