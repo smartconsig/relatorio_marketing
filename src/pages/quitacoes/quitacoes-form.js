@@ -16,6 +16,56 @@ export function q_openModal() {
   if (overlay) overlay.style.display = 'flex';
 }
 
+// Blocos de preenchimento (tabelas id → valor; mesmos fallbacks '')
+function _preencherPessoais(c) {
+  [
+    ['q-f-nome', c.nome], ['q-f-cpf', c.cpf], ['q-f-rg', c.rg],
+    ['q-f-tel', c.telefone], ['q-f-cep', c.cep], ['q-f-end', c.endereco],
+    ['q-f-bairro', c.bairro], ['q-f-cidade', c.cidade], ['q-f-uf', c.uf],
+  ].forEach(([id, v]) => _setVal(id, v || ''));
+}
+
+function _preencherQuitacao(q) {
+  [
+    ['q-f-banco', q.banco], ['q-f-contrato', q.contrato],
+    ['q-f-boleto-data', q.data_boleto], ['q-f-ted-data', q.data_ted],
+    ['q-f-dev-data', q.data_devolucao],
+    ['q-f-pag-nome', q.pag_nome], ['q-f-pag-cnpj', q.pag_cnpj],
+    ['q-f-dest-nome', q.destino_nome], ['q-f-dest-cnpj', q.destino_cnpj],
+    ['q-f-dest-banco', q.destino_banco], ['q-f-dest-agencia', q.destino_agencia],
+    ['q-f-dest-conta', q.destino_conta], ['q-f-txid', q.txid],
+    ['q-f-data-hora-tx', q.data_hora_tx],
+  ].forEach(([id, v]) => _setVal(id, v || ''));
+
+  _setMoneyVal('q-f-boleto-val', q.val_boleto);
+  _setMoneyVal('q-f-ted-val',    q.val_ted);
+  _setMoneyVal('q-f-dev-val',    q.val_devolucao);
+
+  const devEl = document.getElementById('q-f-devolvida');
+  if (devEl) devEl.value = q.devolvida ? 'sim' : 'nao';
+  q_toggleDev();
+}
+
+function _preencherProfissional(p) {
+  [
+    ['q-f-cargo', p.cargo], ['q-f-categoria', p.categoria],
+    ['q-f-unidade', p.unidade], ['q-f-banco-sal', p.banco_sal],
+    ['q-f-agencia', p.agencia], ['q-f-conta', p.conta],
+  ].forEach(([id, v]) => _setVal(id, v || ''));
+}
+
+// Documento já existente (Storage ou legado)
+function _mostrarDocExistente(c) {
+  const hasExistingDoc = c.doc_path || c.doc_pdf;
+  if (!hasExistingDoc || !Q.docNome) return;
+  const nameEl   = document.getElementById('q-file-done-name');
+  const doneEl   = document.getElementById('q-file-done');
+  const uploadEl = document.getElementById('q-upload-area');
+  if (nameEl)   nameEl.textContent     = Q.docNome;
+  if (doneEl)   doneEl.style.display   = '';
+  if (uploadEl) uploadEl.style.display = 'none';
+}
+
 export function q_openEditModal(id) {
   const c = Q.clientes.find(x => x.id === id);
   if (!c) return;
@@ -28,62 +78,10 @@ export function q_openEditModal(id) {
   const titleEl = document.getElementById('q-modal-title');
   if (titleEl) titleEl.textContent = 'Editar Cliente';
 
-  const q = c.quitacao     || {};
-  const p = c.profissional || {};
-
-  // Dados pessoais
-  _setVal('q-f-nome',   c.nome      || '');
-  _setVal('q-f-cpf',    c.cpf       || '');
-  _setVal('q-f-rg',     c.rg        || '');
-  _setVal('q-f-tel',    c.telefone  || '');
-  _setVal('q-f-cep',    c.cep       || '');
-  _setVal('q-f-end',    c.endereco  || '');
-  _setVal('q-f-bairro', c.bairro    || '');
-  _setVal('q-f-cidade', c.cidade    || '');
-  _setVal('q-f-uf',     c.uf        || '');
-
-  // Quitação
-  _setVal('q-f-banco',       q.banco           || '');
-  _setVal('q-f-contrato',    q.contrato        || '');
-  _setMoneyVal('q-f-boleto-val', q.val_boleto);
-  _setVal('q-f-boleto-data', q.data_boleto     || '');
-  _setMoneyVal('q-f-ted-val', q.val_ted);
-  _setVal('q-f-ted-data',    q.data_ted        || '');
-
-  const devEl = document.getElementById('q-f-devolvida');
-  if (devEl) devEl.value = q.devolvida ? 'sim' : 'nao';
-  q_toggleDev();
-  _setVal('q-f-dev-data',    q.data_devolucao  || '');
-  _setMoneyVal('q-f-dev-val', q.val_devolucao);
-
-  _setVal('q-f-pag-nome',     q.pag_nome        || '');
-  _setVal('q-f-pag-cnpj',     q.pag_cnpj        || '');
-  _setVal('q-f-dest-nome',    q.destino_nome    || '');
-  _setVal('q-f-dest-cnpj',    q.destino_cnpj    || '');
-  _setVal('q-f-dest-banco',   q.destino_banco   || '');
-  _setVal('q-f-dest-agencia', q.destino_agencia || '');
-  _setVal('q-f-dest-conta',   q.destino_conta   || '');
-  _setVal('q-f-txid',         q.txid            || '');
-  _setVal('q-f-data-hora-tx', q.data_hora_tx    || '');
-
-  // Profissional
-  _setVal('q-f-cargo',     p.cargo     || '');
-  _setVal('q-f-categoria', p.categoria || '');
-  _setVal('q-f-unidade',   p.unidade   || '');
-  _setVal('q-f-banco-sal', p.banco_sal || '');
-  _setVal('q-f-agencia',   p.agencia   || '');
-  _setVal('q-f-conta',     p.conta     || '');
-
-  // Documento já existente (Storage ou legado)
-  const hasExistingDoc = c.doc_path || c.doc_pdf;
-  if (hasExistingDoc && Q.docNome) {
-    const nameEl   = document.getElementById('q-file-done-name');
-    const doneEl   = document.getElementById('q-file-done');
-    const uploadEl = document.getElementById('q-upload-area');
-    if (nameEl)   nameEl.textContent     = Q.docNome;
-    if (doneEl)   doneEl.style.display   = '';
-    if (uploadEl) uploadEl.style.display = 'none';
-  }
+  _preencherPessoais(c);
+  _preencherQuitacao(c.quitacao || {});
+  _preencherProfissional(c.profissional || {});
+  _mostrarDocExistente(c);
 
   const overlay = document.getElementById('q-modal-overlay');
   if (overlay) overlay.style.display = 'flex';

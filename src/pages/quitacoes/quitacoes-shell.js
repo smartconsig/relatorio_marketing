@@ -52,53 +52,16 @@ export function buildShell(el) {
     </div>
 
     <!-- ── Modal: Novo Cliente ─────────────────────────── -->
-    <div id="q-modal-overlay" onclick="if(event.target===this)q_closeModal()"
-      style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:20px">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow-y:auto">
-        <div style="padding:22px 26px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface2);z-index:10">
-          <div id="q-modal-title" style="font-family:var(--font-h);font-size:16px;font-weight:800;color:var(--white)">Novo Cliente</div>
-          <button onclick="q_closeModal()" style="width:30px;height:30px;border-radius:8px;border:none;background:var(--surface3);cursor:pointer;font-size:17px;color:var(--gray);display:flex;align-items:center;justify-content:center">×</button>
-        </div>
-        <div style="padding:22px 26px">
-          <div class="q-form-grid">
+    ${_modalClienteHTML()}
 
-            <div class="q-form-group full">
-              <label class="q-form-label">Nome Completo</label>
-              ${_inp('q-f-nome', 'Ex: WILTON BORGES VIANA')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">CPF</label>
-              ${_inp('q-f-cpf', '000.000.000-00', 'oninput="q_maskCPF(this)"')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">RG</label>
-              ${_inp('q-f-rg', 'Ex: 21.973.887-7')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">Telefone</label>
-              ${_inp('q-f-tel', '(11) 99999-9999')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">CEP</label>
-              ${_inp('q-f-cep', '00000-000')}
-            </div>
-            <div class="q-form-group full">
-              <label class="q-form-label">Endereço</label>
-              ${_inp('q-f-end', 'Rua, número')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">Bairro</label>
-              ${_inp('q-f-bairro', 'Bairro')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">Cidade</label>
-              ${_inp('q-f-cidade', 'Cidade')}
-            </div>
-            <div class="q-form-group">
-              <label class="q-form-label">UF</label>
-              ${_inp('q-f-uf', 'SP')}
-            </div>
+    <!-- ── Modal: Comprovante ──────────────────────────── -->
+    ${_modalComprovanteHTML()}
+  `;
+}
 
+// Campos de quitação + destino TED do formulário (mesmos IDs q-f-*)
+function _camposQuitacaoHTML() {
+  return `
             <div class="q-form-divider"><span>Dados de Quitação</span></div>
 
             <div class="q-form-group">
@@ -180,6 +143,61 @@ export function buildShell(el) {
               ${_inp('q-f-data-hora-tx', 'Ex: 09 ABR 2026 - 14:32:17')}
             </div>
 
+  `;
+}
+
+// ── Modal de cadastro/edição (contrato de IDs q-f-* com quitacoes-form) ────
+function _modalClienteHTML() {
+  return `
+    <div id="q-modal-overlay" onclick="if(event.target===this)q_closeModal()"
+      style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow-y:auto">
+        <div style="padding:22px 26px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface2);z-index:10">
+          <div id="q-modal-title" style="font-family:var(--font-h);font-size:16px;font-weight:800;color:var(--white)">Novo Cliente</div>
+          <button onclick="q_closeModal()" style="width:30px;height:30px;border-radius:8px;border:none;background:var(--surface3);cursor:pointer;font-size:17px;color:var(--gray);display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+        <div style="padding:22px 26px">
+          <div class="q-form-grid">
+
+            <div class="q-form-group full">
+              <label class="q-form-label">Nome Completo</label>
+              ${_inp('q-f-nome', 'Ex: WILTON BORGES VIANA')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">CPF</label>
+              ${_inp('q-f-cpf', '000.000.000-00', 'oninput="q_maskCPF(this)"')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">RG</label>
+              ${_inp('q-f-rg', 'Ex: 21.973.887-7')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">Telefone</label>
+              ${_inp('q-f-tel', '(11) 99999-9999')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">CEP</label>
+              ${_inp('q-f-cep', '00000-000')}
+            </div>
+            <div class="q-form-group full">
+              <label class="q-form-label">Endereço</label>
+              ${_inp('q-f-end', 'Rua, número')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">Bairro</label>
+              ${_inp('q-f-bairro', 'Bairro')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">Cidade</label>
+              ${_inp('q-f-cidade', 'Cidade')}
+            </div>
+            <div class="q-form-group">
+              <label class="q-form-label">UF</label>
+              ${_inp('q-f-uf', 'SP')}
+            </div>
+
+            ${_camposQuitacaoHTML()}
+
             <div class="q-form-divider"><span>Dados Profissionais</span></div>
 
             <div class="q-form-group full">
@@ -230,10 +248,16 @@ export function buildShell(el) {
       </div>
     </div>
 
-    <!-- ── Modal: Comprovante ──────────────────────────── -->
+  `;
+}
+
+// ── Modal do comprovante estilo transferência ──────────────────────────────
+function _modalComprovanteHTML() {
+  return `
     <div id="q-comp-overlay" onclick="if(event.target===this)q_closeComprovante()"
       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:20px">
       <div id="q-comp-content"
         style="background:#fff;border-radius:16px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;color:#1a1a1a"></div>
-    </div>`;
+    </div>  `;
 }
+

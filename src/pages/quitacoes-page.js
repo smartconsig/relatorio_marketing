@@ -38,14 +38,11 @@ export function q_search(val) {
   renderList();
 }
 
-export async function q_save() {
-  const nome = _v('q-f-nome');
-  const cpf  = _v('q-f-cpf');
-  if (!nome || !cpf) { toast('Preencha pelo menos Nome e CPF', 'err'); return; }
-
+// Coleta o cliente inteiro do formulário (mesmos campos e derivações).
+function _coletarCliente(nome, cpf) {
   const devolvida = document.getElementById('q-f-devolvida')?.value === 'sim';
 
-  const cliente = {
+  return {
     nome:     nome.toUpperCase(),
     cpf,
     telefone: _v('q-f-tel'),
@@ -85,39 +82,53 @@ export async function q_save() {
       conta:     _v('q-f-conta'),
     },
   };
+}
 
+// Upload do documento para o Storage (se selecionado)
+async function _subirDocumento(saved) {
+  if (!Q.docFile) return saved;
+  try {
+    if (saved.doc_path) await deleteDoc(saved.doc_path);
+    const path = await uploadDoc(saved.id, Q.docFile);
+    const withDoc = await updateDocMeta(saved.id, path, Q.docFile.name);
+    if (withDoc) saved = withDoc;
+  } catch (docErr) {
+    toast('Cliente salvo, mas erro ao enviar documento', 'err');
+    console.error(docErr);
+  }
+  Q.docFile = null;
+  return saved;
+}
+
+// Edição volta para o detalhe do cliente; cadastro novo volta para a lista.
+function _refletirSalvo(saved) {
+  if (Q.editingId) {
+    const idx = Q.clientes.findIndex(x => x.id === Q.editingId);
+    if (idx !== -1) Q.clientes[idx] = saved;
+    Q.editingId = null;
+    q_closeModal();
+    showDetailView();
+    renderDetail(saved);
+    return;
+  }
+  Q.clientes.push(saved);
+  Q.clientes.sort((a, b) => a.nome.localeCompare(b.nome));
+  q_closeModal();
+  renderList();
+}
+
+export async function q_save() {
+  const nome = _v('q-f-nome');
+  const cpf  = _v('q-f-cpf');
+  if (!nome || !cpf) { toast('Preencha pelo menos Nome e CPF', 'err'); return; }
+
+  const cliente = _coletarCliente(nome, cpf);
   if (Q.editingId) cliente.id = Q.editingId;
 
   try {
     let saved = await upsertQuitacao(cliente);
-
-    // Upload do documento para o Storage (se selecionado)
-    if (Q.docFile) {
-      try {
-        if (saved.doc_path) await deleteDoc(saved.doc_path);
-        const path = await uploadDoc(saved.id, Q.docFile);
-        const withDoc = await updateDocMeta(saved.id, path, Q.docFile.name);
-        if (withDoc) saved = withDoc;
-      } catch (docErr) {
-        toast('Cliente salvo, mas erro ao enviar documento', 'err');
-        console.error(docErr);
-      }
-      Q.docFile = null;
-    }
-
-    if (Q.editingId) {
-      const idx = Q.clientes.findIndex(x => x.id === Q.editingId);
-      if (idx !== -1) Q.clientes[idx] = saved;
-      Q.editingId = null;
-      q_closeModal();
-      showDetailView();
-      renderDetail(saved);
-    } else {
-      Q.clientes.push(saved);
-      Q.clientes.sort((a, b) => a.nome.localeCompare(b.nome));
-      q_closeModal();
-      renderList();
-    }
+    saved = await _subirDocumento(saved);
+    _refletirSalvo(saved);
     toast('Cliente salvo com sucesso');
   } catch (e) {
     toast('Erro ao salvar: ' + e.message, 'err');
