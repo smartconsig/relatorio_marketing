@@ -5,7 +5,7 @@
 // que é proteção documentada contra vazamento de flag para o cache.
 import { state } from '../state.js';
 import { icon } from '../utils/icons.js';
-import { fmtN, fmtBRL } from '../utils/currency.js';
+import { fmtN } from '../utils/currency.js';
 import { toast } from '../utils/ui.js';
 import { saveState } from '../core/storage.js';
 import { saveClassificationToSupabase } from '../services/classifications.js';
@@ -22,7 +22,7 @@ import { renderOverview } from './overview.js';
 import { renderClientes } from './clientes.js';
 
 // ── Seleção em lote ───────────────────────────────────────────────────────────
-let _selected = new Set(); // conjunto de e._idx selecionados
+const _selected = new Set(); // conjunto de e._idx selecionados
 
 function _updateBatchBar() {
   const bar = document.getElementById('procv-batch-bar');

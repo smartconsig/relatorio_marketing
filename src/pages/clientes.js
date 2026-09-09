@@ -30,7 +30,7 @@ function applySortClientes(arr) {
   const { col, dir } = state.clientesSort;
   if (!col) return arr;
   return [...arr].sort((a, b) => {
-    let va = a[col], vb = b[col];
+    const va = a[col], vb = b[col];
     if (va == null && vb == null) return 0;
     if (va == null) return 1;
     if (vb == null) return -1;

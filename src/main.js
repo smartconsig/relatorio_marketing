@@ -21,7 +21,7 @@ import './styles/home.css';
 import './styles/residuos.css';
 import './styles/carbono.css'; // sempre por último — re-seleciona classes das features (Fase 3c)
 
-import { initNavigation, navigate, clearFilter, renderAll, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
+import { initNavigation, navigate, clearFilter, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV, exportNoValueCSV } from './pages/overview.js';
@@ -31,7 +31,7 @@ import { undoFromClientes, setClientesFilter, setClientesSearch, askUndo, sortCl
 import { closeConfirm, doConfirm } from './utils/confirm.js';
 import { setRankView, setFunilView, toggleFunilAndamento, exportRankingPDF } from './pages/ranking.js';
 import { saveGoals, fmtGoalInput, rawGoalInput, fmtRoasInput, goalsNavMonth, goalsCopyPrev, goalsLoadPeriodo } from './pages/goals-page.js';
-import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, initBSC, saveTVDurations, startEditAvatar, onAvatarFileChange } from './pages/bsc-page.js';
+import { renderBSC, importBSCFile, onBSCFileChange, enterTVMode, exitTVMode, saveTVDurations, startEditAvatar, onAvatarFileChange } from './pages/bsc-page.js';
 import { renderParceiros, importParceirosFile, onParceirosFileChange, toggleParceirosValues, startEditParceiroLogo, onParceiroLogoChange, enterParceirosTop, exitParceirosTop, setParceirosTopN, toggleParceirosTopValues } from './pages/parceiros-page.js';
 import { loadFile, processAll } from './pages/import-page.js';
 import { setPropostasSearch, setPropostasStatus, setPropostasProduto, setPropostasOrigem, setPropostasAudiencia, openExportModal, closeExportModal, doExportCSV, goToPropostasPage, sortPropostas } from './pages/propostas.js';
@@ -46,8 +46,8 @@ import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 import { q_search, q_openModal, q_openEditModal, q_closeModal, q_save, q_showDetail, q_backToList, q_showComprovante, q_closeComprovante, q_attachDoc, q_toggleDev, q_onDocSelect, q_maskCPF, q_maskCNPJ, q_maskMoney } from './pages/quitacoes-page.js';
-import { renderLiberacao, libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libImportarAcerto, libOnImportAcertoFile, libDeletarCliente, libLimparBase, libExportar, libEditarCliente, libSalvarEdicao, libSetEmpresaFiltro, libParaResiduo } from './pages/liberacao-page.js';
-import { renderBoletos, bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote } from './pages/boletos-page.js';
+import { libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libImportarAcerto, libOnImportAcertoFile, libDeletarCliente, libLimparBase, libExportar, libEditarCliente, libSalvarEdicao, libSetEmpresaFiltro, libParaResiduo } from './pages/liberacao-page.js';
+import { bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote } from './pages/boletos-page.js';
 import { renderResiduos, resSetSearch, resSetStatusFiltro, resVerMais, resSolicitar, resMarcarPago, resConfirmarPago, resFecharModal, resExcluir } from './pages/residuos-page.js';
 
 // Expose functions called from inline HTML handlers

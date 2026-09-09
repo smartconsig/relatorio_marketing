@@ -8,7 +8,6 @@ export function isMobile() {
 }
 
 // ── BOTTOM SHEET ────────────────────────────────────────
-let _sheetCallback = null;
 
 export function openBottomSheet({ title, sub, actions }) {
   const overlay = document.getElementById('mobile-sheet-overlay');
@@ -58,7 +57,7 @@ export function initSwipe(navigateFn) {
     moved  = false;
   }, { passive: true });
 
-  content.addEventListener('touchmove', e => {
+  content.addEventListener('touchmove', () => {
     moved = true;
   }, { passive: true });
 

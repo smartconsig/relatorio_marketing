@@ -89,7 +89,7 @@ export async function onParceirosFileChange(e) {
         // reinterpreta como windows-1252 (é como o Excel exporta esse CSV).
         let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
         if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
-        text = text.replace(/^﻿/, ''); // remove BOM
+        text = text.replace(/^\uFEFF/, ''); // remove BOM
         result = parseParceiros(text);
       }
       if (!result.partners.length) { toast('Nenhum parceiro encontrado no arquivo', 'err'); return; }

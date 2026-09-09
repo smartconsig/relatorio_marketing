@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { STATUS_PAID, STATUS_ALMOST_PAID, STATUS_APPROVED, STATUS_REJECTED } from '../config/status.js';
 import { normStr } from '../utils/string.js';
-import { parseBRL, fmtBRL, fmtN } from '../utils/currency.js';
+import { parseBRL } from '../utils/currency.js';
 import { parseExcelDate, inRange } from '../utils/date.js';
 import { getCol } from '../utils/string.js';
 import { HIERARCHY } from '../config/status.js';

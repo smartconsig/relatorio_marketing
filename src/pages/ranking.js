@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { icon } from '../utils/icons.js';
-import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
+import { fmtBRL, fmtPct } from '../utils/currency.js';
 import { getHierarchy } from '../core/calcKPIs.js';
 import { filteredData } from '../core/calcKPIs.js';
 import { calcFunilByVendedor, calcFunilByTime, ESTAGIOS } from '../core/calcFunil.js';

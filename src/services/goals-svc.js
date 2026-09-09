@@ -22,7 +22,7 @@ export async function loadAllGoals() {
       };
     }
     return map;
-  } catch (e) { return {}; }
+  } catch { return {}; }
 }
 
 export async function saveGoalsToSupabase(g, periodo) {

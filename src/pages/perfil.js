@@ -182,12 +182,8 @@ export function renderPerfil(filteredEntries) {
     return;
   }
 
-  // allEntries = histórico completo para cálculo de LTV (ignora filtro de datas)
-  const allEntries = state.result?.entries || filteredEntries;
-  const perf = calcPerfil(filteredEntries, allEntries);
-  const { faixas, estados, conversao, ltv, cobertura } = perf;
-
   // Shell da página com toggle no topo — conteúdo renderizado por _renderConteudo
+  // (que calcula o calcPerfil por filtro; o shell não precisa calcular nada)
   el.innerHTML = `
     <div style="padding:24px;max-width:1200px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">

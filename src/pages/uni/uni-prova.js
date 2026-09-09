@@ -7,7 +7,7 @@ import {
 import { UV, ICONS, svg, renderComingSoon, spinnerHTML } from './uni-core.js';
 import { uniVerCertificado } from './uni-certificado.js';
 
-export function provaSection(prova, tentativas, certificado, concluidas, totalAulas, cor) {
+export function provaSection(prova, tentativas, certificado, concluidas, totalAulas, _cor) {
   const todasConcluidas = totalAulas > 0 && concluidas >= totalAulas;
   const jaPassou        = tentativas.some(t => t.aprovado);
   const ultimaTentativa = tentativas[0] || null;
@@ -231,7 +231,7 @@ async function _submitProva(main, prova, questoes, respostas) {
   }
 }
 
-function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, primeiraT, xpBase = 0, xpMax = 0, certCodigo, certId, erro }) {
+function _renderProvaResultado(main, { aprovado, nota, acertos, total, prova, xpBase = 0, xpMax = 0, certCodigo, certId }) {
   const xpTotal = xpBase + xpMax;
 
   main.innerHTML = `

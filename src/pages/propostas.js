@@ -60,7 +60,6 @@ export function renderPropostas(entries) {
     return;
   }
 
-  const allMkt   = entries.filter(e => e.isMarketing === true);
   const filtered = applyFilters(entries);
   const prods    = uniqueProducts(entries);
   const origens  = uniqueOrigens(entries);
