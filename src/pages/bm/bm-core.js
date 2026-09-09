@@ -73,22 +73,25 @@ export function bmMatch(bm) {
   return alvo.includes(B.busca);
 }
 
+// Um formatador por tipo de evento (mesmos textos do switch original).
+const EVENTO_FMT = {
+  perfil_criado:     ()  => `Perfil criado`,
+  perfil_desativado: ev  => `Perfil desativado — ${MOTIVO_P_LABEL[ev.para] || ev.para || '—'}`,
+  perfil_reativado:  ()  => `Perfil reativado`,
+  perfil_editado:    ev  => `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`,
+  bm_criada:         ()  => `BM criada`,
+  bm_desativada:     ev  => `Desativada — ${MOTIVO_LABEL[ev.para] || ev.para || '—'}`,
+  bm_reativada:      ()  => `Reativada`,
+  bm_editada:        ev  => `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`,
+  bm_movida:         ev  => `BM movida de perfil${ev.texto ? ` — ${ev.texto}` : ''}`,
+  numero_add:        ev  => `Número adicionado — ${ev.texto || ''}`,
+  numero_status:     ev  => `${ev.texto || 'Número'}: status ${STATUS_LABEL[ev.de] || ev.de} → ${STATUS_LABEL[ev.para] || ev.para}`,
+  numero_qualidade:  ev  => `${ev.texto || 'Número'}: qualidade ${QUAL_LABEL[ev.de] || ev.de} → ${QUAL_LABEL[ev.para] || ev.para}`,
+  numero_editado:    ev  => `${ev.texto || 'Número'} editado`,
+  numero_removido:   ev  => `Número removido — ${ev.texto || ''}`,
+};
+
 export function labelEvento(ev) {
-  switch (ev.tipo) {
-    case 'perfil_criado':      return `Perfil criado`;
-    case 'perfil_desativado':  return `Perfil desativado — ${MOTIVO_P_LABEL[ev.para] || ev.para || '—'}`;
-    case 'perfil_reativado':   return `Perfil reativado`;
-    case 'perfil_editado':     return `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`;
-    case 'bm_criada':          return `BM criada`;
-    case 'bm_desativada':      return `Desativada — ${MOTIVO_LABEL[ev.para] || ev.para || '—'}`;
-    case 'bm_reativada':       return `Reativada`;
-    case 'bm_editada':         return `Dados alterados${ev.texto ? `: ${ev.texto}` : ''}`;
-    case 'bm_movida':          return `BM movida de perfil${ev.texto ? ` — ${ev.texto}` : ''}`;
-    case 'numero_add':         return `Número adicionado — ${ev.texto || ''}`;
-    case 'numero_status':      return `${ev.texto || 'Número'}: status ${STATUS_LABEL[ev.de] || ev.de} → ${STATUS_LABEL[ev.para] || ev.para}`;
-    case 'numero_qualidade':   return `${ev.texto || 'Número'}: qualidade ${QUAL_LABEL[ev.de] || ev.de} → ${QUAL_LABEL[ev.para] || ev.para}`;
-    case 'numero_editado':     return `${ev.texto || 'Número'} editado`;
-    case 'numero_removido':    return `Número removido — ${ev.texto || ''}`;
-    default:                   return ev.texto || ev.tipo;
-  }
+  const fmt = EVENTO_FMT[ev.tipo];
+  return fmt ? fmt(ev) : (ev.texto || ev.tipo);
 }

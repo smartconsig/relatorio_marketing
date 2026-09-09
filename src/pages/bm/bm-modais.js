@@ -12,7 +12,25 @@ import {
 import { B, esc, fmtDataHora, labelEvento, numerosDa, bmsDo } from './bm-core.js';
 import { renderLista } from './bm-lista.js';
 
+// Lista de eventos (mesmo markup dos dois modais que mostram histórico).
+function _histHTML(eventos) {
+  return eventos.length
+    ? eventos.map(ev => `
+          <div class="bm-hist-item">
+            <span class="bm-hist-txt">${esc(labelEvento(ev))}</span>
+            <span class="bm-hist-meta">${esc(ev.autor_nome || '')} · ${fmtDataHora(ev.created_at)}</span>
+          </div>`).join('')
+    : '<div class="bm-hint">Sem histórico ainda.</div>';
+}
+
 // ── modal: perfil ────────────────────────────────────────────────────────────
+async function _carregarHistoricoPerfil(p) {
+  document.getElementById('bm-p-hist').innerHTML = '<div class="bm-hint">Carregando…</div>';
+  const eventos = await loadEventosPerfil(p.id);
+  if (B.editPerfilId !== p.id) return;                   // usuário já trocou de modal
+  document.getElementById('bm-p-hist').innerHTML = _histHTML(eventos);
+}
+
 export async function abrirModalPerfil(id) {
   if (!perm.bmEditar()) return;
   B.editPerfilId = id;
@@ -23,28 +41,33 @@ export async function abrirModalPerfil(id) {
   document.getElementById('bm-p-obs').value  = p?.observacao || '';
   document.getElementById('bm-p-excluir').style.display = p && perm.isAdmin() ? '' : 'none';
 
-  const histWrap = document.getElementById('bm-p-hist-wrap');
-  histWrap.style.display = p ? '' : 'none';
+  document.getElementById('bm-p-hist-wrap').style.display = p ? '' : 'none';
   document.getElementById('bm-perfil-modal').style.display = 'flex';
   document.getElementById('bm-p-nome').focus();
 
-  if (p) {
-    document.getElementById('bm-p-hist').innerHTML = '<div class="bm-hint">Carregando…</div>';
-    const eventos = await loadEventosPerfil(p.id);
-    if (B.editPerfilId !== p.id) return;                 // usuário já trocou de modal
-    document.getElementById('bm-p-hist').innerHTML = eventos.length
-      ? eventos.map(ev => `
-          <div class="bm-hist-item">
-            <span class="bm-hist-txt">${esc(labelEvento(ev))}</span>
-            <span class="bm-hist-meta">${esc(ev.autor_nome || '')} · ${fmtDataHora(ev.created_at)}</span>
-          </div>`).join('')
-      : '<div class="bm-hint">Sem histórico ainda.</div>';
-  }
+  if (p) await _carregarHistoricoPerfil(p);
 }
 
 export function fecharModalPerfil() {
   B.editPerfilId = null;
   document.getElementById('bm-perfil-modal').style.display = 'none';
+}
+
+async function _persistirPerfil(payload) {
+  if (B.editPerfilId) {
+    const p = B.perfis.find(x => x.id === B.editPerfilId);
+    const novo = await updatePerfil(B.editPerfilId, payload);
+    const mudou = Object.keys(payload).filter(k => (p[k] || '') !== (payload[k] || ''));
+    if (mudou.length) await logEvento({ perfil_id: B.editPerfilId, tipo: 'perfil_editado', texto: mudou.join(', ') });
+    Object.assign(p, novo);
+    toast('Perfil atualizado');
+    return;
+  }
+  const novo = await createPerfil(payload);
+  B.perfis.push(novo);
+  B.perfis.sort((a, b) => a.nome.localeCompare(b.nome));
+  B.abertosP.add(novo.id);             // já abre para cadastrar as BMs
+  toast('Perfil criado');
 }
 
 export async function salvarPerfil() {
@@ -57,20 +80,7 @@ export async function salvarPerfil() {
   };
 
   try {
-    if (B.editPerfilId) {
-      const p = B.perfis.find(x => x.id === B.editPerfilId);
-      const novo = await updatePerfil(B.editPerfilId, payload);
-      const mudou = Object.keys(payload).filter(k => (p[k] || '') !== (payload[k] || ''));
-      if (mudou.length) await logEvento({ perfil_id: B.editPerfilId, tipo: 'perfil_editado', texto: mudou.join(', ') });
-      Object.assign(p, novo);
-      toast('Perfil atualizado');
-    } else {
-      const novo = await createPerfil(payload);
-      B.perfis.push(novo);
-      B.perfis.sort((a, b) => a.nome.localeCompare(b.nome));
-      B.abertosP.add(novo.id);           // já abre para cadastrar as BMs
-      toast('Perfil criado');
-    }
+    await _persistirPerfil(payload);
     fecharModalPerfil();
     renderLista();
   } catch (err) {
@@ -110,6 +120,28 @@ export function excluirPerfil() {
 }
 
 // ── modal: BM ────────────────────────────────────────────────────────────────
+function _opcoesPerfilHTML(perfilSel) {
+  return B.perfis
+    .map(p => `<option value="${p.id}"${p.id === perfilSel ? ' selected' : ''}>${esc(p.nome)}${p.ativa ? '' : ' (fora do ar)'}</option>`)
+    .join('');
+}
+
+function _preencherFormBM(bm) {
+  document.getElementById('bm-modal-title').textContent = bm ? 'Editar BM' : 'Nova BM';
+  document.getElementById('bm-f-nome').value   = bm?.nome || '';
+  document.getElementById('bm-f-idmeta').value = bm?.bm_id_meta || '';
+  document.getElementById('bm-f-data').value   = bm?.data_criacao_bm || '';
+  document.getElementById('bm-f-obs').value    = bm?.observacao || '';
+  document.getElementById('bm-excluir').style.display = bm && perm.isAdmin() ? '' : 'none';
+}
+
+async function _carregarHistoricoBM(bm) {
+  document.getElementById('bm-hist').innerHTML = '<div class="bm-hint">Carregando…</div>';
+  const eventos = await loadEventos(bm.id);
+  if (B.editBmId !== bm.id) return;                      // usuário já trocou de modal
+  document.getElementById('bm-hist').innerHTML = _histHTML(eventos);
+}
+
 export async function abrirModalBM(id, perfilPre) {
   if (!perm.bmEditar()) return;
   B.editBmId    = id;
@@ -117,34 +149,14 @@ export async function abrirModalBM(id, perfilPre) {
   const bm = id ? B.bms.find(b => b.id === id) : null;
 
   const perfilSel = bm?.perfil_id || B.bmPerfilPre || B.perfis[0]?.id || '';
-  document.getElementById('bm-f-perfil').innerHTML = B.perfis
-    .map(p => `<option value="${p.id}"${p.id === perfilSel ? ' selected' : ''}>${esc(p.nome)}${p.ativa ? '' : ' (fora do ar)'}</option>`)
-    .join('');
+  document.getElementById('bm-f-perfil').innerHTML = _opcoesPerfilHTML(perfilSel);
+  _preencherFormBM(bm);
 
-  document.getElementById('bm-modal-title').textContent = bm ? 'Editar BM' : 'Nova BM';
-  document.getElementById('bm-f-nome').value   = bm?.nome || '';
-  document.getElementById('bm-f-idmeta').value = bm?.bm_id_meta || '';
-  document.getElementById('bm-f-data').value   = bm?.data_criacao_bm || '';
-  document.getElementById('bm-f-obs').value    = bm?.observacao || '';
-  document.getElementById('bm-excluir').style.display = bm && perm.isAdmin() ? '' : 'none';
-
-  const histWrap = document.getElementById('bm-hist-wrap');
-  histWrap.style.display = bm ? '' : 'none';
+  document.getElementById('bm-hist-wrap').style.display = bm ? '' : 'none';
   document.getElementById('bm-modal').style.display = 'flex';
   document.getElementById('bm-f-nome').focus();
 
-  if (bm) {
-    document.getElementById('bm-hist').innerHTML = '<div class="bm-hint">Carregando…</div>';
-    const eventos = await loadEventos(bm.id);
-    if (B.editBmId !== bm.id) return;                    // usuário já trocou de modal
-    document.getElementById('bm-hist').innerHTML = eventos.length
-      ? eventos.map(ev => `
-          <div class="bm-hist-item">
-            <span class="bm-hist-txt">${esc(labelEvento(ev))}</span>
-            <span class="bm-hist-meta">${esc(ev.autor_nome || '')} · ${fmtDataHora(ev.created_at)}</span>
-          </div>`).join('')
-      : '<div class="bm-hint">Sem histórico ainda.</div>';
-  }
+  if (bm) await _carregarHistoricoBM(bm);
 }
 
 export function fecharModalBM() {
@@ -169,37 +181,48 @@ export async function salvarBM() {
   };
 
   try {
-    if (B.editBmId) {
-      const bm = B.bms.find(b => b.id === B.editBmId);
-      const mudouPerfil = payload.perfil_id !== bm.perfil_id;
-      const perfilAntigo = bm.perfil_id;
-      const novo = await updateBM(B.editBmId, payload);
-      const mudou = Object.keys(payload)
-        .filter(k => k !== 'perfil_id')
-        .filter(k => (bm[k] || '') !== (payload[k] || ''));
-      if (mudou.length) await logEvento({ bm_id: B.editBmId, tipo: 'bm_editada', texto: mudou.join(', ') });
-      if (mudouPerfil) {
-        const de   = B.perfis.find(p => p.id === perfilAntigo)?.nome || '—';
-        const para = B.perfis.find(p => p.id === payload.perfil_id)?.nome || '—';
-        await logEvento({ bm_id: B.editBmId, perfil_id: payload.perfil_id, tipo: 'bm_movida', texto: `${de} → ${para}` });
-        B.abertosP.add(payload.perfil_id);   // mostra para onde a BM foi
-      }
-      Object.assign(bm, novo);
-      toast('BM atualizada');
-    } else {
-      const novo = await createBM(payload);
-      B.bms.push(novo);
-      B.bms.sort((a, b) => a.nome.localeCompare(b.nome));
-      B.abertosP.add(novo.perfil_id);
-      B.abertas.add(novo.id);            // já abre para cadastrar os números
-      toast('BM criada');
-    }
+    await _persistirBM(payload);
     fecharModalBM();
     renderLista();
   } catch (err) {
     console.error('salvarBM:', err);
     toast('Erro ao salvar a BM', 'err');
   }
+}
+
+// Log do que mudou nos campos (perfil_id tem evento próprio de "movida").
+async function _registrarEdicaoBM(bm, payload) {
+  const mudou = Object.keys(payload)
+    .filter(k => k !== 'perfil_id')
+    .filter(k => (bm[k] || '') !== (payload[k] || ''));
+  if (mudou.length) await logEvento({ bm_id: B.editBmId, tipo: 'bm_editada', texto: mudou.join(', ') });
+}
+
+async function _registrarMovimentacaoBM(perfilAntigo, payload) {
+  const de   = B.perfis.find(p => p.id === perfilAntigo)?.nome || '—';
+  const para = B.perfis.find(p => p.id === payload.perfil_id)?.nome || '—';
+  await logEvento({ bm_id: B.editBmId, perfil_id: payload.perfil_id, tipo: 'bm_movida', texto: `${de} → ${para}` });
+  B.abertosP.add(payload.perfil_id);     // mostra para onde a BM foi
+}
+
+async function _persistirBM(payload) {
+  if (B.editBmId) {
+    const bm = B.bms.find(b => b.id === B.editBmId);
+    const mudouPerfil = payload.perfil_id !== bm.perfil_id;
+    const perfilAntigo = bm.perfil_id;
+    const novo = await updateBM(B.editBmId, payload);
+    await _registrarEdicaoBM(bm, payload);
+    if (mudouPerfil) await _registrarMovimentacaoBM(perfilAntigo, payload);
+    Object.assign(bm, novo);
+    toast('BM atualizada');
+    return;
+  }
+  const novo = await createBM(payload);
+  B.bms.push(novo);
+  B.bms.sort((a, b) => a.nome.localeCompare(b.nome));
+  B.abertosP.add(novo.perfil_id);
+  B.abertas.add(novo.id);              // já abre para cadastrar os números
+  toast('BM criada');
 }
 
 export function excluirBM() {
@@ -229,6 +252,24 @@ export function excluirBM() {
 }
 
 // ── modal: número oficial ────────────────────────────────────────────────────
+function _preencherFormNum(n, bm) {
+  document.getElementById('bm-num-title').textContent =
+    (n ? 'Editar número — ' : 'Novo número — ') + (bm?.nome || '');
+  const campos = [
+    ['bm-n-numero', n?.numero,        ''],
+    ['bm-n-nome',   n?.nome_exibicao, ''],
+    ['bm-n-status', n?.status,        'ativo'],
+    ['bm-n-qual',   n?.qualidade,     'na'],
+    ['bm-n-tier',   n?.tier,          'na'],
+    ['bm-n-data',   n?.data_ativacao, ''],
+    ['bm-n-obs',    n?.observacao,    ''],
+  ];
+  campos.forEach(([id, valor, padrao]) => {
+    document.getElementById(id).value = valor || padrao;
+  });
+  document.getElementById('bm-n-excluir').style.display = n ? '' : 'none';
+}
+
 export function abrirModalNum(bmId, numId) {
   if (!perm.bmEditar()) return;
   B.numBmId   = bmId;
@@ -236,17 +277,7 @@ export function abrirModalNum(bmId, numId) {
   const n  = numId ? B.numeros.find(x => x.id === numId) : null;
   const bm = B.bms.find(b => b.id === bmId);
 
-  document.getElementById('bm-num-title').textContent =
-    (n ? 'Editar número — ' : 'Novo número — ') + (bm?.nome || '');
-  document.getElementById('bm-n-numero').value = n?.numero || '';
-  document.getElementById('bm-n-nome').value   = n?.nome_exibicao || '';
-  document.getElementById('bm-n-status').value = n?.status    || 'ativo';
-  document.getElementById('bm-n-qual').value   = n?.qualidade || 'na';
-  document.getElementById('bm-n-tier').value   = n?.tier      || 'na';
-  document.getElementById('bm-n-data').value   = n?.data_ativacao || '';
-  document.getElementById('bm-n-obs').value    = n?.observacao || '';
-  document.getElementById('bm-n-excluir').style.display = n ? '' : 'none';
-
+  _preencherFormNum(n, bm);
   document.getElementById('bm-num-modal').style.display = 'flex';
   document.getElementById('bm-n-numero').focus();
 }

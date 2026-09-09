@@ -98,6 +98,14 @@ export function shellHTML() {
   </div>
 
   <!-- Modal: criar/editar número oficial -->
+  ${_modalNumeroHTML()}
+
+  <!-- Modal: motivo da desativação (BM ou perfil) -->
+  ${_modalMotivoHTML()}`;
+}
+
+function _modalNumeroHTML() {
+  return `
   <div class="bm-modal-bg" id="bm-num-modal" style="display:none">
     <div class="bm-modal bm-modal-sm">
       <div class="bm-modal-head">
@@ -150,9 +158,11 @@ export function shellHTML() {
         </div>
       </div>
     </div>
-  </div>
+  </div>`;
+}
 
-  <!-- Modal: motivo da desativação (BM ou perfil) -->
+function _modalMotivoHTML() {
+  return `
   <div class="bm-modal-bg" id="bm-motivo-modal" style="display:none">
     <div class="bm-modal bm-modal-sm">
       <div class="bm-modal-head">

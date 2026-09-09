@@ -18,31 +18,34 @@ import {
   abrirModalNum, fecharModalNum, salvarNumero, excluirNumero,
 } from './bm/bm-modais.js';
 
+// (id do elemento, handler) de cada clique dos modais — mesma lista de antes,
+// só que em tabela para ligar num laço.
+const _CLIQUES_SHELL = [
+  ['bm-novo-perfil',   () => abrirModalPerfil(null)],
+  ['bm-p-x',           fecharModalPerfil],
+  ['bm-p-cancelar',    fecharModalPerfil],
+  ['bm-p-salvar',      salvarPerfil],
+  ['bm-p-excluir',     excluirPerfil],
+  ['bm-fechar',        fecharModalBM],
+  ['bm-cancelar',      fecharModalBM],
+  ['bm-salvar',        salvarBM],
+  ['bm-excluir',       excluirBM],
+  ['bm-num-x',         fecharModalNum],
+  ['bm-n-cancelar',    fecharModalNum],
+  ['bm-n-salvar',      salvarNumero],
+  ['bm-n-excluir',     excluirNumero],
+  ['bm-motivo-x',      fecharMotivo],
+  ['bm-motivo-cancel', fecharMotivo],
+  ['bm-motivo-ok',     confirmarMotivo],
+];
+
 function _bindShell() {
   // cliques nos cards da lista abrem os modais correspondentes
   onAbrirModalPerfil(abrirModalPerfil);
   onAbrirModalBM(abrirModalBM);
   onAbrirModalNum(abrirModalNum);
 
-  document.getElementById('bm-novo-perfil').addEventListener('click', () => abrirModalPerfil(null));
-  document.getElementById('bm-p-x').addEventListener('click', fecharModalPerfil);
-  document.getElementById('bm-p-cancelar').addEventListener('click', fecharModalPerfil);
-  document.getElementById('bm-p-salvar').addEventListener('click', salvarPerfil);
-  document.getElementById('bm-p-excluir').addEventListener('click', excluirPerfil);
-
-  document.getElementById('bm-fechar').addEventListener('click', fecharModalBM);
-  document.getElementById('bm-cancelar').addEventListener('click', fecharModalBM);
-  document.getElementById('bm-salvar').addEventListener('click', salvarBM);
-  document.getElementById('bm-excluir').addEventListener('click', excluirBM);
-
-  document.getElementById('bm-num-x').addEventListener('click', fecharModalNum);
-  document.getElementById('bm-n-cancelar').addEventListener('click', fecharModalNum);
-  document.getElementById('bm-n-salvar').addEventListener('click', salvarNumero);
-  document.getElementById('bm-n-excluir').addEventListener('click', excluirNumero);
-
-  document.getElementById('bm-motivo-x').addEventListener('click', fecharMotivo);
-  document.getElementById('bm-motivo-cancel').addEventListener('click', fecharMotivo);
-  document.getElementById('bm-motivo-ok').addEventListener('click', confirmarMotivo);
+  _CLIQUES_SHELL.forEach(([id, fn]) => document.getElementById(id).addEventListener('click', fn));
 
   document.querySelectorAll('.bm-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {

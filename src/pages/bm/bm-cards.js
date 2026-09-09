@@ -8,25 +8,31 @@ import {
 } from './bm-core.js';
 
 // ── card do perfil (nível 1) ─────────────────────────────────────────────────
-export function perfilCardHTML(p) {
-  const bms  = bmsDo(p.id);
-  const nums = bms.flatMap(b => numerosDa(b.id));
-  const bmsBanidas = bms.filter(b => !b.ativa && b.motivo_inativa === 'banida').length;
-  const numBanidos = nums.filter(n => n.status === 'banido').length;
-  // busca ativa expande o perfil para mostrar onde bateu o resultado
-  const aberta = B.abertosP.has(p.id) || (!!B.busca && bms.some(bm => bmMatch(bm)));
-  const podeEditar = perm.bmEditar();
-
-  const statusBadge = p.ativa
+function _perfilBadgeHTML(p) {
+  return p.ativa
     ? '<span class="bm-badge ok">Ativo</span>'
     : `<span class="bm-badge ${p.motivo_inativa === 'banido' ? 'ruim' : 'off'}">${esc(MOTIVO_P_LABEL[p.motivo_inativa] || 'Inativo')}</span>`;
+}
 
-  const resumo = [
+function _perfilResumoHTML(bms, nums) {
+  const bmsBanidas = bms.filter(b => !b.ativa && b.motivo_inativa === 'banida').length;
+  const numBanidos = nums.filter(n => n.status === 'banido').length;
+  return [
     `${bms.length} BM${bms.length === 1 ? '' : 's'}`,
     `${nums.length} número${nums.length === 1 ? '' : 's'}`,
     bmsBanidas ? `<span class="bm-ruim-txt">${bmsBanidas} BM${bmsBanidas === 1 ? '' : 's'} banida${bmsBanidas === 1 ? '' : 's'}</span>` : null,
     numBanidos ? `<span class="bm-ruim-txt">${numBanidos} número${numBanidos === 1 ? '' : 's'} banido${numBanidos === 1 ? '' : 's'}</span>` : null,
   ].filter(Boolean).join(' · ');
+}
+
+export function perfilCardHTML(p) {
+  const bms  = bmsDo(p.id);
+  const nums = bms.flatMap(b => numerosDa(b.id));
+  // busca ativa expande o perfil para mostrar onde bateu o resultado
+  const aberta = B.abertosP.has(p.id) || (!!B.busca && bms.some(bm => bmMatch(bm)));
+  const podeEditar = perm.bmEditar();
+  const statusBadge = _perfilBadgeHTML(p);
+  const resumo = _perfilResumoHTML(bms, nums);
 
   return `
     <div class="bm-card bm-perfil${p.ativa ? '' : ' off'}${aberta ? ' aberta' : ''}" data-perfil="${p.id}">
@@ -64,22 +70,28 @@ function _perfilBodyHTML(p, bms, podeEditar) {
 }
 
 // ── card da BM (nível 2) ─────────────────────────────────────────────────────
-function _bmCardHTML(bm, perfil) {
-  const nums     = numerosDa(bm.id);
-  const ativos   = nums.filter(n => n.status === 'ativo').length;
-  const banidos  = nums.filter(n => n.status === 'banido').length;
-  const aberta   = B.abertas.has(bm.id);
-  const podeEditar = perm.bmEditar();
-
-  const statusBadge = bm.ativa
+function _bmBadgeHTML(bm) {
+  return bm.ativa
     ? '<span class="bm-badge ok">Ativa</span>'
     : `<span class="bm-badge ${bm.motivo_inativa === 'banida' ? 'ruim' : 'off'}">${esc(MOTIVO_LABEL[bm.motivo_inativa] || 'Inativa')}</span>`;
+}
 
-  const resumo = [
+function _bmResumoHTML(nums) {
+  const ativos  = nums.filter(n => n.status === 'ativo').length;
+  const banidos = nums.filter(n => n.status === 'banido').length;
+  return [
     `${nums.length} número${nums.length === 1 ? '' : 's'}`,
     ativos  ? `${ativos} ativo${ativos === 1 ? '' : 's'}` : null,
     banidos ? `<span class="bm-ruim-txt">${banidos} banido${banidos === 1 ? '' : 's'}</span>` : null,
   ].filter(Boolean).join(' · ');
+}
+
+function _bmCardHTML(bm, perfil) {
+  const nums     = numerosDa(bm.id);
+  const aberta   = B.abertas.has(bm.id);
+  const podeEditar = perm.bmEditar();
+  const statusBadge = _bmBadgeHTML(bm);
+  const resumo = _bmResumoHTML(nums);
 
   return `
     <div class="bm-card${bm.ativa ? '' : ' off'}${aberta ? ' aberta' : ''}${perfil.ativa ? '' : ' perfil-off'}" data-bm="${bm.id}">
