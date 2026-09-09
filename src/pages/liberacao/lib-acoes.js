@@ -110,6 +110,37 @@ async function _confirmarDelete(id) {
 }
 
 // ── Marcar OK (admin) ──────────────────────────────────────────────────────
+// ⚠ reescreve o onclick via setAttribute com o nome global "libToggleOk" —
+// NÃO RENOMEAR (vigiado por scripts/verifica-handlers).
+function _atualizarBotaoOk(tr, id, novoValor) {
+  const btn = tr.querySelector('.lib-btn-ok');
+  if (!btn) return;
+  const lockOk = !isAdmin() && novoValor;   // parceiro: OK confirmado trava
+  btn.className = `lib-btn-ok${novoValor ? ' ok' : ''}${lockOk ? ' locked' : ''}`;
+  if (lockOk) {
+    btn.disabled = true;
+    btn.removeAttribute('onclick');
+    btn.title = 'OK confirmado — somente admin pode remover';
+    return;
+  }
+  btn.disabled = false;
+  btn.setAttribute('onclick', `libToggleOk('${id}', ${novoValor})`);
+  btn.title = novoValor ? 'Remover OK' : 'Marcar como OK';
+}
+
+// Reflete o novo estado na própria linha, sem redesenhar a tabela.
+function _refletirOkNaLinha(id, novoValor) {
+  const tr = document.querySelector(`.lib-tr[data-id="${id}"]`);
+  if (!tr) return;
+  tr.className = `lib-tr${novoValor ? ' lib-row-ok' : ''}`;
+  _atualizarBotaoOk(tr, id, novoValor);
+  const badge = tr.querySelector('.lib-badge-ok, .lib-badge-pen');
+  if (badge) {
+    badge.className = novoValor ? 'lib-badge-ok' : 'lib-badge-pen';
+    badge.textContent = novoValor ? '✓ OK' : 'Pendente';
+  }
+}
+
 export async function libToggleOk(id, atual) {
   const novoValor = !atual;
   const { error } = await updateLiberacao(id, { aprovado: novoValor });
@@ -119,29 +150,7 @@ export async function libToggleOk(id, atual) {
   const reg = S.registros.find(r => r.id === id);
   if (reg) reg.aprovado = novoValor;
 
-  const tr = document.querySelector(`.lib-tr[data-id="${id}"]`);
-  if (tr) {
-    tr.className = `lib-tr${novoValor ? ' lib-row-ok' : ''}`;
-    const btn = tr.querySelector('.lib-btn-ok');
-    if (btn) {
-      const lockOk = !isAdmin() && novoValor;   // parceiro: OK confirmado trava
-      btn.className = `lib-btn-ok${novoValor ? ' ok' : ''}${lockOk ? ' locked' : ''}`;
-      if (lockOk) {
-        btn.disabled = true;
-        btn.removeAttribute('onclick');
-        btn.title = 'OK confirmado — somente admin pode remover';
-      } else {
-        btn.disabled = false;
-        btn.setAttribute('onclick', `libToggleOk('${id}', ${novoValor})`);
-        btn.title = novoValor ? 'Remover OK' : 'Marcar como OK';
-      }
-    }
-    const badge = tr.querySelector('.lib-badge-ok, .lib-badge-pen');
-    if (badge) {
-      badge.className = novoValor ? 'lib-badge-ok' : 'lib-badge-pen';
-      badge.textContent = novoValor ? '✓ OK' : 'Pendente';
-    }
-  }
+  _refletirOkNaLinha(id, novoValor);
 }
 
 // ── Salvar Acerto (admin) ──────────────────────────────────────────────────

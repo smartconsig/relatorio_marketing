@@ -9,6 +9,22 @@ import { S, empresaParceira, fmtBRL, fmtDate, esc } from './lib-core.js';
 import { reloadAndRender } from './lib-tabela.js';
 
 // ── Editar Cliente ────────────────────────────────────────────────────────
+// Valores iniciais do formulário de edição (mesmos fallbacks de sempre).
+function _valoresEdicao(r) {
+  const sd    = r.saldo_devedor || 0;
+  const troco = r.troco || 0;
+  return {
+    cpf:      esc(r.cpf || ''),
+    nome:     esc(r.nome || ''),
+    convenio: esc(r.convenio || ''),
+    produto:  esc(r.produto || ''),
+    obs:      esc(r.obs || ''),
+    sd, troco,
+    total:    fmtBRL(sd + troco),
+    comissao: fmtBRL((sd + troco) * 0.06),
+  };
+}
+
 export function libEditarCliente(id) {
   const r = S.registros.find(x => x.id === id);
   if (!r) return;
@@ -17,49 +33,50 @@ export function libEditarCliente(id) {
   const modal   = document.getElementById('lib-modal');
   if (!content || !modal) return;
 
+  const v = _valoresEdicao(r);
   content.innerHTML = `
     <h2 class="lib-modal-title">Editar Cliente</h2>
 
     <div class="lib-form-row">
       <label>CPF</label>
-      <input type="text" id="lib-f-cpf" value="${esc(r.cpf || '')}" maxlength="14" />
+      <input type="text" id="lib-f-cpf" value="${v.cpf}" maxlength="14" />
     </div>
 
     <div class="lib-form-row">
       <label>Nome Completo</label>
-      <input type="text" id="lib-f-nome" value="${esc(r.nome || '')}" />
+      <input type="text" id="lib-f-nome" value="${v.nome}" />
     </div>
 
     <div class="lib-form-row-2">
       <div>
         <label>Convênio</label>
-        <input type="text" id="lib-f-convenio" value="${esc(r.convenio || '')}" />
+        <input type="text" id="lib-f-convenio" value="${v.convenio}" />
       </div>
       <div>
         <label>Produto</label>
-        <input type="text" id="lib-f-produto" value="${esc(r.produto || '')}" />
+        <input type="text" id="lib-f-produto" value="${v.produto}" />
       </div>
     </div>
 
     <div class="lib-form-row-2">
       <div>
         <label>Saldo Devedor (R$)</label>
-        <input type="text" id="lib-f-sd" value="${r.saldo_devedor || 0}" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-sd" value="${v.sd}" oninput="libCalcPreview()" />
       </div>
       <div>
         <label>Troco (R$)</label>
-        <input type="text" id="lib-f-troco" value="${r.troco || 0}" oninput="libCalcPreview()" />
+        <input type="text" id="lib-f-troco" value="${v.troco}" oninput="libCalcPreview()" />
       </div>
     </div>
 
     <div class="lib-calc-preview">
       <div class="lib-calc-preview-item">
         <span class="lbl">Saldo Total</span>
-        <span class="val" id="lib-prev-total">${fmtBRL((r.saldo_devedor || 0) + (r.troco || 0))}</span>
+        <span class="val" id="lib-prev-total">${v.total}</span>
       </div>
       <div class="lib-calc-preview-item">
         <span class="lbl">Comissão 6%</span>
-        <span class="val" id="lib-prev-com">${fmtBRL(((r.saldo_devedor || 0) + (r.troco || 0)) * 0.06)}</span>
+        <span class="val" id="lib-prev-com">${v.comissao}</span>
       </div>
     </div>
 
@@ -70,7 +87,7 @@ export function libEditarCliente(id) {
 
     <div class="lib-form-row">
       <label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
-      <textarea id="lib-f-obs">${esc(r.obs || '')}</textarea>
+      <textarea id="lib-f-obs">${v.obs}</textarea>
     </div>
 
     <div id="lib-modal-err" style="color:var(--red);font-size:.8rem;margin-bottom:8px;display:none"></div>
@@ -85,25 +102,51 @@ export function libEditarCliente(id) {
   modal.onclick = e => { if (e.target === modal) libFecharModal(); };
 }
 
-export async function libSalvarEdicao(id) {
-  const cpf   = document.getElementById('lib-f-cpf')?.value.trim();
-  const nome  = document.getElementById('lib-f-nome')?.value.trim();
-  const sd    = parseBRL(document.getElementById('lib-f-sd')?.value);
-  const troco = parseBRL(document.getElementById('lib-f-troco')?.value) || 0;
-  const obs   = document.getElementById('lib-f-obs')?.value.trim() || null;
-  const err   = document.getElementById('lib-modal-err');
-  const btn   = document.getElementById('lib-btn-save');
+// Lê e valida os campos comuns do formulário (adicionar e editar usam o
+// mesmo). Devolve null se algo obrigatório faltar — a mensagem já foi
+// exibida, na MESMA ordem de validação original.
+function _lerCamposCliente() {
+  return {
+    cpf:      document.getElementById('lib-f-cpf')?.value.trim(),
+    nome:     document.getElementById('lib-f-nome')?.value.trim(),
+    sd:       parseBRL(document.getElementById('lib-f-sd')?.value),
+    troco:    parseBRL(document.getElementById('lib-f-troco')?.value) || 0,
+    obs:      document.getElementById('lib-f-obs')?.value.trim() || null,
+    convenio: document.getElementById('lib-f-convenio')?.value.trim(),
+    produto:  document.getElementById('lib-f-produto')?.value.trim(),
+  };
+}
 
-  if (!cpf)       { err.textContent = 'Informe o CPF.';           err.style.display = ''; return; }
-  if (!nome)      { err.textContent = 'Informe o nome.';          err.style.display = ''; return; }
-  if (!sd || sd <= 0) { err.textContent = 'Informe o saldo devedor.'; err.style.display = ''; return; }
+function _coletarFormCliente() {
+  const err = document.getElementById('lib-modal-err');
+  const falha = msg => { err.textContent = msg; err.style.display = ''; return null; };
+  const d = _lerCamposCliente();
 
-  const convenio = document.getElementById('lib-f-convenio')?.value.trim();
-  const produto  = document.getElementById('lib-f-produto')?.value.trim();
-  if (!convenio) { err.textContent = 'Informe o convênio.'; err.style.display = ''; return; }
-  if (!produto)  { err.textContent = 'Informe o produto.';  err.style.display = ''; return; }
+  if (!d.cpf)             return falha('Informe o CPF.');
+  if (!d.nome)            return falha('Informe o nome.');
+  if (!d.sd || d.sd <= 0) return falha('Informe o saldo devedor.');
+  if (!d.convenio)        return falha('Informe o convênio.');
+  if (!d.produto)         return falha('Informe o produto.');
 
   err.style.display = 'none';
+  return d;
+}
+
+// Espelha os campos salvos no registro em memória (a linha some/atualiza
+// de verdade no reloadAndRender logo em seguida).
+function _refletirEdicaoLocal(id, d) {
+  const reg = S.registros.find(r => r.id === id);
+  if (!reg) return;
+  reg.cpf = d.cpf; reg.nome = d.nome; reg.convenio = d.convenio; reg.produto = d.produto;
+  reg.saldo_devedor = d.sd; reg.troco = d.troco; reg.obs = d.obs;
+}
+
+export async function libSalvarEdicao(id) {
+  const dados = _coletarFormCliente();
+  if (!dados) return;
+  const { cpf, nome, convenio, produto, sd, troco, obs } = dados;
+
+  const btn = document.getElementById('lib-btn-save');
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   const { error } = await updateLiberacao(id, { cpf, nome, convenio, produto, saldo_devedor: sd, troco, obs });
@@ -114,8 +157,7 @@ export async function libSalvarEdicao(id) {
     return;
   }
 
-  const reg = S.registros.find(r => r.id === id);
-  if (reg) { reg.cpf = cpf; reg.nome = nome; reg.convenio = convenio; reg.produto = produto; reg.saldo_devedor = sd; reg.troco = troco; reg.obs = obs; }
+  _refletirEdicaoLocal(id, dados);
 
   libFecharModal();
   toast('Cliente atualizado!');
@@ -216,24 +258,11 @@ export function libCalcPreview() {
 }
 
 export async function libSalvarCliente() {
-  const cpf   = document.getElementById('lib-f-cpf')?.value.trim();
-  const nome  = document.getElementById('lib-f-nome')?.value.trim();
-  const sd    = parseBRL(document.getElementById('lib-f-sd')?.value);
-  const troco = parseBRL(document.getElementById('lib-f-troco')?.value) || 0;
-  const obs   = document.getElementById('lib-f-obs')?.value.trim() || null;
-  const err   = document.getElementById('lib-modal-err');
-  const btn   = document.getElementById('lib-btn-save');
+  const dados = _coletarFormCliente();
+  if (!dados) return;
+  const { cpf, nome, convenio, produto, sd, troco, obs } = dados;
 
-  if (!cpf)       { err.textContent = 'Informe o CPF.';           err.style.display = ''; return; }
-  if (!nome)      { err.textContent = 'Informe o nome.';          err.style.display = ''; return; }
-  if (!sd || sd <= 0) { err.textContent = 'Informe o saldo devedor.'; err.style.display = ''; return; }
-
-  const convenio = document.getElementById('lib-f-convenio')?.value.trim();
-  const produto  = document.getElementById('lib-f-produto')?.value.trim();
-  if (!convenio) { err.textContent = 'Informe o convênio.'; err.style.display = ''; return; }
-  if (!produto)  { err.textContent = 'Informe o produto.';  err.style.display = ''; return; }
-
-  err.style.display = 'none';
+  const btn = document.getElementById('lib-btn-save');
   btn.disabled = true;
   btn.textContent = 'Salvando…';
 
@@ -251,6 +280,7 @@ export async function libSalvarCliente() {
   });
 
   if (error) {
+    const err = document.getElementById('lib-modal-err');
     err.textContent = 'Erro ao salvar: ' + error.message;
     err.style.display = '';
     btn.disabled = false;

@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { S, isAdmin, empresaParceira, fmtDate } from './lib-core.js';
 import { reloadAndRender } from './lib-tabela.js';
 import { libFecharModal } from './lib-modais.js';
+import { padCpf, lerCabecalhos, mapearColunas, coletarLinhas } from './lib-import-parse.js';
 
 // ── Erro: planilha no modelo antigo (sem Convênio/Produto) ─────────────────
 function _mostrarErroModelo() {
@@ -38,159 +39,70 @@ export function libImportarPlanilha() {
   document.getElementById('lib-import-input')?.click();
 }
 
+// Insere em fatias de 500; devolve o total inserido, ou -1 se deu erro.
+async function _inserirLotes(valid) {
+  const BATCH = 500;
+  let inserted = 0;
+  for (let i = 0; i < valid.length; i += BATCH) {
+    const { error } = await insertLiberacoes(valid.slice(i, i + BATCH));
+    if (error) { handleError('Erro ao importar planilha.', error); return -1; }
+    inserted += valid.slice(i, i + BATCH).length;
+  }
+  return inserted;
+}
+
+function _msgImportacao(inserted, skipped) {
+  return skipped > 0
+    ? `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''}, ${skipped} ignorado${skipped !== 1 ? 's' : ''}.`
+    : `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''} com sucesso!`;
+}
+
+// Lê o Excel; null (com erro já mostrado) se o arquivo for ilegível.
+async function _lerWorkbook(file, opts) {
+  try {
+    const buf = await file.arrayBuffer();
+    return XLSX.read(buf, opts);
+  } catch {
+    handleError('Erro ao ler o arquivo.', null);
+    return null;
+  }
+}
+
 export async function libOnImportFile(input) {
   const file = input.files?.[0];
   if (!file) return;
   input.value = '';
 
-  const admin          = isAdmin();
-  const empresaParceiro = empresaParceira();
-  const hoje           = new Date().toISOString().slice(0, 10);
-
-  let wb;
-  try {
-    const buf = await file.arrayBuffer();
-    wb = XLSX.read(buf, { type: 'array', cellDates: true, cellStyles: true });
-  } catch {
-    handleError('Erro ao ler o arquivo.', null);
-    return;
-  }
+  const wb = await _lerWorkbook(file, { type: 'array', cellDates: true, cellStyles: true });
+  if (!wb) return;
 
   const ws    = wb.Sheets[wb.SheetNames[0]];
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-
-  // Lê cabeçalhos da linha 1
-  const normStr = s => String(s).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s]/g, '').trim();
-
-  const headers = [];
-  for (let c = range.s.c; c <= range.e.c; c++) {
-    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-    headers.push(cell?.v ? normStr(cell.v) : '');
-  }
-
-  const colIdx = (...names) => {
-    for (const n of names) {
-      const idx = headers.indexOf(normStr(n));
-      if (idx >= 0) return idx;
-    }
-    return -1;
-  };
-
-  const iCpf    = colIdx('cpf');
-  const iNome   = colIdx('nome', 'nome completo');
-  const iEmp    = colIdx('empresa', 'empresa parceira');
-  const iSd     = colIdx('saldo devedor', 'saldo devedor r');
-  const iTroco  = colIdx('troco', 'troco r');
-  const iAcerto = colIdx('acerto');
-  const iDq     = colIdx('data quitado');
-  const iObs    = colIdx('obs', 'observacoes', 'observações');
-  const iConvenio = colIdx('convenio', 'convênio');
-  const iProduto  = colIdx('produto');
+  const cols  = mapearColunas(lerCabecalhos(ws, range));
 
   // Bloqueia modelo antigo (sem as colunas obrigatórias Convênio/Produto)
-  if (iConvenio < 0 || iProduto < 0) {
+  if (cols.iConvenio < 0 || cols.iProduto < 0) {
     _mostrarErroModelo();
     return;
   }
 
-  const getVal = (r, colI) => {
-    if (colI < 0) return undefined;
-    return ws[XLSX.utils.encode_cell({ r, c: colI })]?.v;
+  const plan = {
+    ws, range, cols,
+    admin: isAdmin(),
+    empresaParceiro: empresaParceira(),
+    hoje: new Date().toISOString().slice(0, 10),
   };
-
-  const parseMoney = v => {
-    if (v == null || v === '') return 0;
-    if (typeof v === 'number') return v;
-    // Remove R$, espaços (incl. NBSP), letras e qualquer símbolo — mantém só dígitos, vírgula, ponto e sinal
-    const s = String(v).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(s) || 0;
-  };
-
-  const padCpf = v => String(v).replace(/\D/g, '').padStart(11, '0');
-
-  const parseDate = v => {
-    if (!v) return null;
-    if (v instanceof Date) return v.toISOString().slice(0, 10);
-    const m = String(v).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return null;
-  };
-
-  // Detecta linha verde pela cor FF00B050 (verde padrão do template)
-  const isGreenRow = r => {
-    for (let c = range.s.c; c <= Math.min(range.e.c, 4); c++) {
-      const cell = ws[XLSX.utils.encode_cell({ r, c })];
-      const rgb  = (cell?.s?.fgColor?.rgb || cell?.s?.bgColor?.rgb || '').toUpperCase();
-      if (rgb.includes('00B050')) return true;
-    }
-    return false;
-  };
-
-  // Normaliza nome da empresa para bater com os grupos do sistema
-  const normalizeEmpresa = v => {
-    if (!v) return 'Smart Consig';
-    const s = String(v).toLowerCase();
-    if (s.includes('smart'))                          return 'Smart Consig';
-    if (s.includes('vital'))                          return 'Vital Cred';
-    if (s.includes('rz') || s.includes('r z'))        return 'RZ Cred';
-    if (s.includes('cred vale') || s.includes('credvale')) return 'Cred Vale';
-    if (s.includes('tem cred') || s.includes('temcred'))   return 'Tem Credito';
-    if (s.includes('alg'))                            return 'ALG Promotora';
-    if (s.includes('neg'))                            return 'Negócio Certo';
-    if (s.includes('pnl'))                            return 'PNL Credito';
-    if (s.includes('ita'))                            return 'ITA Promotora';
-    return String(v).trim();
-  };
-
-  const seen   = new Set();
-  const valid  = [];
-  let skipped  = 0;
-
-  for (let r = range.s.r + 1; r <= range.e.r; r++) {
-    const cpfRaw = getVal(r, iCpf);
-    const nome   = String(getVal(r, iNome) || '').trim();
-    if (!cpfRaw && !nome) continue;
-
-    const cpf    = padCpf(cpfRaw);
-    const sd     = parseMoney(getVal(r, iSd));
-    const troco  = parseMoney(getVal(r, iTroco));
-    const obs      = String(getVal(r, iObs) || '').trim() || null;
-    const convenio = String(getVal(r, iConvenio) || '').trim();
-    const produto  = String(getVal(r, iProduto)  || '').trim();
-    const acerto = parseDate(getVal(r, iAcerto));
-    const dq     = parseDate(getVal(r, iDq)) || hoje;
-    const aprovado = isGreenRow(r);
-    const empresa  = admin ? normalizeEmpresa(getVal(r, iEmp)) : empresaParceiro;
-
-    if (!cpf || cpf === '00000000000' || !nome || sd <= 0 || !convenio || !produto) { skipped++; continue; }
-
-    const dupKey = `${cpf}|${sd}`;
-    if (seen.has(dupKey)) { skipped++; continue; }
-    seen.add(dupKey);
-
-    valid.push({ cpf, nome, convenio, produto, empresa_parceira: empresa, saldo_devedor: sd, troco, data_quitado: dq, acerto, obs, aprovado });
-  }
+  const { valid, skipped } = coletarLinhas(plan);
 
   if (valid.length === 0) {
     toast('Nenhum registro válido encontrado na planilha.', 'err');
     return;
   }
 
-  const BATCH = 500;
-  let inserted = 0;
-  for (let i = 0; i < valid.length; i += BATCH) {
-    const { error } = await insertLiberacoes(valid.slice(i, i + BATCH));
-    if (error) { handleError('Erro ao importar planilha.', error); return; }
-    inserted += valid.slice(i, i + BATCH).length;
-  }
+  const inserted = await _inserirLotes(valid);
+  if (inserted < 0) return;
 
-  const msg = skipped > 0
-    ? `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''}, ${skipped} ignorado${skipped !== 1 ? 's' : ''}.`
-    : `${inserted} cliente${inserted !== 1 ? 's' : ''} importado${inserted !== 1 ? 's' : ''} com sucesso!`;
-  toast(msg);
-
+  toast(_msgImportacao(inserted, skipped));
   await reloadAndRender();
 }
 
@@ -199,29 +111,10 @@ export function libImportarAcerto() {
   document.getElementById('lib-import-acerto-input')?.click();
 }
 
-export async function libOnImportAcertoFile(input) {
-  const file = input.files?.[0];
-  if (!file) return;
-  input.value = '';
-
-  let wb;
-  try {
-    const buf = await file.arrayBuffer();
-    wb = XLSX.read(buf, { type: 'array' });
-  } catch {
-    handleError('Erro ao ler o arquivo.', null);
-    return;
-  }
-
-  const ws    = wb.Sheets[wb.SheetNames[0]];
-  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-  const hoje  = new Date().toISOString().slice(0, 10);
-
-  const padCpf = v => String(v).replace(/\D/g, '').padStart(11, '0');
-
-  // Coleta CPFs únicos da planilha (pula cabeçalho linha 0)
-  const seenPlan  = new Set();
-  const cpfsList  = [];
+// Coleta CPFs únicos da planilha (pula cabeçalho linha 0)
+function _lerCpfsDaPlanilha(ws, range) {
+  const seenPlan = new Set();
+  const cpfsList = [];
   for (let r = range.s.r + 1; r <= range.e.r; r++) {
     const cell = ws[XLSX.utils.encode_cell({ r, c: range.s.c })];
     if (!cell?.v) continue;
@@ -231,21 +124,23 @@ export async function libOnImportAcertoFile(input) {
     seenPlan.add(cpf);
     cpfsList.push(cpf);
   }
+  return cpfsList;
+}
 
-  if (cpfsList.length === 0) {
-    toast('Nenhum CPF encontrado na planilha.', 'err');
-    return;
-  }
-
-  // Monta índice por CPF a partir dos registros já carregados em memória
+// Monta índice por CPF a partir dos registros já carregados em memória
+function _indexarRegistrosPorCpf() {
   const byCpf = {};
   for (const r of S.registros) {
     const c = padCpf(r.cpf || '');
     (byCpf[c] = byCpf[c] || []).push(r);
   }
+  return byCpf;
+}
 
-  const toUpdate   = [];
-  const pulados    = [];
+// Decide, CPF a CPF, quem recebe o acerto e quem é pulado (com o motivo).
+function _classificarAcertos(cpfsList, byCpf) {
+  const toUpdate = [];
+  const pulados  = [];
 
   for (const cpf of cpfsList) {
     const matches = byCpf[cpf] || [];
@@ -265,6 +160,39 @@ export async function libOnImportAcertoFile(input) {
     }
     toUpdate.push(ok[0]);
   }
+  return { toUpdate, pulados };
+}
+
+// Atualiza no Supabase em lote (um por um para segurança); devolve os salvos.
+async function _aplicarAcertos(toUpdate, pulados, hoje) {
+  let ok = 0;
+  for (const reg of toUpdate) {
+    const { error } = await updateLiberacao(reg.id, { acerto: hoje });
+    if (error) { pulados.push({ cpf: reg.cpf, nome: reg.nome, motivo: 'Erro ao salvar: ' + error.message }); }
+    else { reg.acerto = hoje; ok++; }
+  }
+  return ok;
+}
+
+export async function libOnImportAcertoFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = '';
+
+  const wb = await _lerWorkbook(file, { type: 'array' });
+  if (!wb) return;
+
+  const ws    = wb.Sheets[wb.SheetNames[0]];
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  const hoje  = new Date().toISOString().slice(0, 10);
+
+  const cpfsList = _lerCpfsDaPlanilha(ws, range);
+  if (cpfsList.length === 0) {
+    toast('Nenhum CPF encontrado na planilha.', 'err');
+    return;
+  }
+
+  const { toUpdate, pulados } = _classificarAcertos(cpfsList, _indexarRegistrosPorCpf());
 
   if (toUpdate.length === 0) {
     toast('Nenhum cliente elegível para atualização de acerto.', 'err');
@@ -272,13 +200,7 @@ export async function libOnImportAcertoFile(input) {
     return;
   }
 
-  // Atualiza no Supabase em lote (um por um para segurança)
-  let ok = 0;
-  for (const reg of toUpdate) {
-    const { error } = await updateLiberacao(reg.id, { acerto: hoje });
-    if (error) { pulados.push({ cpf: reg.cpf, nome: reg.nome, motivo: 'Erro ao salvar: ' + error.message }); }
-    else { reg.acerto = hoje; ok++; }
-  }
+  const ok = await _aplicarAcertos(toUpdate, pulados, hoje);
 
   await reloadAndRender();
 
