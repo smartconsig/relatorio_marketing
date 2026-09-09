@@ -18,21 +18,8 @@ function _syncGoalsToPeriodo() {
   state.goals = state.allGoals?.[periodo] || { invest: 0, cpl: 0, approved: 0, paid: 0, cac: 0, roas: 0 };
 }
 
-export function renderAll() {
-  _syncGoalsToPeriodo();
-  syncPeriodBars(); // pós-restauração de F5/login, as barras refletem o filtro carregado
-  const fd = filteredData();
-  if (!fd) return;
-  const kpis = calcKPIs(fd.entries, fd.facebook);
-  renderOverview(kpis, fd);
-  renderRanking(fd.entries);
-  renderReview(kpis.toReview, state.result.unknownStatuses);
-  renderProcv(fd.entries);
-  renderClientes(fd.entries);
-  renderPropostas(fd.entries);
-  renderPerfil(fd.entries);
-  switchGestaoTab(state.gestaoTab || 'procv');
-
+// Badges de pendência: Revisão Manual, PROCV e o combinado do bottom nav.
+function _atualizarBadges(fd) {
   // Badge "Revisão Manual" → só statuses desconhecidos
   const reviewCnt   = state.result.unknownStatuses.length;
   const reviewBadge = document.getElementById('review-badge');
@@ -60,6 +47,23 @@ export function renderAll() {
     mbnGestaoBadge.textContent = mbnCnt;
     mbnGestaoBadge.classList.toggle('hidden', mbnCnt === 0);
   }
+}
+
+export function renderAll() {
+  _syncGoalsToPeriodo();
+  syncPeriodBars(); // pós-restauração de F5/login, as barras refletem o filtro carregado
+  const fd = filteredData();
+  if (!fd) return;
+  const kpis = calcKPIs(fd.entries, fd.facebook);
+  renderOverview(kpis, fd);
+  renderRanking(fd.entries);
+  renderReview(kpis.toReview, state.result.unknownStatuses);
+  renderProcv(fd.entries);
+  renderClientes(fd.entries);
+  renderPropostas(fd.entries);
+  renderPerfil(fd.entries);
+  switchGestaoTab(state.gestaoTab || 'procv');
+  _atualizarBadges(fd);
 }
 
 export function switchGestaoTab(tab) {

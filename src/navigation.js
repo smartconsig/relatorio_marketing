@@ -74,8 +74,8 @@ const TITLES = {
   admin:             'Administração',
 };
 
-export function navigate(sec) {
-  // Sai do modo imersivo da Universidade ao navegar para outra seção
+// Entra/sai dos modos imersivos (Universidade e admin da Universidade)
+function _sairDosModosImersivos(sec) {
   if (sec !== 'universidade') document.body.classList.remove('uni-mode');
   if (sec !== 'uni-admin' && sec !== 'uni-gamificacao') {
     document.body.classList.remove('uni-admin-mode');
@@ -92,6 +92,10 @@ export function navigate(sec) {
       document.body.appendChild(btn);
     }
   }
+}
+
+// Filtro de data do header, seção lembrada e hash da URL
+function _atualizarChromeDaSecao(sec) {
   // Oculta o filtro de data global na tela de Lib. Margem
   const dateFilter = document.querySelector('.date-filter');
   if (dateFilter) dateFilter.style.display = (sec === 'liberacao' || sec === 'boletos' || sec === 'residuos') ? 'none' : '';
@@ -101,7 +105,10 @@ export function navigate(sec) {
   if (!window.location.hash.includes('access_token')) {
     history.replaceState(null, '', '#' + sec);
   }
+}
 
+// Sidebar (grupo pai, item ativo), seção visível e título do topo
+function _atualizarMenus(sec) {
   // Auto-abre o grupo pai se a seção for um item filho
   const parentGroup = GROUP_MAP[sec];
   if (parentGroup) {
@@ -112,48 +119,60 @@ export function navigate(sec) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.sec === sec));
   document.querySelectorAll('.section').forEach(el => el.classList.toggle('active', el.id === `sec-${sec}`));
   document.getElementById('topbar-title').textContent = TITLES[sec] || '';
+}
 
-  // Cascata de entrada: os cards da seção sobem em sequência ao entrar nela
+// Cascata de entrada: os cards da seção sobem em sequência ao entrar nela
+function _animarEntrada(sec) {
   const secEl = document.getElementById(`sec-${sec}`);
-  if (secEl) {
-    secEl.classList.remove('anim-enter');
-    void secEl.offsetWidth; // reinicia as animações CSS
-    secEl.classList.add('anim-enter');
-    clearTimeout(_animEnterT);
-    _animEnterT = setTimeout(() => secEl.classList.remove('anim-enter'), 900);
-  }
+  if (!secEl) return;
+  secEl.classList.remove('anim-enter');
+  void secEl.offsetWidth; // reinicia as animações CSS
+  secEl.classList.add('anim-enter');
+  clearTimeout(_animEnterT);
+  _animEnterT = setTimeout(() => secEl.classList.remove('anim-enter'), 900);
+}
 
-  syncPeriodBars(); // barras de período refletem o state ao trocar de tela
-
-  // Float rail — itens standalone
+// Float rail — itens standalone e grupos (ativo se algum filho for a atual)
+function _atualizarFloatRail(sec) {
   document.querySelectorAll('.nav-float-item:not(.nav-float-group)').forEach(el =>
     el.classList.toggle('active', el.dataset.sec === sec)
   );
-  // Float rail — grupos: ativo se algum filho for a seção atual
   document.querySelectorAll('.nav-float-item.nav-float-group').forEach(groupEl => {
     const children = groupEl.querySelectorAll('.nav-float-flyout-item[data-sec]');
     const hasActive = [...children].some(c => c.dataset.sec === sec);
     groupEl.classList.toggle('active', hasActive);
     children.forEach(c => c.classList.toggle('active', c.dataset.sec === sec));
   });
+}
 
+// Seções que renderizam sob demanda ao entrar
+const RENDER_POR_SECAO = {
+  admin:             renderAdminPage,
+  home:              renderHome,
+  trafego:           renderTrafego,
+  quitacoes:         renderQuitacoes,
+  conteudo:          renderConteudo,
+  bms:               renderBMs,
+  liberacao:         renderLiberacao,
+  boletos:           renderBoletos,
+  residuos:          renderResiduos,
+  goals:             initGoalsPage,
+  universidade:      renderUniversidade,
+  'uni-admin':       renderUniAdmin,
+  'uni-gamificacao': renderUniGamificacao,
+};
+
+export function navigate(sec) {
+  _sairDosModosImersivos(sec);
+  _atualizarChromeDaSecao(sec);
+  _atualizarMenus(sec);
+  _animarEntrada(sec);
+  syncPeriodBars(); // barras de período refletem o state ao trocar de tela
+  _atualizarFloatRail(sec);
   syncBottomNav(sec);
   // Scroll para o topo ao trocar de seção no mobile
   document.querySelector('.content')?.scrollTo({ top: 0 });
-  // Renderiza seções sob demanda
-  if (sec === 'admin')        renderAdminPage();
-  if (sec === 'home')        renderHome();
-  if (sec === 'trafego')     renderTrafego();
-  if (sec === 'quitacoes')   renderQuitacoes();
-  if (sec === 'conteudo')    renderConteudo();
-  if (sec === 'bms')         renderBMs();
-  if (sec === 'liberacao')   renderLiberacao();
-  if (sec === 'boletos')     renderBoletos();
-  if (sec === 'residuos')    renderResiduos();
-  if (sec === 'goals')       initGoalsPage();
-  if (sec === 'universidade') renderUniversidade();
-  if (sec === 'uni-admin')        renderUniAdmin();
-  if (sec === 'uni-gamificacao')  renderUniGamificacao();
+  RENDER_POR_SECAO[sec]?.();
 }
 
 export function toggleSidebar() {

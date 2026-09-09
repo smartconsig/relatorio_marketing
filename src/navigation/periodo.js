@@ -30,27 +30,28 @@ export function clearFilter() {
 const _pad = n => String(n).padStart(2, '0');
 const _fmt = d => `${d.getFullYear()}-${_pad(d.getMonth()+1)}-${_pad(d.getDate())}`;
 
+const _diasAtras = (today, n) => { const s = new Date(today); s.setDate(s.getDate() - n); return s; };
+
+// Converte o atalho no par [start, end] (YYYY-MM-DD); null se desconhecido.
+function _rangeDoPreset(preset, today) {
+  switch (preset) {
+    case 'today':      return [_fmt(today), _fmt(today)];
+    case 'yesterday':  { const f = _fmt(_diasAtras(today, 1)); return [f, f]; }
+    case 'this-month': return [_fmt(new Date(today.getFullYear(), today.getMonth(), 1)), _fmt(today)];
+    case 'last-month': return [
+      _fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+      _fmt(new Date(today.getFullYear(), today.getMonth(), 0)),
+    ];
+    case '7d':  return [_fmt(_diasAtras(today, 6)),  _fmt(today)];
+    case '15d': return [_fmt(_diasAtras(today, 14)), _fmt(today)];
+    case '30d': return [_fmt(_diasAtras(today, 29)), _fmt(today)];
+    default: return null;
+  }
+}
+
 export function quickFilter(preset) {
   const today = new Date(); today.setHours(0,0,0,0);
-  let start, end;
-  switch (preset) {
-    case 'today':
-      start = end = _fmt(today); break;
-    case 'yesterday': {
-      const y = new Date(today); y.setDate(y.getDate() - 1);
-      start = end = _fmt(y); break;
-    }
-    case 'this-month':
-      start = _fmt(new Date(today.getFullYear(), today.getMonth(), 1));
-      end   = _fmt(today); break;
-    case 'last-month': {
-      start = _fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-      end   = _fmt(new Date(today.getFullYear(), today.getMonth(), 0)); break;
-    }
-    case '7d': { const s = new Date(today); s.setDate(s.getDate()-6);  start=_fmt(s); end=_fmt(today); break; }
-    case '15d':{ const s = new Date(today); s.setDate(s.getDate()-14); start=_fmt(s); end=_fmt(today); break; }
-    case '30d':{ const s = new Date(today); s.setDate(s.getDate()-29); start=_fmt(s); end=_fmt(today); break; }
-    default: return;
-  }
-  setPeriodo(start, end);
+  const range = _rangeDoPreset(preset, today);
+  if (!range) return;
+  setPeriodo(range[0], range[1]);
 }
