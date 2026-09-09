@@ -115,6 +115,32 @@ export default defineConfig([
     },
   },
 
+  // ── Coração da Fase 3, cálculos de dinheiro e Resíduos ───────────────────
+  // Dívida de complexidade ACEITA de propósito (etapa 3, 09/09/2026):
+  // quebrar estas funções para caber na métrica traria risco real de
+  // regressão em persistência/dinheiro sem nenhum ganho funcional
+  // (onAuthenticated, buildResult, calcKPIs, a trava markLocalEdit…).
+  // Os orçamentos de tamanho ficam desligados SÓ AQUI — arquivo novo
+  // continua sob o teto normal.
+  {
+    files: [
+      "src/core/buildResult.js",
+      "src/core/calcKPIs.js",
+      "src/services/auth.js",
+      "src/services/auth/boot-data.js",
+      "src/services/classifications.js",
+      "src/services/propostas-store.js",
+      "src/services/snapshot.js",
+      "src/pages/residuos-page.js",
+    ],
+    rules: {
+      complexity: "off",
+      "max-statements": "off",
+      "max-depth": "off",
+      "max-lines-per-function": "off",
+    },
+  },
+
   // ── O adaptador de log em si (DEPOIS do bloco que liga a regra) ──────────
   {
     files: ["src/utils/ui.js"],
