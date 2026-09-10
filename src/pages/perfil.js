@@ -43,27 +43,12 @@ function _setFiltro(filtro) {
   if (_lastEntries) _renderConteudo(_lastEntries);
 }
 
-function _renderConteudo(filteredEntries) {
-  const container = document.getElementById('perfil-conteudo');
-  if (!container) return;
-
-  const entries = _filtroAtivo === 'marketing'
-    ? filteredEntries.filter(e => e.isMarketing)
-    : filteredEntries;
-
-  const allBase = state.result?.entries || filteredEntries;
-  const allEntries = _filtroAtivo === 'marketing'
-    ? allBase.filter(e => e.isMarketing)
-    : allBase;
-
-  const perf = calcPerfil(entries, allEntries);
-  const { faixas, estados, conversao, ltv, cobertura } = perf;
-
+function _kpisHTML({ faixas, estados, conversao, ltv, cobertura }) {
   const taxaGeral  = cobertura.totalMkt > 0 ? cobertura.totalPagos / cobertura.totalMkt * 100 : 0;
   const bestFaixa  = faixas[0];
   const bestEstado = estados[0];
 
-  const kpis = `
+  return `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px">
       <div class="kpi-card">
         <div class="kpi-label">${_filtroAtivo === 'marketing' ? 'Leads Marketing' : 'Total de Clientes'}</div>
@@ -91,10 +76,13 @@ function _renderConteudo(filteredEntries) {
         <div class="kpi-sub">${fmtPct(ltv.taxaRecorrencia)} dos clientes${Number.isFinite(ltv.tempMedioRecompra) ? ' · recompra em ' + _fmtDias(ltv.tempMedioRecompra) : ''}</div>
       </div>
     </div>`;
+}
 
+// Aviso de cobertura parcial (nascimento/UF preenchidos em menos da metade)
+function _avisoCoberturaHTML(cobertura) {
   const pctIdade  = cobertura.totalMkt > 0 ? cobertura.comIdade  / cobertura.totalMkt : 0;
   const pctEstado = cobertura.totalMkt > 0 ? cobertura.comEstado / cobertura.totalMkt : 0;
-  const warn = (pctIdade < 0.5 || pctEstado < 0.5) ? `
+  return (pctIdade < 0.5 || pctEstado < 0.5) ? `
     <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#f59e0b;font-family:var(--font-h)">
       ${icon('alert', 13)} Cobertura parcial — as análises refletem apenas registros com os campos preenchidos.
       <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px">
@@ -102,7 +90,9 @@ function _renderConteudo(filteredEntries) {
         <div><div style="margin-bottom:4px">Estado (UF)</div>${_bar(cobertura.comEstado, cobertura.totalMkt)}</div>
       </div>
     </div>` : '';
+}
 
+function _tblFaixasHTML(faixas) {
   const faixasRows = faixas.length === 0
     ? `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--gray)">Sem dados de nascimento disponíveis</td></tr>`
     : faixas.map((f, i) => `<tr>
@@ -112,14 +102,16 @@ function _renderConteudo(filteredEntries) {
         <td>${f.pagos > 0 ? fmtBRL(f.ticketMedio) : '—'}</td>
       </tr>`).join('');
 
-  const tblFaixas = `<div class="card" style="margin-bottom:0">
+  return `<div class="card" style="margin-bottom:0">
     ${_cardHeader('Faixa Etária')}
     <div style="overflow-x:auto"><table class="admin-table">
       <thead><tr><th>Faixa</th><th>Leads</th><th>Pagos</th><th>Tx. Conv.</th><th>Ticket Médio</th></tr></thead>
       <tbody>${faixasRows}</tbody>
     </table></div>
   </div>`;
+}
 
+function _tblEstadosHTML(estados) {
   const estadosRows = estados.length === 0
     ? `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--gray)">Sem dados de estado disponíveis</td></tr>`
     : estados.slice(0, 15).map((e, i) => `<tr>
@@ -130,14 +122,16 @@ function _renderConteudo(filteredEntries) {
         <td>${e.pagos > 0 ? fmtBRL(e.ticketMedio) : '—'}</td>
       </tr>`).join('');
 
-  const tblEstados = `<div class="card" style="margin-bottom:0">
+  return `<div class="card" style="margin-bottom:0">
     ${_cardHeader('Ranking por Estado')}
     <div style="overflow-x:auto"><table class="admin-table">
       <thead><tr><th>UF</th><th>Região</th><th>Leads</th><th>Pagos</th><th>Tx. Conv.</th><th>Ticket Médio</th></tr></thead>
       <tbody>${estadosRows}</tbody>
     </table></div>
   </div>`;
+}
 
+function _tblLtvHTML(ltv) {
   const ltvRows = ltv.topClientes.length === 0
     ? `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--gray)">Nenhum cliente pago encontrado</td></tr>`
     : ltv.topClientes.map((c, i) => `<tr>
@@ -147,22 +141,38 @@ function _renderConteudo(filteredEntries) {
         <td><strong style="color:var(--red)">${fmtBRL(c.ltv)}</strong></td>
       </tr>`).join('');
 
-  const tblLtv = `<div class="card">
+  return `<div class="card">
     ${_cardHeader('LTV — Top Clientes (histórico completo)', `${ltv.totalClientes} únicos · ${ltv.recorrentes} recorrentes`)}
     <div style="overflow-x:auto"><table class="admin-table">
       <thead><tr><th>Cliente</th><th>CPF</th><th style="text-align:center">Compras</th><th>LTV Total</th></tr></thead>
       <tbody>${ltvRows}</tbody>
     </table></div>
   </div>`;
+}
+
+function _renderConteudo(filteredEntries) {
+  const container = document.getElementById('perfil-conteudo');
+  if (!container) return;
+
+  const entries = _filtroAtivo === 'marketing'
+    ? filteredEntries.filter(e => e.isMarketing)
+    : filteredEntries;
+
+  const allBase = state.result?.entries || filteredEntries;
+  const allEntries = _filtroAtivo === 'marketing'
+    ? allBase.filter(e => e.isMarketing)
+    : allBase;
+
+  const perf = calcPerfil(entries, allEntries);
 
   container.innerHTML = `
-    ${kpis}
-    ${warn}
+    ${_kpisHTML(perf)}
+    ${_avisoCoberturaHTML(perf.cobertura)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-      ${tblFaixas}
-      ${tblEstados}
+      ${_tblFaixasHTML(perf.faixas)}
+      ${_tblEstadosHTML(perf.estados)}
     </div>
-    ${tblLtv}
+    ${_tblLtvHTML(perf.ltv)}
     ${renderTopPublicos(filteredEntries)}
     ${renderTopProdutosBancos(filteredEntries)}
     ${renderVendedores(filteredEntries)}

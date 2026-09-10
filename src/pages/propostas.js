@@ -13,6 +13,16 @@ export { openExportModal, closeExportModal, doExportCSV } from './propostas/prop
 const PAGE_SIZE = 12;
 
 // ── Card ───────────────────────────────────────────────────────────────────
+// Tooltip do status (data/autor/observação, quando existem)
+function _statusTipHTML(e) {
+  if (!(e.statusObs || e.statusUpdatedAt)) return '';
+  return `
+            <div class="status-tip">
+              ${e.statusUpdatedAt ? `<div class="status-tip-date">${icon('calendar', 10)} ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
+              ${e.statusObs ? `<div class="status-tip-obs">${e.statusObs}</div>` : ''}
+            </div>`;
+}
+
 function propostaCard(e) {
   const badge = statusBadge(e.statusCat);
   return `
@@ -25,11 +35,7 @@ function propostaCard(e) {
         <div class="proposta-header-right">
           <div class="status-tip-wrap">
             <span class="badge ${badge.cls}">${e.rawStatus || badge.label}</span>
-            ${(e.statusObs || e.statusUpdatedAt) ? `
-            <div class="status-tip">
-              ${e.statusUpdatedAt ? `<div class="status-tip-date">${icon('calendar', 10)} ${fmtDate(e.statusUpdatedAt)}${e.statusUpdatedBy ? ' · ' + e.statusUpdatedBy : ''}</div>` : ''}
-              ${e.statusObs ? `<div class="status-tip-obs">${e.statusObs}</div>` : ''}
-            </div>` : ''}
+            ${_statusTipHTML(e)}
           </div>
           <span class="proposta-valor">${e.valor ? fmtBRL(e.valor) : '—'}</span>
         </div>
@@ -48,25 +54,9 @@ function propostaCard(e) {
     </div>`;
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
-export function renderPropostas(entries) {
-  const el = document.getElementById('propostas-body');
-  if (!el) return;
-
-  if (!entries?.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">${icon('clipboard')}</div>
-      <div class="empty-title">Nenhum dado processado</div>
-      <div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
-    return;
-  }
-
-  const filtered = applyFilters(entries);
-  const prods    = uniqueProducts(entries);
-  const origens  = uniqueOrigens(entries);
-  const auds     = uniqueAudiencias(entries);
-  const { status, produto, origem, audiencia } = state.propostasFilter;
-
-  const statusOpts = [
+// ── Options dos filtros (mesmo escape de aspas de sempre) ──────────────────
+function _statusOptsHTML(status) {
+  return [
     { v: 'all',          l: `Todos os status` },
     { v: 'pago',         l: 'Pago'            },
     { v: 'quase pago',   l: 'Quase Pago'      },
@@ -75,65 +65,46 @@ export function renderPropostas(entries) {
     { v: 'desconhecido', l: 'Desconhecido'    },
     { v: 'sem status',   l: 'Sem Status'      },
   ].map(o => `<option value="${o.v}" ${status === o.v ? 'selected' : ''}>${o.l}</option>`).join('');
+}
 
-  const prodOpts = [
-    `<option value="all" ${produto === 'all' ? 'selected' : ''}>Todos os produtos</option>`,
-    ...prods.map(p => `<option value="${p.replace(/"/g,'&quot;')}" ${produto === p ? 'selected':''}>${p}</option>`)
+function _optsDe(lista, atual, labelTodos) {
+  return [
+    `<option value="all" ${atual === 'all' ? 'selected' : ''}>${labelTodos}</option>`,
+    ...lista.map(x => `<option value="${x.replace(/"/g,'&quot;')}" ${atual === x ? 'selected':''}>${x}</option>`),
   ].join('');
+}
 
-  const origemOpts = [
-    `<option value="all" ${origem === 'all' ? 'selected' : ''}>Todas as origens</option>`,
-    ...origens.map(o => `<option value="${o.replace(/"/g,'&quot;')}" ${origem === o ? 'selected':''}>${o}</option>`)
-  ].join('');
+// Valor combinado col_dir — o mesmo formato que sortPropostas() recebe e divide.
+const _SORT_OPTS = [
+  ['cliente_asc',   'Nome A→Z'],
+  ['cliente_desc',  'Nome Z→A'],
+  ['valor_desc',    'Maior valor'],
+  ['valor_asc',     'Menor valor'],
+  ['saleDate_desc', 'Mais recente'],
+  ['saleDate_asc',  'Mais antigo'],
+  ['rawStatus_asc', 'Status A→Z'],
+];
 
-  const audOpts = [
-    `<option value="all" ${audiencia === 'all' ? 'selected' : ''}>Todas as audiências</option>`,
-    ...auds.map(a => `<option value="${a.replace(/"/g,'&quot;')}" ${audiencia === a ? 'selected':''}>${a}</option>`)
-  ].join('');
+function _sortOptsHTML() {
+  const atual = `${state.propostasSort.col}_${state.propostasSort.dir}`;
+  return _SORT_OPTS.map(([v, l]) => `<option value="${v}" ${atual === v ? 'selected' : ''}>${l}</option>`).join('');
+}
 
-  // ── Paginação ──────────────────────────────────────────────────────────
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const page       = Math.min(Math.max(1, state.propostasFilter.page || 1), totalPages);
-  state.propostasFilter.page = page;
-  const pageItems  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+function _toolbarHTML(entries, filtered, pageStart, pageEnd) {
+  const prods    = uniqueProducts(entries);
+  const origens  = uniqueOrigens(entries);
+  const auds     = uniqueAudiencias(entries);
+  const { status, produto, origem, audiencia } = state.propostasFilter;
 
-  const cards = pageItems.length
-    ? pageItems.map(propostaCard).join('')
-    : `<div class="empty" style="margin-top:24px">
-        <div class="empty-icon">${icon('search')}</div>
-        <div class="empty-title">Nenhuma proposta encontrada</div>
-        <div class="empty-desc">Tente ajustar os filtros.</div>
-       </div>`;
-
-  // Botões de paginação
-  const pageStart = (page - 1) * PAGE_SIZE + 1;
-  const pageEnd   = Math.min(page * PAGE_SIZE, filtered.length);
-
-  // Gera no máx 5 páginas visíveis ao redor da atual
-  const pageButtons = (() => {
-    if (totalPages <= 1) return '';
-    let btns = '';
-    const range = 2;
-    const lo = Math.max(1, page - range);
-    const hi = Math.min(totalPages, page + range);
-    if (lo > 1) btns += `<button class="pg-btn" onclick="goToPropostasPage(1)">1</button>${lo > 2 ? '<span class="pg-dots">…</span>' : ''}`;
-    for (let i = lo; i <= hi; i++)
-      btns += `<button class="pg-btn ${i === page ? 'pg-active' : ''}" onclick="goToPropostasPage(${i})">${i}</button>`;
-    if (hi < totalPages) btns += `${hi < totalPages - 1 ? '<span class="pg-dots">…</span>' : ''}<button class="pg-btn" onclick="goToPropostasPage(${totalPages})">${totalPages}</button>`;
-    return `
-      <div class="propostas-pagination">
-        <button class="pg-btn" onclick="goToPropostasPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹ Anterior</button>
-        ${btns}
-        <button class="pg-btn" onclick="goToPropostasPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Próxima ›</button>
-      </div>`;
-  })();
+  const statusOpts = _statusOptsHTML(status);
+  const prodOpts   = _optsDe(prods,   produto,   'Todos os produtos');
+  const origemOpts = _optsDe(origens, origem,    'Todas as origens');
+  const audOpts    = _optsDe(auds,    audiencia, 'Todas as audiências');
 
   const selectStyle = `background:var(--surface);border:1px solid var(--border);color:var(--white);
     padding:8px 12px;border-radius:7px;font-size:13px;font-family:var(--font-b);cursor:pointer;outline:none`;
 
-  el.innerHTML = `
-    ${sectionTitle('Propostas de Marketing')}
-
+  return `
     <div class="propostas-toolbar">
       <div style="position:relative;flex:1;min-width:200px;max-width:320px">
         <input type="text" placeholder="Buscar por nome ou CPF…"
@@ -151,23 +122,75 @@ export function renderPropostas(entries) {
       <select onchange="setPropostasProduto(this.value)" style="${selectStyle}">${prodOpts}</select>
       <select onchange="setPropostasOrigem(this.value)" style="${selectStyle}">${origemOpts}</select>
       <select onchange="setPropostasAudiencia(this.value)" style="${selectStyle}">${audOpts}</select>
-      <select onchange="sortPropostas(this.value)" style="${selectStyle}">
-        <option value="cliente_asc"  ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='asc'  ? 'selected':''}>Nome A→Z</option>
-        <option value="cliente_desc" ${state.propostasSort.col==='cliente' && state.propostasSort.dir==='desc' ? 'selected':''}>Nome Z→A</option>
-        <option value="valor_desc"   ${state.propostasSort.col==='valor'   && state.propostasSort.dir==='desc' ? 'selected':''}>Maior valor</option>
-        <option value="valor_asc"    ${state.propostasSort.col==='valor'   && state.propostasSort.dir==='asc'  ? 'selected':''}>Menor valor</option>
-        <option value="saleDate_desc"${state.propostasSort.col==='saleDate'&& state.propostasSort.dir==='desc' ? 'selected':''}>Mais recente</option>
-        <option value="saleDate_asc" ${state.propostasSort.col==='saleDate'&& state.propostasSort.dir==='asc'  ? 'selected':''}>Mais antigo</option>
-        <option value="rawStatus_asc"${state.propostasSort.col==='rawStatus'&&state.propostasSort.dir==='asc'  ? 'selected':''}>Status A→Z</option>
-      </select>
+      <select onchange="sortPropostas(this.value)" style="${selectStyle}">${_sortOptsHTML()}</select>
       <span style="color:var(--gray);font-size:13px;white-space:nowrap">
         ${filtered.length ? `${pageStart}–${pageEnd} de ${fmtN(filtered.length)}` : '0 resultados'}
       </span>
       <button class="btn-sm btn-primary" onclick="openExportModal()">${icon('download', 12)} Exportar CSV</button>
-    </div>
+    </div>`;
+}
+
+// Gera no máx 5 páginas visíveis ao redor da atual
+function _pageButtonsHTML(page, totalPages) {
+  if (totalPages <= 1) return '';
+  let btns = '';
+  const range = 2;
+  const lo = Math.max(1, page - range);
+  const hi = Math.min(totalPages, page + range);
+  if (lo > 1) btns += `<button class="pg-btn" onclick="goToPropostasPage(1)">1</button>${lo > 2 ? '<span class="pg-dots">…</span>' : ''}`;
+  for (let i = lo; i <= hi; i++)
+    btns += `<button class="pg-btn ${i === page ? 'pg-active' : ''}" onclick="goToPropostasPage(${i})">${i}</button>`;
+  if (hi < totalPages) btns += `${hi < totalPages - 1 ? '<span class="pg-dots">…</span>' : ''}<button class="pg-btn" onclick="goToPropostasPage(${totalPages})">${totalPages}</button>`;
+  return `
+    <div class="propostas-pagination">
+      <button class="pg-btn" onclick="goToPropostasPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹ Anterior</button>
+      ${btns}
+      <button class="pg-btn" onclick="goToPropostasPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Próxima ›</button>
+    </div>`;
+}
+
+// ── Paginação (clampa a página atual e grava de volta no state) ────────────
+function _paginar(filtered) {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const page       = Math.min(Math.max(1, state.propostasFilter.page || 1), totalPages);
+  state.propostasFilter.page = page;
+  const pageItems  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  return { page, totalPages, pageItems };
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+export function renderPropostas(entries) {
+  const el = document.getElementById('propostas-body');
+  if (!el) return;
+
+  if (!entries?.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${icon('clipboard')}</div>
+      <div class="empty-title">Nenhum dado processado</div>
+      <div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
+    return;
+  }
+
+  const filtered = applyFilters(entries);
+  const { page, totalPages, pageItems } = _paginar(filtered);
+
+  const cards = pageItems.length
+    ? pageItems.map(propostaCard).join('')
+    : `<div class="empty" style="margin-top:24px">
+        <div class="empty-icon">${icon('search')}</div>
+        <div class="empty-title">Nenhuma proposta encontrada</div>
+        <div class="empty-desc">Tente ajustar os filtros.</div>
+       </div>`;
+
+  const pageStart = (page - 1) * PAGE_SIZE + 1;
+  const pageEnd   = Math.min(page * PAGE_SIZE, filtered.length);
+
+  el.innerHTML = `
+    ${sectionTitle('Propostas de Marketing')}
+
+    ${_toolbarHTML(entries, filtered, pageStart, pageEnd)}
 
     <div class="propostas-grid">${cards}</div>
-    ${pageButtons}
+    ${_pageButtonsHTML(page, totalPages)}
 
     <!-- Export Modal -->
     <div id="propostas-export-modal" style="display:none;position:fixed;inset:0;z-index:1000;

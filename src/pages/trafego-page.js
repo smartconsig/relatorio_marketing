@@ -49,6 +49,81 @@ function _diasFaltantes(start, end, rows) {
   return falta;
 }
 
+function _topBarHTML(podeEditar) {
+  return '<div class="trafego-top">'
+    + '<div class="section-title" style="margin:0"><span class="bar"></span>Tráfego Pago — dias digitados</div>'
+    + (podeEditar ? '<button class="btn-sm trafego-add-btn" onclick="openTrafegoForm()">+ Lançar dia</button>' : '')
+    + '</div>';
+}
+
+function _chipsHTML(t, cpl, ctr) {
+  const brlChip = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
+  return `<div class="trafego-chips">
+    <div class="trafego-chip"><span>Investimento + imposto</span><strong>${brlChip(t.invest * (1 + TAXA_IMPOSTO))}</strong></div>
+    <div class="trafego-chip"><span>Investimento (painel Meta)</span><strong>${brlChip(t.invest)}</strong></div>
+    <div class="trafego-chip"><span>Leads</span><strong>${fmtN(t.leads)}</strong></div>
+    <div class="trafego-chip"><span>CPL (s/ imposto)</span><strong>${brlChip(cpl)}</strong></div>
+    <div class="trafego-chip"><span>CTR médio</span><strong>${ctr.toFixed(2)}%</strong></div>
+    <div class="trafego-chip"><span>Dias digitados</span><strong>${t.dias}</strong></div>
+  </div>`;
+}
+
+function _faltaHTML(falta, podeEditar) {
+  if (!falta.length) return '';
+  return `<div class="trafego-falta">${icon('alert', 13)} ${falta.length} dia(s) do período sem lançamento: ${falta.map(_fmtDia).join(', ')}${podeEditar ? ' — clique em “Lançar dia” para preencher.' : ''}</div>`;
+}
+
+function _linhaTrafegoHTML(r, podeEditar) {
+  const inv  = Number(r.investimento) || 0;
+  const rCpl = r.leads ? inv / r.leads : 0;
+  const rCtr = r.impressoes ? (r.cliques / r.impressoes) * 100 : 0;
+  return `<tr>
+        <td class="trafego-dia">${_fmtDia(r.dia)}</td>
+        <td>${fmtBRL(inv)}</td>
+        <td>${fmtN(r.leads)}</td>
+        <td>${fmtN(r.cliques)}</td>
+        <td>${fmtBRL(rCpl)}</td>
+        <td>${rCtr.toFixed(2)}%</td>
+        <td>${fmtN(r.impressoes)}</td>
+        <td>${fmtN(r.alcance)}</td>
+        <td class="trafego-imposto">${fmtBRL(inv * (1 + TAXA_IMPOSTO))}</td>
+        ${podeEditar ? `<td class="trafego-acoes">
+          <button class="btn-sm btn-ghost" onclick="openTrafegoForm('${r.dia}')" title="Editar">${icon('edit', 13)}</button>
+          <button class="btn-sm btn-ghost" onclick="askDeleteTrafego('${r.dia}')" title="Excluir">${icon('trash', 13)}</button>
+        </td>` : ''}
+      </tr>`;
+}
+
+// Tabela do período (ou estado vazio); totais no tfoot usam os agregados de t
+function _corpoTrafegoHTML(rows, t, cpl, ctr, podeEditar) {
+  if (!rows.length) {
+    return `<div class="empty"><div class="empty-icon">${icon('trend')}</div><div class="empty-title">Nenhum dia digitado no período</div><div class="empty-desc">Use “Lançar dia” para registrar investimento, leads, cliques, impressões e alcance.</div></div>`;
+  }
+  let h = `<div class="trafego-table-wrap"><table class="trafego-table">
+      <thead><tr>
+        <th>Data</th><th>Investimento</th><th>Leads</th><th>Cliques</th>
+        <th>CPL</th><th>CTR</th><th>Impressões</th><th>Alcance</th>
+        <th>Invest. + Imposto</th>${podeEditar ? '<th></th>' : ''}
+      </tr></thead><tbody>`;
+  for (const r of rows) {
+    h += _linhaTrafegoHTML(r, podeEditar);
+  }
+  h += `</tbody><tfoot><tr>
+      <td>TOTAL</td>
+      <td>${fmtBRL(t.invest)}</td>
+      <td>${fmtN(t.leads)}</td>
+      <td>${fmtN(t.cliques)}</td>
+      <td>${fmtBRL(cpl)}</td>
+      <td>${ctr.toFixed(2)}%</td>
+      <td>${fmtN(t.impressoes)}</td>
+      <td>${fmtN(t.alcance)}</td>
+      <td class="trafego-imposto">${fmtBRL(t.invest * (1 + TAXA_IMPOSTO))}</td>
+      ${podeEditar ? '<td></td>' : ''}
+    </tr></tfoot></table></div>`;
+  h += `<div class="trafego-nota">CPL e CTR são calculados automaticamente. Investimento + Imposto = investimento × ${(1 + TAXA_IMPOSTO).toFixed(2).replace('.', ',')} — é o valor usado no CAC e ROAS da Visão Geral.</div>`;
+  return h;
+}
+
 export async function renderTrafego() {
   const sec = document.getElementById('trafego-body');
   if (!sec) return;
@@ -72,71 +147,10 @@ export async function renderTrafego() {
   const cpl = t.leads ? t.invest / t.leads : 0;
   const ctr = t.impressoes ? (t.cliques / t.impressoes) * 100 : 0;
 
-  let h = '';
-  h += '<div class="trafego-top">';
-  h += '<div class="section-title" style="margin:0"><span class="bar"></span>Tráfego Pago — dias digitados</div>';
-  if (podeEditar) h += '<button class="btn-sm trafego-add-btn" onclick="openTrafegoForm()">+ Lançar dia</button>';
-  h += '</div>';
-
-  const brlChip = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
-  h += `<div class="trafego-chips">
-    <div class="trafego-chip"><span>Investimento + imposto</span><strong>${brlChip(t.invest * (1 + TAXA_IMPOSTO))}</strong></div>
-    <div class="trafego-chip"><span>Investimento (painel Meta)</span><strong>${brlChip(t.invest)}</strong></div>
-    <div class="trafego-chip"><span>Leads</span><strong>${fmtN(t.leads)}</strong></div>
-    <div class="trafego-chip"><span>CPL (s/ imposto)</span><strong>${brlChip(cpl)}</strong></div>
-    <div class="trafego-chip"><span>CTR médio</span><strong>${ctr.toFixed(2)}%</strong></div>
-    <div class="trafego-chip"><span>Dias digitados</span><strong>${t.dias}</strong></div>
-  </div>`;
-
-  if (falta.length) {
-    h += `<div class="trafego-falta">${icon('alert', 13)} ${falta.length} dia(s) do período sem lançamento: ${falta.map(_fmtDia).join(', ')}${podeEditar ? ' — clique em “Lançar dia” para preencher.' : ''}</div>`;
-  }
-
-  if (!rows.length) {
-    h += `<div class="empty"><div class="empty-icon">${icon('trend')}</div><div class="empty-title">Nenhum dia digitado no período</div><div class="empty-desc">Use “Lançar dia” para registrar investimento, leads, cliques, impressões e alcance.</div></div>`;
-  } else {
-    h += `<div class="trafego-table-wrap"><table class="trafego-table">
-      <thead><tr>
-        <th>Data</th><th>Investimento</th><th>Leads</th><th>Cliques</th>
-        <th>CPL</th><th>CTR</th><th>Impressões</th><th>Alcance</th>
-        <th>Invest. + Imposto</th>${podeEditar ? '<th></th>' : ''}
-      </tr></thead><tbody>`;
-    for (const r of rows) {
-      const inv  = Number(r.investimento) || 0;
-      const rCpl = r.leads ? inv / r.leads : 0;
-      const rCtr = r.impressoes ? (r.cliques / r.impressoes) * 100 : 0;
-      h += `<tr>
-        <td class="trafego-dia">${_fmtDia(r.dia)}</td>
-        <td>${fmtBRL(inv)}</td>
-        <td>${fmtN(r.leads)}</td>
-        <td>${fmtN(r.cliques)}</td>
-        <td>${fmtBRL(rCpl)}</td>
-        <td>${rCtr.toFixed(2)}%</td>
-        <td>${fmtN(r.impressoes)}</td>
-        <td>${fmtN(r.alcance)}</td>
-        <td class="trafego-imposto">${fmtBRL(inv * (1 + TAXA_IMPOSTO))}</td>
-        ${podeEditar ? `<td class="trafego-acoes">
-          <button class="btn-sm btn-ghost" onclick="openTrafegoForm('${r.dia}')" title="Editar">${icon('edit', 13)}</button>
-          <button class="btn-sm btn-ghost" onclick="askDeleteTrafego('${r.dia}')" title="Excluir">${icon('trash', 13)}</button>
-        </td>` : ''}
-      </tr>`;
-    }
-    h += `</tbody><tfoot><tr>
-      <td>TOTAL</td>
-      <td>${fmtBRL(t.invest)}</td>
-      <td>${fmtN(t.leads)}</td>
-      <td>${fmtN(t.cliques)}</td>
-      <td>${fmtBRL(cpl)}</td>
-      <td>${ctr.toFixed(2)}%</td>
-      <td>${fmtN(t.impressoes)}</td>
-      <td>${fmtN(t.alcance)}</td>
-      <td class="trafego-imposto">${fmtBRL(t.invest * (1 + TAXA_IMPOSTO))}</td>
-      ${podeEditar ? '<td></td>' : ''}
-    </tr></tfoot></table></div>`;
-    h += `<div class="trafego-nota">CPL e CTR são calculados automaticamente. Investimento + Imposto = investimento × ${(1 + TAXA_IMPOSTO).toFixed(2).replace('.', ',')} — é o valor usado no CAC e ROAS da Visão Geral.</div>`;
-  }
-
-  sec.innerHTML = h;
+  sec.innerHTML = _topBarHTML(podeEditar)
+    + _chipsHTML(t, cpl, ctr)
+    + _faltaHTML(falta, podeEditar)
+    + _corpoTrafegoHTML(rows, t, cpl, ctr, podeEditar);
 }
 
 // ── Modal de lançamento/edição ───────────────────────────────────────────────

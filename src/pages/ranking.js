@@ -8,40 +8,85 @@ import { normStr } from '../utils/string.js';
 import { filterButtonsHTML } from '../components/FilterButtons.jsx';
 import { sectionTitle } from '../components/ui.js';
 
+// Chave de agrupamento conforme a visão escolhida
+function _chaveDaVisao(v, r, hier) {
+  return v === 'seller' ? (r.vendedor || '—')
+       : v === 'team'   ? (r.loja     || '—')
+       : v === 'sup'    ? hier.supervisor
+       : hier.gerente;
+}
+
+// Mesmas contagens de sempre (válidas somam valor; pagas contam à parte)
+function _acumular(e, r) {
+  if (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') e.approved++;
+  if (r.statusCat === 'pago') e.paid++;
+  if (r.statusCat === 'pago' || r.statusCat === 'aprovado' || r.statusCat === 'quase pago') e.value += r.valor;
+  if (r.isMarketing && r.statusCat === 'pago') e.mktPaid++;
+}
+
+function _agregarPorVisao(entries, v) {
+  const map = {};
+  for (const r of entries) {
+    if (r.statusCat === 'reprovado' || r.statusCat === 'desconhecido') continue;
+    const hier    = getHierarchy(r.loja);
+    const keyName = _chaveDaVisao(v, r, hier);
+    if (!map[keyName]) map[keyName] = {
+      name: keyName, loja: r.loja || '—',
+      supervisor: hier.supervisor, gerente: hier.gerente,
+      paid: 0, approved: 0, value: 0, mktPaid: 0,
+    };
+    _acumular(map[keyName], r);
+  }
+  return map;
+}
+
+// Células extras por view — Supervisor removido da view de Vendedor
+function _extraColsRow(v, row) {
+  return v === 'seller'
+    ? `<td class="muted">${row.loja}</td><td class="muted">${row.gerente}</td>`
+    : v === 'team'
+    ? `<td class="muted">${row.supervisor}</td><td class="muted">${row.gerente}</td>`
+    : v === 'sup'
+    ? `<td class="muted">${row.gerente}</td>`
+    : '';
+}
+
+function _linhaRankingHTML(row, i, v, leadsByOp) {
+  const ri     = i + 1;
+  const rc     = ri === 1 ? 'r1' : ri === 2 ? 'r2' : ri === 3 ? 'r3' : '';
+  const ticket = row.approved ? row.value / row.approved : 0;
+
+  // % Marketing = Aprovadas ÷ Leads × 100
+  const leads  = leadsByOp[normStr(row.name)] || 0;
+  const pMkt   = leads > 0 ? (row.approved / leads) * 100 : 0;
+  const leadsCol = v === 'seller' ? `<td>${leads > 0 ? leads : '—'}</td>` : '';
+
+  return `<tr>
+          <td><div class="rank-num ${rc}">${ri}</div></td>
+          <td><strong>${row.name}</strong></td>
+          ${_extraColsRow(v, row)}
+          ${leadsCol}
+          <td><span class="badge badge-green">${row.paid}</span></td>
+          <td>${row.approved}</td>
+          <td>${fmtBRL(row.value)}</td>
+          <td>${fmtBRL(ticket)}</td>
+          <td><span class="badge ${pMkt >= 50 ? 'badge-green' : 'badge-gray'}">${fmtPct(pMkt)}</span></td>
+        </tr>`;
+}
+
 export function renderRanking(entries) {
   const v = state.rankView;
 
   if (v === 'funil') { _renderFunil(); return; }
-
-  const map = {};
 
   // Mapa de leads do Smart por vendedor (para % conversão e coluna Leads)
   const funilData    = calcFunilByVendedor();
   const leadsByOp    = {};
   for (const f of funilData) leadsByOp[f.operador] = f.totalLeads;
 
-  for (const r of entries) {
-    if (r.statusCat === 'reprovado' || r.statusCat === 'desconhecido') continue;
-    const hier    = getHierarchy(r.loja);
-    const keyName = v === 'seller' ? (r.vendedor || '—')
-                  : v === 'team'   ? (r.loja     || '—')
-                  : v === 'sup'    ? hier.supervisor
-                  : hier.gerente;
-    if (!map[keyName]) map[keyName] = {
-      name: keyName, loja: r.loja || '—',
-      supervisor: hier.supervisor, gerente: hier.gerente,
-      paid: 0, approved: 0, value: 0, mktPaid: 0,
-    };
-    const e = map[keyName];
-    if (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') e.approved++;
-    if (r.statusCat === 'pago') e.paid++;
-    if (r.statusCat === 'pago' || r.statusCat === 'aprovado' || r.statusCat === 'quase pago') e.value += r.valor;
-    if (r.isMarketing && r.statusCat === 'pago') e.mktPaid++;
-  }
-
+  const map  = _agregarPorVisao(entries, v);
   const rows = Object.values(map).sort((a, b) => b.paid - a.paid || b.value - a.value);
 
-  // Colunas extras por view — Supervisor removido da view de Vendedor
   const extraCols = v === 'seller'
     ? '<th>Time</th><th>Gerente</th>'
     : v === 'team'
@@ -52,39 +97,7 @@ export function renderRanking(entries) {
 
   const rowsHtml = rows.length === 0
     ? `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--gray)">Nenhum dado disponível</td></tr>`
-    : rows.map((row, i) => {
-        const ri     = i + 1;
-        const rc     = ri === 1 ? 'r1' : ri === 2 ? 'r2' : ri === 3 ? 'r3' : '';
-        const ticket = row.approved ? row.value / row.approved : 0;
-
-        // % Marketing = Aprovadas ÷ Leads × 100
-        const leads  = leadsByOp[normStr(row.name)] || 0;
-        const pMkt   = leads > 0 ? (row.approved / leads) * 100 : 0;
-
-        const extra = v === 'seller'
-          ? `<td class="muted">${row.loja}</td><td class="muted">${row.gerente}</td>`
-          : v === 'team'
-          ? `<td class="muted">${row.supervisor}</td><td class="muted">${row.gerente}</td>`
-          : v === 'sup'
-          ? `<td class="muted">${row.gerente}</td>`
-          : '';
-
-        const leadsCol = v === 'seller'
-          ? `<td>${leads > 0 ? leads : '—'}</td>`
-          : '';
-
-        return `<tr>
-          <td><div class="rank-num ${rc}">${ri}</div></td>
-          <td><strong>${row.name}</strong></td>
-          ${extra}
-          ${leadsCol}
-          <td><span class="badge badge-green">${row.paid}</span></td>
-          <td>${row.approved}</td>
-          <td>${fmtBRL(row.value)}</td>
-          <td>${fmtBRL(ticket)}</td>
-          <td><span class="badge ${pMkt >= 50 ? 'badge-green' : 'badge-gray'}">${fmtPct(pMkt)}</span></td>
-        </tr>`;
-      }).join('');
+    : rows.map((row, i) => _linhaRankingHTML(row, i, v, leadsByOp)).join('');
 
   const colLabel  = v === 'seller' ? 'Vendedor' : v === 'team' ? 'Time' : v === 'sup' ? 'Supervisor' : 'Gerente';
   const leadsHead = v === 'seller' ? '<th>Leads</th>' : '';

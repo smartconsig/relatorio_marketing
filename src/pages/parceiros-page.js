@@ -64,30 +64,32 @@ export function importParceirosFile() {
   document.getElementById('parc-file-input').click();
 }
 
-export async function onParceirosFileChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = async ev => {
-    try {
-      const buf = ev.target.result;
+// Detecta o formato pelo conteudo e devolve o ranking parseado.
+function _parsearArquivoParceiros(buf) {
       const bytes = new Uint8Array(buf);
-      let result;
       if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
         // Assinatura "PK" → arquivo .xlsx. O ranking fica na aba "Resumo";
         // valores brutos das células (raw) evitam problemas de formato de moeda.
         const wb    = XLSX.read(buf, { type: 'array' });
         const sheet = wb.SheetNames.find(n => n.trim().toLowerCase() === 'resumo') || wb.SheetNames[0];
         const rows  = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { header: 1, raw: true, defval: null });
-        result = parseParceirosRows(rows);
-      } else {
+        return parseParceirosRows(rows);
+      }
         // CSV: tenta UTF-8; se vier caractere de substituição (acentos quebrados),
         // reinterpreta como windows-1252 (é como o Excel exporta esse CSV).
         let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
         if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
         text = text.replace(/^\uFEFF/, ''); // remove BOM
-        result = parseParceiros(text);
-      }
+        return parseParceiros(text);
+}
+
+export async function onParceirosFileChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    try {
+      const result = _parsearArquivoParceiros(ev.target.result);
       if (!result.partners.length) { toast('Nenhum parceiro encontrado no arquivo', 'err'); return; }
 
       state.parceiros = { ...result, importedAt: new Date().toISOString(), importedBy: state.currentUser?.email || '' };
