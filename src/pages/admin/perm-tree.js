@@ -69,6 +69,61 @@ function leafKeys(node) {
   return (node.children || []).flatMap(leafKeys);
 }
 
+// Folha com checkbox direto
+function _folhaNode(node, permissoes) {
+  const label = document.createElement('label');
+  label.className = 'perm-leaf';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.dataset.key = node.key;
+  cb.checked = permissoes[node.key] === true;
+  label.append(cb, document.createTextNode(' ' + node.label));
+  return label;
+}
+
+// Cabeçalho do nó pai: checkbox de grupo (com estado indeterminado) + label + seta
+function _grupoHeaderNode(node, permissoes) {
+  const header = document.createElement('div');
+  header.className = 'perm-group-header';
+
+  const cbGroup = document.createElement('input');
+  cbGroup.type = 'checkbox';
+  cbGroup.className = 'perm-group-cb';
+  const keys = leafKeys(node);
+  const allChecked = keys.every(k => permissoes[k] === true);
+  const someChecked = keys.some(k => permissoes[k] === true);
+  cbGroup.checked = allChecked;
+  cbGroup.indeterminate = !allChecked && someChecked;
+
+  const groupLabel = document.createElement('span');
+  groupLabel.className = 'perm-group-label';
+  groupLabel.textContent = node.label;
+
+  const toggle = document.createElement('span');
+  toggle.className = 'perm-toggle';
+  toggle.textContent = '▼';
+
+  header.append(cbGroup, groupLabel, toggle);
+  return { header, cbGroup, toggle };
+}
+
+function _ligarGrupo({ cbGroup, toggle, children, container }) {
+  // Toggle collapse
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    children.classList.toggle('collapsed');
+    toggle.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
+  });
+
+  // Grupo checkbox: marca/desmarca todos os filhos
+  cbGroup.addEventListener('change', () => {
+    children.querySelectorAll('input[data-key]').forEach(cb => {
+      cb.checked = cbGroup.checked;
+    });
+    _syncParents(container);
+  });
+}
+
 export function renderPermTree(container, permissoes = {}) {
   container.innerHTML = '';
 
@@ -77,60 +132,19 @@ export function renderPermTree(container, permissoes = {}) {
     wrap.className = `perm-node depth-${depth}`;
 
     if (node.key) {
-      // Folha com checkbox direto
-      const label = document.createElement('label');
-      label.className = 'perm-leaf';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.dataset.key = node.key;
-      cb.checked = permissoes[node.key] === true;
-      label.append(cb, document.createTextNode(' ' + node.label));
-      wrap.appendChild(label);
-    } else {
-      // Nó pai: checkbox de grupo + label expansível
-      const header = document.createElement('div');
-      header.className = 'perm-group-header';
-
-      const cbGroup = document.createElement('input');
-      cbGroup.type = 'checkbox';
-      cbGroup.className = 'perm-group-cb';
-      const keys = leafKeys(node);
-      const allChecked = keys.every(k => permissoes[k] === true);
-      const someChecked = keys.some(k => permissoes[k] === true);
-      cbGroup.checked = allChecked;
-      cbGroup.indeterminate = !allChecked && someChecked;
-
-      const groupLabel = document.createElement('span');
-      groupLabel.className = 'perm-group-label';
-      groupLabel.textContent = node.label;
-
-      const toggle = document.createElement('span');
-      toggle.className = 'perm-toggle';
-      toggle.textContent = '▼';
-
-      header.append(cbGroup, groupLabel, toggle);
-      wrap.appendChild(header);
-
-      const children = document.createElement('div');
-      children.className = 'perm-children';
-      (node.children || []).forEach(child => children.appendChild(buildNode(child, depth + 1)));
-      wrap.appendChild(children);
-
-      // Toggle collapse
-      toggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        children.classList.toggle('collapsed');
-        toggle.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
-      });
-
-      // Grupo checkbox: marca/desmarca todos os filhos
-      cbGroup.addEventListener('change', () => {
-        children.querySelectorAll('input[data-key]').forEach(cb => {
-          cb.checked = cbGroup.checked;
-        });
-        _syncParents(container);
-      });
+      wrap.appendChild(_folhaNode(node, permissoes));
+      return wrap;
     }
+
+    const { header, cbGroup, toggle } = _grupoHeaderNode(node, permissoes);
+    wrap.appendChild(header);
+
+    const children = document.createElement('div');
+    children.className = 'perm-children';
+    (node.children || []).forEach(child => children.appendChild(buildNode(child, depth + 1)));
+    wrap.appendChild(children);
+
+    _ligarGrupo({ cbGroup, toggle, children, container });
 
     return wrap;
   }

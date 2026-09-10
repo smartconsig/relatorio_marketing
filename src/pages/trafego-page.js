@@ -95,7 +95,7 @@ function _linhaTrafegoHTML(r, podeEditar) {
 }
 
 // Tabela do período (ou estado vazio); totais no tfoot usam os agregados de t
-function _corpoTrafegoHTML(rows, t, cpl, ctr, podeEditar) {
+function _corpoTrafegoHTML(rows, t, { cpl, ctr, podeEditar }) {
   if (!rows.length) {
     return `<div class="empty"><div class="empty-icon">${icon('trend')}</div><div class="empty-title">Nenhum dia digitado no período</div><div class="empty-desc">Use “Lançar dia” para registrar investimento, leads, cliques, impressões e alcance.</div></div>`;
   }
@@ -150,7 +150,7 @@ export async function renderTrafego() {
   sec.innerHTML = _topBarHTML(podeEditar)
     + _chipsHTML(t, cpl, ctr)
     + _faltaHTML(falta, podeEditar)
-    + _corpoTrafegoHTML(rows, t, cpl, ctr, podeEditar);
+    + _corpoTrafegoHTML(rows, t, { cpl, ctr, podeEditar });
 }
 
 // ── Modal de lançamento/edição ───────────────────────────────────────────────

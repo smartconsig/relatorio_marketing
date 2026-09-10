@@ -14,16 +14,8 @@ import { renderVersions } from './admin/versoes-tab.js';
 
 let _adminTab = 'usuarios';
 
-export async function renderAdminPage() {
-  const body = document.getElementById('admin-body');
-  if (!body) return;
-
-  if (!perm.isAdmin()) {
-    body.innerHTML = `<div class="empty"><div class="empty-icon">${icon('lock')}</div><div class="empty-title">Acesso negado</div><div class="empty-desc">Você não tem permissão para acessar esta área.</div></div>`;
-    return;
-  }
-
-  body.innerHTML = `
+function _shellHTML() {
+  return `
     <div class="admin-tabs">
       <button class="admin-tab-btn ${_adminTab === 'usuarios'   ? 'active' : ''}" data-tab="usuarios">Usuários</button>
       <button class="admin-tab-btn ${_adminTab === 'grupos'     ? 'active' : ''}" data-tab="grupos">Grupos de Acesso</button>
@@ -45,6 +37,18 @@ export async function renderAdminPage() {
     <div id="admin-tab-mapeamento" class="admin-tab-content" style="${_adminTab !== 'mapeamento' ? 'display:none' : ''}"></div>
     <div id="admin-tab-versoes"    class="admin-tab-content" style="${_adminTab !== 'versoes'    ? 'display:none' : ''}">${renderVersions()}</div>
   `;
+}
+
+export async function renderAdminPage() {
+  const body = document.getElementById('admin-body');
+  if (!body) return;
+
+  if (!perm.isAdmin()) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">${icon('lock')}</div><div class="empty-title">Acesso negado</div><div class="empty-desc">Você não tem permissão para acessar esta área.</div></div>`;
+    return;
+  }
+
+  body.innerHTML = _shellHTML();
 
   // Tabs
   body.querySelectorAll('.admin-tab-btn').forEach(btn => {
