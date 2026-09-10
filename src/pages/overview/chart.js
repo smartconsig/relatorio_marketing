@@ -6,31 +6,39 @@ import { fmtBRL, fmtN, parseBRL } from '../../utils/currency.js';
 import { parseExcelDate } from '../../utils/date.js';
 import { trafegoInRange, TAXA_IMPOSTO } from '../../services/trafego-svc.js';
 
-export function renderChart(fd) {
-  if (state.chart) { state.chart.destroy(); state.chart = null; }
-  const dayMap = {};
-
-  // Fonte oficial: dias digitados no Tráfego (com imposto); depois API do Meta; depois planilha
-  const trDays = trafegoInRange(state.filterDates.start, state.filterDates.end).rows;
-  if (trDays.length) {
-    for (const r of trDays) {
-      if (!dayMap[r.dia]) dayMap[r.dia] = { invest: 0, valid: 0, rejected: 0 };
-      dayMap[r.dia].invest += (Number(r.investimento) || 0) * (1 + TAXA_IMPOSTO);
-    }
-  } else if (state.metaAds?.daily?.length) {
-    for (const row of state.metaAds.daily) {
-      if (!dayMap[row.date]) dayMap[row.date] = { invest: 0, valid: 0, rejected: 0 };
-      dayMap[row.date].invest += row.invest;
-    }
-  } else {
-    for (const r of fd.facebook) {
-      const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
-      if (!d) continue;
-      const key = d.toISOString().slice(0, 10);
-      if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
-      dayMap[key].invest += parseBRL(r['Montante gasto (BRL)']);
-    }
+function _somarTrafego(dayMap, trDays) {
+  for (const r of trDays) {
+    if (!dayMap[r.dia]) dayMap[r.dia] = { invest: 0, valid: 0, rejected: 0 };
+    dayMap[r.dia].invest += (Number(r.investimento) || 0) * (1 + TAXA_IMPOSTO);
   }
+}
+
+function _somarMeta(dayMap) {
+  for (const row of state.metaAds.daily) {
+    if (!dayMap[row.date]) dayMap[row.date] = { invest: 0, valid: 0, rejected: 0 };
+    dayMap[row.date].invest += row.invest;
+  }
+}
+
+function _somarPlanilhaFB(dayMap, fd) {
+  for (const r of fd.facebook) {
+    const d = parseExcelDate(r['Dia'] || r['Início dos relatórios'] || r['Inicio dos relatórios']);
+    if (!d) continue;
+    const key = d.toISOString().slice(0, 10);
+    if (!dayMap[key]) dayMap[key] = { invest: 0, valid: 0, rejected: 0 };
+    dayMap[key].invest += parseBRL(r['Montante gasto (BRL)']);
+  }
+}
+
+// Fonte oficial: dias digitados no Tráfego (com imposto); depois API do Meta; depois planilha
+function _investPorDia(fd, dayMap) {
+  const trDays = trafegoInRange(state.filterDates.start, state.filterDates.end).rows;
+  if (trDays.length)                     _somarTrafego(dayMap, trDays);
+  else if (state.metaAds?.daily?.length) _somarMeta(dayMap);
+  else                                   _somarPlanilhaFB(dayMap, fd);
+}
+
+function _vendasPorDia(fd, dayMap) {
   for (const r of fd.entries) {
     if (r.isMarketing && r.saleDate) {
       const key = new Date(r.saleDate).toISOString().slice(0, 10);
@@ -39,6 +47,13 @@ export function renderChart(fd) {
       if (r.statusCat === 'reprovado') dayMap[key].rejected += (r.valor || 0);
     }
   }
+}
+
+export function renderChart(fd) {
+  if (state.chart) { state.chart.destroy(); state.chart = null; }
+  const dayMap = {};
+  _investPorDia(fd, dayMap);
+  _vendasPorDia(fd, dayMap);
   const days = Object.keys(dayMap).sort();
   if (!days.length) return;
   const ctx = document.getElementById('main-chart')?.getContext('2d');

@@ -19,16 +19,74 @@ export { pct, kpiCard, pipelineCard } from './overview/kpi-cards.js';
 export { exportNoValueCSV, exportNoDatesCSV } from './overview/exports-csv.js';
 export { renderDiag } from './overview/diag.js';
 
-// ── main render ────────────────────────────────────────────────────────────
-export function renderOverview(k, fd) {
-  const g = state.goals;
-  let h = '';
+// ── 1. HERO — Resultados de Marketing ───────────────────────────────────────
+function _heroSectionHTML(k, g) {
+  const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
+  const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
+  const corConv = convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--red-bright)';
+  const corConvVal = convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--danger)';
 
-  // ── 0. AVISO ENTRADAS SEM DATA ───────────────────────────────────────────
+  return sectionTitle('Resultados de Marketing') + `<div class="hero-grid">
+    ${heroCard({ label: 'Válidas Total', count: k.countValidMkt, value: k.valueValidMkt,
+                 sub: 'em andamento + pagas · tráfego pago', accentColor: 'var(--green)',
+                 p: pct(k.valueValidMkt, g.approved), valueColor: 'var(--blue)',
+                 goalLabel: g.approved ? `meta: ${fmtBRL(g.approved)}` : null })}
+    ${heroCard({ label: 'Pagas', count: k.paidMkt, value: k.valueMkt,
+                 sub: 'operações confirmadas · tráfego pago', accentColor: 'var(--green)',
+                 p: pct(k.valueMkt, g.paid),
+                 goalLabel: g.paid ? `meta: ${fmtBRL(g.paid)}` : null })}
+    ${heroCard({ label: 'Investimento', value: k.invest,
+                 sub: k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads',
+                 accentColor: 'var(--red-bright)', p: pct(k.invest, g.invest), inv: true, valueColor: 'var(--white)',
+                 goalLabel: g.invest ? `limite: ${fmtBRL(g.invest)}` : null })}
+    ${heroCard({ label: 'CAC Válidas', value: cacValidas,
+                 sub: 'custo por venda válida · 70% das válidas', accentColor: 'var(--yellow)', valueColor: 'var(--white)' })}
+    ${heroCard({ label: 'Conversão', value: `${convProspeccao.toFixed(1)}%`,
+                 sub: `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`,
+                 accentColor: corConv, valueColor: corConvVal })}
+  </div>`;
+}
+
+// ── 2. PIPELINE COMPLEMENTAR ────────────────────────────────────────────────
+function _pipelineMktHTML(k) {
+  return sectionTitle('Pipeline Marketing') + `<div class="pipeline-row pipeline-3">
+    ${pipelineCard({ label: 'Em Andamento', cls: 'pc-inprog', count: k.inProgMkt,     value: k.valueInProgMkt,     sub: 'propostas em análise / aprovadas' })}
+    ${pipelineCard({ label: 'Quase Pago',   cls: 'pc-almost', count: k.almostPaidMkt, value: k.valueAlmostPaidMkt, sub: 'desaverbação em andamento' })}
+    ${pipelineCard({ label: 'Reprovadas',   cls: 'pc-rej',    count: k.rejMkt,        value: k.valueRejMkt,        sub: 'propostas reprovadas' })}
+  </div>`;
+}
+
+// ── 3. INDICADORES ──────────────────────────────────────────────────────────
+function _indicadoresHTML(k, g) {
+  return sectionTitle('Indicadores de Performance') + `<div class="kpi-grid">
+    ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), { meta: 'vendas pagas de marketing' })}
+    ${kpiCard('CAC', fmtBRL(k.cac), { p: pct(k.cac, g.cac), inv: true, goalLabel: g.cac ? `máx. ${fmtBRL(g.cac)}` : null })}
+    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', { p: pct(k.roas, g.roas), goalLabel: g.roas ? `mín. ${g.roas.toFixed(2)}x` : null })}
+    ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), { meta: 'Leads → Vendas Pagas' })}
+    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), { p: pct(k.cplCalc, g.cpl), inv: true, goalLabel: g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null })}
+    ${kpiCard('Leads Gerados', fmtN(k.leads), { meta: 'leads recebidos no período' })}
+    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), { meta: k.investSource === 'trafego' ? 'painel Meta · sem imposto' : 'Reportado pelo Facebook' })}
+  </div>`;
+}
+
+// ── 4. SECUNDÁRIO — Todas as Origens ────────────────────────────────────────
+function _todasOrigensHTML(k) {
+  return sectionTitle('Todas as Origens', 'margin-top:8px') + `<div class="pipeline-row">
+    ${pipelineCard({ label: 'Em Andamento',    cls: 'pc-inprog', count: k.inProgAll,     value: k.valueInProgAll,     sub: 'todas as origens' })}
+    ${pipelineCard({ label: 'Quase Pago',      cls: 'pc-almost', count: k.almostPaidAll, value: k.valueAlmostPaidAll, sub: 'todas as origens' })}
+    ${pipelineCard({ label: 'Pagas',           cls: 'pc-paid',   count: k.paidAll,       value: k.valuePaidAll,       sub: 'todas as origens' })}
+    ${pipelineCard({ label: 'Reprovadas',      cls: 'pc-rej',    count: k.rejAll,        value: k.valueRejAll,        sub: 'todas as origens' })}
+    ${pipelineCard({ label: 'Válidas (Total)', cls: 'pc-valid',  count: k.countValidAll, value: k.valueValidAll,      sub: 'todas as origens' })}
+  </div>`;
+}
+
+// ── main render ────────────────────────────────────────────────────────────
+// ── 0. AVISO ENTRADAS SEM DATA ──────────────────────────────────────────────
+function _avisoSemDataHTML() {
   const semData     = (state.result?.entries || []).filter(e => !e.saleDate);
   const semDataMkt  = semData.filter(e => e.isMarketing);
-  if (semData.length > 0) {
-    h += `
+  if (semData.length === 0) return '';
+  return `
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
       <div style="color:var(--danger);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
@@ -45,59 +103,43 @@ export function renderOverview(k, fd) {
         </div>
       </div>
     </div>`;
-  }
+}
+
+export function renderOverview(k, fd) {
+  const g = state.goals;
+  let h = '';
+
+  h += _avisoSemDataHTML();
 
   // ── 0b. DIVERGÊNCIAS ECORBAN ─────────────────────────────────────────────
   h += renderDivergencias(fd.entries);
 
-  // ── 1. HERO ──────────────────────────────────────────────────────────────
-  const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
-  const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
-  h += sectionTitle('Resultados de Marketing');
-  h += `<div class="hero-grid">
-    ${heroCard('Válidas Total', k.countValidMkt, k.valueValidMkt, 'em andamento + pagas · tráfego pago', 'var(--green)', pct(k.valueValidMkt, g.approved), false, 'var(--blue)', g.approved ? `meta: ${fmtBRL(g.approved)}` : null)}
-    ${heroCard('Pagas', k.paidMkt, k.valueMkt, 'operações confirmadas · tráfego pago', 'var(--green)', pct(k.valueMkt, g.paid), false, null, g.paid ? `meta: ${fmtBRL(g.paid)}` : null)}
-    ${heroCard('Investimento', null, k.invest, k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads', 'var(--red-bright)', pct(k.invest, g.invest), true, 'var(--white)', g.invest ? `limite: ${fmtBRL(g.invest)}` : null)}
-    ${heroCard('CAC Válidas', null, cacValidas, 'custo por venda válida · 70% das válidas', 'var(--yellow)', null, false, 'var(--white)', null)}
-    ${heroCard('Conversão', null, `${convProspeccao.toFixed(1)}%`, `${fmtN(k.countValidMkt)} válidas de ${fmtN(k.leads)} leads Facebook · meta 15%`, convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--red-bright)', null, false, convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--danger)', null)}
+  h += _heroSectionHTML(k, g);
+  h += _pipelineMktHTML(k);
+  h += _indicadoresHTML(k, g);
+  h += _todasOrigensHTML(k);
+
+  h += _avisoSemValorHTML(fd);
+  h += _kolmeyaHTML();
+
+  // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
+  h += sectionTitle('Evolução Diária');
+  h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
+    <canvas id="main-chart" height="75"></canvas>
   </div>`;
 
-  // ── 2. PIPELINE COMPLEMENTAR ─────────────────────────────────────────────
-  h += sectionTitle('Pipeline Marketing');
-  h += `<div class="pipeline-row pipeline-3">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgMkt, k.valueInProgMkt, 'propostas em análise / aprovadas')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidMkt, k.valueAlmostPaidMkt, 'desaverbação em andamento')}
-    ${pipelineCard('Reprovadas', 'pc-rej', k.rejMkt, k.valueRejMkt, 'propostas reprovadas')}
-  </div>`;
+  document.getElementById('overview-body').innerHTML = h;
+  animateHeroValues();
+  renderChart(fd);
+}
 
-  // ── 3. INDICADORES ───────────────────────────────────────────────────────
-  h += sectionTitle('Indicadores de Performance');
-  h += `<div class="kpi-grid">
-    ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), 'vendas pagas de marketing', null, false)}
-    ${kpiCard('CAC', fmtBRL(k.cac), null, pct(k.cac, g.cac), true, g.cac ? `máx. ${fmtBRL(g.cac)}` : null)}
-    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', null, pct(k.roas, g.roas), false, g.roas ? `mín. ${g.roas.toFixed(2)}x` : null)}
-    ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), 'Leads → Vendas Pagas', null, false)}
-    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), null, pct(k.cplCalc, g.cpl), true, g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null)}
-    ${kpiCard('Leads Gerados', fmtN(k.leads), 'leads recebidos no período', null, false)}
-    ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), k.investSource === 'trafego' ? 'painel Meta · sem imposto' : 'Reportado pelo Facebook', null, false)}
-  </div>`;
-
-  // ── 4. SECUNDÁRIO ────────────────────────────────────────────────────────
-  h += sectionTitle('Todas as Origens', 'margin-top:8px');
-  h += `<div class="pipeline-row">
-    ${pipelineCard('Em Andamento', 'pc-inprog', k.inProgAll, k.valueInProgAll, 'todas as origens')}
-    ${pipelineCard('Quase Pago', 'pc-almost', k.almostPaidAll, k.valueAlmostPaidAll, 'todas as origens')}
-    ${pipelineCard('Pagas', 'pc-paid', k.paidAll, k.valuePaidAll, 'todas as origens')}
-    ${pipelineCard('Reprovadas', 'pc-rej', k.rejAll, k.valueRejAll, 'todas as origens')}
-    ${pipelineCard('Válidas (Total)', 'pc-valid', k.countValidAll, k.valueValidAll, 'todas as origens')}
-  </div>`;
-
-  // ── 5. AVISO SEM VALOR ───────────────────────────────────────────────────
+// ── 5. AVISO SEM VALOR ──────────────────────────────────────────────────────
+function _avisoSemValorHTML(fd) {
   const semValorValidas = fd.entries.filter(r => (r.statusCat === 'aprovado' || r.statusCat === 'quase pago' || r.statusCat === 'pago') && !r.valor);
   const semValorReprov  = fd.entries.filter(r => r.statusCat === 'reprovado' && !r.valor);
   const semValorTotal   = fd.entries.filter(r => r.statusCat !== 'desconhecido' && !r.valor);
-  if (semValorTotal.length > 0) {
-    h += `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+  if (semValorTotal.length === 0) return '';
+  return `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
       <div style="color:var(--yellow);line-height:1">${icon('alert', 18)}</div>
       <div style="flex:1;min-width:200px">
         <div style="font-family:var(--font-h);font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:4px">PROPOSTAS SEM VALOR MULTIPLICADOR</div>
@@ -143,30 +185,19 @@ export function renderOverview(k, fd) {
         </div>
       </div>
     </div>`;
-  }
+}
 
-  // ── 6. SMS KOLMEYA ───────────────────────────────────────────────────────
-  if (state.kolmeya) {
-    const km = state.kolmeya;
-    const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : '—';
-    h += sectionTitle('SMS — Kolmeya');
-    h += `<div class="kpi-grid">
-      ${kpiCard('Enviados', fmtN(km.enviados), `período ${km.period}`, null, false)}
-      ${kpiCard('Entregues', fmtN(km.entregues), `taxa ${txEntrega}`, null, false)}
-      ${kpiCard('Não Entregues', fmtN(km.naoEntregues), 'falha na entrega', null, false)}
-      ${kpiCard('Respostas', fmtN(km.respostas), 'respostas dos destinatários', null, false)}
-      ${kpiCard('Acessos no Link', fmtN(km.acessos), 'cliques no encurtador', null, false)}
-      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), 'valor pago no período', null, false)}
+// ── 6. SMS KOLMEYA ──────────────────────────────────────────────────────────
+function _kolmeyaHTML() {
+  if (!state.kolmeya) return '';
+  const km = state.kolmeya;
+  const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : '—';
+  return sectionTitle('SMS — Kolmeya') + `<div class="kpi-grid">
+      ${kpiCard('Enviados', fmtN(km.enviados), { meta: `período ${km.period}` })}
+      ${kpiCard('Entregues', fmtN(km.entregues), { meta: `taxa ${txEntrega}` })}
+      ${kpiCard('Não Entregues', fmtN(km.naoEntregues), { meta: 'falha na entrega' })}
+      ${kpiCard('Respostas', fmtN(km.respostas), { meta: 'respostas dos destinatários' })}
+      ${kpiCard('Acessos no Link', fmtN(km.acessos), { meta: 'cliques no encurtador' })}
+      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), { meta: 'valor pago no período' })}
     </div>`;
-  }
-
-  // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
-  h += sectionTitle('Evolução Diária');
-  h += `<div class="chart-card"><div class="chart-title">Investimento (barras) vs. Válidos e Reprovados de Marketing (linhas)</div>
-    <canvas id="main-chart" height="75"></canvas>
-  </div>`;
-
-  document.getElementById('overview-body').innerHTML = h;
-  animateHeroValues();
-  renderChart(fd);
 }
