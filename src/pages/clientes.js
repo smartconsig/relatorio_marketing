@@ -56,6 +56,26 @@ function applyClientesFilters(confirmed) {
   return filtered;
 }
 
+// Células de dados da linha do cliente (nº → badge de classificação)
+function _celulasClienteHTML(e, i) {
+  return `<td class="muted" style="font-size:11px">${i + 1}</td>
+        <td><strong>${e.cliente || '—'}</strong></td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
+        <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
+        <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
+        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
+        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? 'Marketing' : 'Não é Marketing'}</span></td>`;
+}
+
+// Botões da linha (onclick intactos — Reclassificar volta a proposta ao PROCV)
+function _acoesClienteHTML(e, safeName) {
+  return `<td style="display:flex;gap:6px;align-items:center">
+          <button class="btn-nomkt procv-actions-desktop" onclick="askUndo(${e._idx},'${safeName}')" style="font-size:11px;padding:4px 8px">${icon('undo', 11)} Reclassificar</button>
+          <button class="btn-dots procv-actions-mobile" onclick="openBottomSheet({title:'${safeName}',sub:'Reclassificar cliente',actions:[{id:'undo',label:'Reclassificar',cls:'ms-btn-nomkt',onClick:()=>askUndo(${e._idx},'${safeName}')},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>
+          <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
+        </td>`;
+}
+
 /** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa). */
 function buildClientesResultsHTML(filtered) {
   const rowsHtml = filtered.length === 0
@@ -64,18 +84,8 @@ function buildClientesResultsHTML(filtered) {
         const safeName = (e.cliente || '').replace(/'/g, "\\'");
         return `
       <tr data-clientes-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
-        <td class="muted" style="font-size:11px">${i + 1}</td>
-        <td><strong>${e.cliente || '—'}</strong></td>
-        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
-        <td>${badgeHTML(e.statusCat, e.rawStatus)}</td>
-        <td class="muted mobile-hide">${e.ecorbanOrigem || '—'}</td>
-        <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
-        <td><span class="badge ${e.isMarketing === true ? 'badge-green' : 'badge-gray'}">${e.isMarketing === true ? 'Marketing' : 'Não é Marketing'}</span></td>
-        <td style="display:flex;gap:6px;align-items:center">
-          <button class="btn-nomkt procv-actions-desktop" onclick="askUndo(${e._idx},'${safeName}')" style="font-size:11px;padding:4px 8px">${icon('undo', 11)} Reclassificar</button>
-          <button class="btn-dots procv-actions-mobile" onclick="openBottomSheet({title:'${safeName}',sub:'Reclassificar cliente',actions:[{id:'undo',label:'Reclassificar',cls:'ms-btn-nomkt',onClick:()=>askUndo(${e._idx},'${safeName}')},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>
-          <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>
-        </td>
+        ${_celulasClienteHTML(e, i)}
+        ${_acoesClienteHTML(e, safeName)}
       </tr>`;
       }).join('');
 
@@ -202,6 +212,35 @@ export function askUndo(idx, clientName) {
   );
 }
 
+// Alguma OUTRA proposta do mesmo CPF ainda está confirmada como 'manual'?
+function _outraPropostaConfirmada(normCpf, idx) {
+  return normCpf && state.result.entries.some(
+    (e, i) => i !== idx && normCPF(e.cpf) === normCpf && e.reviewReason === 'manual'
+  );
+}
+
+async function _persistirDesfazer(normCpf, otherStillConfirmed) {
+  if (!otherStillConfirmed && normCpf) {
+    await deleteClassificationFromSupabase(normCpf);
+  }
+  // Salva snapshot imediatamente e busca o timestamp real do Supabase
+  // para evitar mismatch de formato e re-download do snapshot antigo no F5
+  await saveSnapshotToSupabase();
+  const serverTs = await checkSnapshotTimestamp();
+  if (serverTs) saveSnapshotTimestamp(serverTs);
+}
+
+// Só UI — nenhuma persistência aqui
+function _rerenderAposUndo() {
+  const fd = filteredData();
+  if (fd) {
+    renderProcv(fd.entries);
+    renderClientes(fd.entries);
+    const k = calcKPIs(fd.entries, fd.facebook);
+    renderOverview(k, fd);
+  }
+}
+
 export async function undoFromClientes(idx) {
   if (!state.result) return;
   const entry = state.result.entries[idx];
@@ -217,9 +256,7 @@ export async function undoFromClientes(idx) {
   // Só remove do banco de classificações se NENHUMA outra proposta desse CPF
   // ainda estiver confirmada como 'manual'
   const normCpf = entry.cpf ? normCPF(entry.cpf) : null;
-  const otherStillConfirmed = normCpf && state.result.entries.some(
-    (e, i) => i !== idx && normCPF(e.cpf) === normCpf && e.reviewReason === 'manual'
-  );
+  const otherStillConfirmed = _outraPropostaConfirmada(normCpf, idx);
 
   if (!otherStillConfirmed && normCpf) {
     delete state.overrides[normCpf];
@@ -231,21 +268,8 @@ export async function undoFromClientes(idx) {
   toast('Classificação desfeita — proposta voltou para o PROCV');
 
   if (state.currentUser) {
-    if (!otherStillConfirmed && normCpf) {
-      await deleteClassificationFromSupabase(normCpf);
-    }
-    // Salva snapshot imediatamente e busca o timestamp real do Supabase
-    // para evitar mismatch de formato e re-download do snapshot antigo no F5
-    await saveSnapshotToSupabase();
-    const serverTs = await checkSnapshotTimestamp();
-    if (serverTs) saveSnapshotTimestamp(serverTs);
+    await _persistirDesfazer(normCpf, otherStillConfirmed);
   }
 
-  const fd = filteredData();
-  if (fd) {
-    renderProcv(fd.entries);
-    renderClientes(fd.entries);
-    const k = calcKPIs(fd.entries, fd.facebook);
-    renderOverview(k, fd);
-  }
+  _rerenderAposUndo();
 }

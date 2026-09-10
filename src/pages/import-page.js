@@ -56,61 +56,84 @@ export function checkProcessBtn() {
   document.getElementById('btn-process').disabled = !state.raw.ecorban;
 }
 
+// Captura classificações manuais do estado atual antes de reconstruir
+function _capturarClassificacoesAtuais() {
+  const prevClassifications = {};
+  if (state.result?.entries) {
+    for (const e of state.result.entries) {
+      if (e.reviewReason === 'manual' && e.cpf) {
+        prevClassifications[normCPF(e.cpf)] = e.isMarketing;
+      }
+    }
+  }
+  return prevClassifications;
+}
+
+// Reaplica classificações anteriores nas novas entradas (cobre falha de DB e state.overrides stale)
+function _reaplicarClassificacoes(prevClassifications) {
+  for (const e of state.result.entries) {
+    if (e.reviewReason === 'manual') continue;
+    const norm = normCPF(e.cpf);
+    if (norm && prevClassifications[norm] !== undefined) {
+      e.isMarketing  = prevClassifications[norm];
+      e.reviewReason = 'manual';
+    }
+  }
+}
+
+function _toastResultadoImport() {
+  const matchPct = state.result.diag.ecorban.total
+    ? Math.round(state.result.diag.ecorban.matched / state.result.diag.ecorban.total * 100) : 0;
+  const src = state.result.diag.smart.source === 'api' ? 'API Smart' : 'Excel Smart';
+  toast(`Processado: ${state.result.entries.length} propostas · ${matchPct}% encontradas no ${src}`);
+}
+
+// Fase 3 / Etapa A: dual-write nas tabelas normalizadas (fundo, não-fatal)
+function _gravarFichasEmFundo() {
+  replaceImportData().then(res => {
+    if (!res) return;
+    // Carimba o cache local com o import recém-gravado: o próximo login
+    // reconhece que já tem estas fichas e não precisa relê-las (Etapa B1)
+    if (res.import_id && res.updated_at) saveImportStamp(`${res.import_id}|${res.updated_at}`);
+    console.info('Fichas de propostas atualizadas no Supabase');
+    shadowCompareImportData('pós-import'); // confere o que foi gravado
+  });
+}
+
+// Sequência do import — a ORDEM dos passos importa (sync antes do saveState,
+// snapshot e fichas depois do navigate); não reordenar.
+async function _executarImport() {
+  await new Promise(resolve => setTimeout(resolve, 60));
+
+  const prevClassifications = _capturarClassificacoesAtuais();
+
+  state.result = buildResult();
+
+  _reaplicarClassificacoes(prevClassifications);
+
+  await syncClassificationsFromSupabase();
+  saveState();
+  setCacheIndicator(true);
+  renderAll();
+  renderDiag(state.result.diag);
+
+  _toastResultadoImport();
+
+  navigate('overview');
+  saveSnapshotToSupabase();
+  _gravarFichasEmFundo();
+  logAction('__import__', 'Dados processados', 'imported_data').then(() =>
+    renderLastSystemEvent('import-last-log', '__import__')
+  );
+}
+
 export async function processAll() {
   const btn = document.getElementById('btn-process');
   btn.textContent = 'Processando…';
   btn.disabled = true;
 
   try {
-    await new Promise(resolve => setTimeout(resolve, 60));
-
-    // Captura classificações manuais do estado atual antes de reconstruir
-    const prevClassifications = {};
-    if (state.result?.entries) {
-      for (const e of state.result.entries) {
-        if (e.reviewReason === 'manual' && e.cpf) {
-          prevClassifications[normCPF(e.cpf)] = e.isMarketing;
-        }
-      }
-    }
-
-    state.result = buildResult();
-
-    // Reaplica classificações anteriores nas novas entradas (cobre falha de DB e state.overrides stale)
-    for (const e of state.result.entries) {
-      if (e.reviewReason === 'manual') continue;
-      const norm = normCPF(e.cpf);
-      if (norm && prevClassifications[norm] !== undefined) {
-        e.isMarketing  = prevClassifications[norm];
-        e.reviewReason = 'manual';
-      }
-    }
-
-    await syncClassificationsFromSupabase();
-    saveState();
-    setCacheIndicator(true);
-    renderAll();
-    renderDiag(state.result.diag);
-
-    const matchPct = state.result.diag.ecorban.total
-      ? Math.round(state.result.diag.ecorban.matched / state.result.diag.ecorban.total * 100) : 0;
-    const src = state.result.diag.smart.source === 'api' ? 'API Smart' : 'Excel Smart';
-    toast(`Processado: ${state.result.entries.length} propostas · ${matchPct}% encontradas no ${src}`);
-
-    navigate('overview');
-    saveSnapshotToSupabase();
-    // Fase 3 / Etapa A: dual-write nas tabelas normalizadas (fundo, não-fatal)
-    replaceImportData().then(res => {
-      if (!res) return;
-      // Carimba o cache local com o import recém-gravado: o próximo login
-      // reconhece que já tem estas fichas e não precisa relê-las (Etapa B1)
-      if (res.import_id && res.updated_at) saveImportStamp(`${res.import_id}|${res.updated_at}`);
-      console.info('Fichas de propostas atualizadas no Supabase');
-      shadowCompareImportData('pós-import'); // confere o que foi gravado
-    });
-    logAction('__import__', 'Dados processados', 'imported_data').then(() =>
-      renderLastSystemEvent('import-last-log', '__import__')
-    );
+    await _executarImport();
   } catch (err) {
     toast('Erro ao processar: ' + err.message, 'err');
     console.error(err);

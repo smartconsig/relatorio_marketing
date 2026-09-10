@@ -3,9 +3,8 @@ import { state } from '../../state.js';
 import { toast } from '../../utils/ui.js';
 import { filteredData } from '../../core/calcKPIs.js';
 
-export function exportProcvCSV() {
-  const fd = filteredData();
-  if (!fd) return;
+// Mesmo funil da tabela: aba ativa (state.procvFilter) + busca (state.procvSearch)
+function _filtrarParaExport(fd) {
   let filtered = fd.entries.filter(e => e.isMarketing === true || e.reverseCandidate === true || e.reviewReason === 'manual' || e.reviewReason === 'reclassified');
   if (state.procvFilter === 'pending')       filtered = filtered.filter(e => !e.reverseCandidate && e.smartSignal !== 'confirmed' && e.reviewReason !== 'manual');
   if (state.procvFilter === 'doubt')         filtered = filtered.filter(e => (e.smartSignal === 'doubt' || e.smartSignal === 'not_found') && e.reviewReason !== 'manual');
@@ -17,6 +16,13 @@ export function exportProcvCSV() {
   if (q) filtered = filtered.filter(e =>
     (e.cliente || '').toLowerCase().includes(q) || (e.cpf || '').includes(q)
   );
+  return filtered;
+}
+
+export function exportProcvCSV() {
+  const fd = filteredData();
+  if (!fd) return;
+  const filtered = _filtrarParaExport(fd);
 
   const header = ['Cliente', 'CPF', 'Status', 'Categoria', 'Origem Ecorban', 'Telefone Smart', 'Origem Smart', 'Audiencia Smart', 'Sinal Smart'];
   const rows   = filtered.map(e => [

@@ -223,6 +223,29 @@ export function sortProcv(col) {
   if (fd) renderProcv(fd.entries);
 }
 
+// Só UI — nenhuma persistência aqui (ela vive em classifyFromProcv)
+function _rerenderAposClassificacao() {
+  const fd = filteredData();
+  if (fd) {
+    renderProcv(fd.entries);
+    renderClientes(fd.entries);
+    const k = calcKPIs(fd.entries, fd.facebook);
+    renderOverview(k, fd);
+  }
+}
+
+// Atualiza badge do PROCV
+function _atualizarBadgeProcv() {
+  const pending = state.result
+    ? procvPendingCount(state.result.entries)
+    : 0;
+  const badge = document.getElementById('procv-badge');
+  if (badge) {
+    badge.textContent = pending;
+    badge.classList.toggle('hidden', pending === 0);
+  }
+}
+
 export function classifyFromProcv(idx, isMkt) {
   if (!state.result) return;
   const entry = state.result.entries[idx];
@@ -237,22 +260,8 @@ export function classifyFromProcv(idx, isMkt) {
   saveClassificationToSupabase(entry.cpf, isMkt);
   logAction(entry.cpf, entry.cliente, isMkt ? 'classified_marketing' : 'classified_not_marketing');
   scheduleSaveSnapshot();
-  const fd = filteredData();
-  if (fd) {
-    renderProcv(fd.entries);
-    renderClientes(fd.entries);
-    const k = calcKPIs(fd.entries, fd.facebook);
-    renderOverview(k, fd);
-  }
-  // Atualiza badge do PROCV
-  const pending = state.result
-    ? procvPendingCount(state.result.entries)
-    : 0;
-  const badge = document.getElementById('procv-badge');
-  if (badge) {
-    badge.textContent = pending;
-    badge.classList.toggle('hidden', pending === 0);
-  }
+  _rerenderAposClassificacao();
+  _atualizarBadgeProcv();
 }
 
 export function askClassify(idx, isMkt) {

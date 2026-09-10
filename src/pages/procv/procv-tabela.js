@@ -79,25 +79,20 @@ export function applyProcvFilters(entries) {
   return { mktEntries, total, capped, hasMore };
 }
 
-/** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa).
- *  `selected` é o Set de e._idx marcados (vive em procv.js). */
-export function buildProcvResultsHTML(total, hasMore, capped, selected) {
-  const rowsHtml = capped.length === 0
-    ? `<tr><td colspan="13" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
-    : capped.map((e, i) => {
-        const safeName   = (e.cliente || '').replace(/'/g, "\\'");
-        const canSelect  = e.reviewReason !== 'manual';
-        const isChecked  = selected.has(e._idx);
-        return `
-      <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
-        <td style="width:28px;padding:0 4px;text-align:center">
-          ${canSelect
-            ? `<input type="checkbox" data-batch-idx="${e._idx}" ${isChecked ? 'checked' : ''}
+// Checkbox de seleção em lote (linha já revisada mostra só o ícone de check)
+function _checkProcvHTML(e, selected) {
+  const canSelect = e.reviewReason !== 'manual';
+  const isChecked = selected.has(e._idx);
+  return canSelect
+    ? `<input type="checkbox" data-batch-idx="${e._idx}" ${isChecked ? 'checked' : ''}
                  onchange="toggleBatchSelect(${e._idx},this.checked)"
                  style="cursor:pointer;accent-color:var(--red);width:14px;height:14px">`
-            : `<span style="color:var(--gray)">${icon('check', 11)}</span>`}
-        </td>
-        <td class="muted" style="font-size:11px">${i + 1}</td>
+    : `<span style="color:var(--gray)">${icon('check', 11)}</span>`;
+}
+
+// Células de dados da linha: nº, cliente, CPF, status, valor, lados Ecorban/Smart
+function _celulasDadosProcvHTML(e, i) {
+  return `<td class="muted" style="font-size:11px">${i + 1}</td>
         <td><strong>${e.cliente || '—'}</strong></td>
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.cpf || '—'}</td>
         <td><span class="badge ${statusBadge(e.statusCat)}">${e.rawStatus || '—'}</span></td>
@@ -106,18 +101,37 @@ export function buildProcvResultsHTML(total, hasMore, capped, selected) {
         <td class="muted mobile-hide" style="font-family:monospace;font-size:12px">${e.smartPhone || '—'}</td>
         <td class="mobile-hide">${e.origem ? `<span class="badge badge-blue">${e.origem}</span>` : '<span class="muted">—</span>'}</td>
         <td class="muted mobile-hide" style="font-size:12px">${e.audiencia || '—'}</td>
-        <td>${signalBadge(e)}</td>
-        <td>
-          ${e.reviewReason === 'manual'
-            ? e.isMarketing
-              ? `<span class="badge badge-green">${icon('check', 10)} Confirmado: Marketing</span>`
-              : `<span class="badge badge-red">${icon('x', 10)} Confirmado: Não é Marketing</span>`
-            : `<div class="procv-actions-desktop" style="display:flex;gap:5px;flex-wrap:wrap">
+        <td>${signalBadge(e)}</td>`;
+}
+
+// Célula de ação: badge de confirmado OU botões É/Não é Marketing (onclick intactos)
+function _acaoProcvHTML(e, safeName) {
+  return e.reviewReason === 'manual'
+    ? e.isMarketing
+      ? `<span class="badge badge-green">${icon('check', 10)} Confirmado: Marketing</span>`
+      : `<span class="badge badge-red">${icon('x', 10)} Confirmado: Não é Marketing</span>`
+    : `<div class="procv-actions-desktop" style="display:flex;gap:5px;flex-wrap:wrap">
                 <button class="btn-mkt"   onclick="askClassify(${e._idx},true)"  style="font-size:11px;padding:4px 8px">${icon('check', 11)} É Marketing</button>
                 <button class="btn-nomkt" onclick="askClassify(${e._idx},false)" style="font-size:11px;padding:4px 8px">${icon('x', 11)} Não é Marketing</button>
                </div>
-               <button class="procv-actions-mobile btn-dots" onclick="openBottomSheet({title:'${safeName}',sub:'Confirmar classificação',actions:[{id:'mkt',label:'É Marketing',cls:'ms-btn-mkt',onClick:()=>askClassify(${e._idx},true)},{id:'nomkt',label:'Não é Marketing',cls:'ms-btn-nomkt',onClick:()=>askClassify(${e._idx},false)},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>`
-          }
+               <button class="procv-actions-mobile btn-dots" onclick="openBottomSheet({title:'${safeName}',sub:'Confirmar classificação',actions:[{id:'mkt',label:'É Marketing',cls:'ms-btn-mkt',onClick:()=>askClassify(${e._idx},true)},{id:'nomkt',label:'Não é Marketing',cls:'ms-btn-nomkt',onClick:()=>askClassify(${e._idx},false)},{id:'cancel',label:'Cancelar',cls:'ms-btn-cancel',onClick:()=>{}}]})">⋯</button>`;
+}
+
+/** Constrói apenas o HTML da tabela de resultados (sem a barra de pesquisa).
+ *  `selected` é o Set de e._idx marcados (vive em procv.js). */
+export function buildProcvResultsHTML(total, hasMore, capped, selected) {
+  const rowsHtml = capped.length === 0
+    ? `<tr><td colspan="13" style="text-align:center;padding:36px;color:var(--gray)">Nenhum cliente encontrado com os filtros aplicados.</td></tr>`
+    : capped.map((e, i) => {
+        const safeName   = (e.cliente || '').replace(/'/g, "\\'");
+        return `
+      <tr data-procv-row data-name="${(e.cliente || '').toLowerCase().replace(/"/g, '')}" data-cpf="${e.cpf || ''}" data-phone="${(e.smartPhone || '').replace(/\D/g, '')}">
+        <td style="width:28px;padding:0 4px;text-align:center">
+          ${_checkProcvHTML(e, selected)}
+        </td>
+        ${_celulasDadosProcvHTML(e, i)}
+        <td>
+          ${_acaoProcvHTML(e, safeName)}
         </td>
         <td>
           <button class="btn-dots" title="Histórico" onclick="openHistoryPanel('${e.cpf || ''}','${(e.cliente || '').replace(/'/g, '')}')">⋯</button>

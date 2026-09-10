@@ -23,21 +23,28 @@ function _preencherCamposCard(card, respSel) {
   document.getElementById('cont-f-coluna').value = card?.coluna || 'ideias';
 }
 
-// Modo leitura x edição + o que aparece para card novo x existente.
-function _aplicarPermissoesModal(card, podeEditar) {
-  // Sem permissão de edição, o modal vira leitura
+// Sem permissão de edição, o modal vira leitura
+function _aplicarModoLeitura(card, podeEditar) {
   document.querySelectorAll('#cont-modal .cont-input').forEach(el => { el.disabled = !podeEditar; });
   // depois do loop: o select de status tem regra própria (precisa de tipo)
   popularStatusModal(card?.tipo || '', card?.producao_status || '');
   if (!podeEditar) document.getElementById('cont-f-status').disabled = true;
   document.getElementById('cont-salvar').style.display  = podeEditar ? '' : 'none';
   document.getElementById('cont-excluir').style.display = (card && podeEditar) ? '' : 'none';
+}
 
-  // Anexos e histórico só existem para card já criado
+// Anexos e histórico só existem para card já criado
+function _aplicarVisibilidadeSecoes(card, podeEditar) {
   document.getElementById('cont-hist-wrap').style.display   = card ? '' : 'none';
   document.getElementById('cont-anexos-wrap').style.display = card ? '' : 'none';
   document.getElementById('cont-chat-box').style.display = podeEditar ? '' : 'none';
   document.getElementById('cont-anexar').style.display   = podeEditar ? '' : 'none';
+}
+
+// Modo leitura x edição + o que aparece para card novo x existente.
+function _aplicarPermissoesModal(card, podeEditar) {
+  _aplicarModoLeitura(card, podeEditar);
+  _aplicarVisibilidadeSecoes(card, podeEditar);
 }
 
 export function abrirModal(id) {
