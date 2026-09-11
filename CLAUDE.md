@@ -394,7 +394,7 @@ O projeto tem ESLint 9 (flat config em `eslint.config.mjs`) com três regras pr�
 | `max-nested-callbacks` | 3 | Callbacks aninhados além disso reprovam |
 | `no-var` | — | Só `const`/`let` |
 
-### Orçamentos de tamanho (warn — hoje todos em zero)
+### Orçamentos de tamanho (também error, desde 11/09/2026)
 
 | Regra | Limite |
 |---|---|
@@ -404,7 +404,13 @@ O projeto tem ESLint 9 (flat config em `eslint.config.mjs`) com três regras pr�
 | `max-params` | 4 — acima disso, usar **objeto de opções** |
 | `max-lines-per-function` | 150 |
 
-Estão como aviso só por herança da instalação; como a contagem zerou, a política escrita no próprio `eslint.config.mjs` é promovê-los a `error`. **Trate-os como obrigatórios.**
+Nasceram como aviso porque havia 152 violações. Com o burndown da etapa 3 zerando tudo, foram promovidos a `error` — código novo já nasce dentro do orçamento. `prefer-const`, `no-unused-vars` e `no-irregular-whitespace` subiram junto.
+
+### Quem roda isso
+
+`.github/workflows/qualidade.yml` roda a bateria inteira (lint com `--max-warnings 0`, handlers, cálculos e build) a cada push na `main` e em pull request. Ela **avisa, não bloqueia**: o deploy da Vercel é independente e acontece mesmo se a checagem falhar — um ✗ no GitHub significa que subiu código com problema e precisa de correção.
+
+Não há hook de commit, e o build da Vercel (`vite build`) **não** chama o lint. Ou seja: rodar `npm run lint` antes de commitar continua sendo responsabilidade de quem escreve; o GitHub é a rede de segurança depois do fato.
 
 ### Dívida aceita — não "consertar" estes arquivos
 
