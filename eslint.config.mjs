@@ -47,31 +47,36 @@ export default defineConfig([
     rules: {
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-var": "error",
-      "prefer-const": "warn", // baseline: 11 — "error" quando zerar
-      // baseline: 23 (imports mortos + variáveis atribuídas e nunca lidas) —
-      // volta para "error" quando o burndown zerar a contagem
+      "prefer-const": "error", // baseline 11 → zerado na etapa 3 (F1)
+      // baseline 23 (imports mortos + variáveis atribuídas e nunca lidas) →
+      // zerado na etapa 3 (F1). Promovido conforme a política combinada.
       "no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      // Orçamento de tamanho/complexidade: "warn" de propósito — é conversa
-      // sobre fatoração, não gate. Promover a "error" quando zerar.
-      // Baselines medidos em 07/09/2026 (instalação do gate):
-      complexity: ["warn", 12], // baseline: 79
-      "max-depth": ["warn", 4], // baseline: 5
-      "max-statements": ["warn", 20], // baseline: 62
-      "max-params": ["warn", 4], // baseline: 4
+      // ── Orçamento de tamanho/complexidade ──────────────────────────────
+      // Nasceram como "warn" em 07/09/2026 porque havia 152 violações — eram
+      // conversa sobre fatoração, não gate. O burndown da etapa 3 zerou todas
+      // (185 avisos → 0 em 10/09/2026), então em 11/09/2026 foram PROMOVIDOS
+      // A "error", conforme a política escrita aqui desde a instalação:
+      // daqui em diante, código novo já nasce dentro do orçamento.
+      // Os 8 arquivos do coração de dados seguem isentos no bloco de override
+      // mais abaixo — dívida aceita de propósito, não esquecimento.
+      complexity: ["error", 12], // baseline: 79 → 0
+      "max-depth": ["error", 4], // baseline: 5 → 0
+      "max-statements": ["error", 20], // baseline: 62 → 0
+      "max-params": ["error", 4], // baseline: 4 → 0
       "max-lines-per-function": [
-        "warn",
+        "error",
         { max: 150, skipBlankLines: true, skipComments: true },
-      ], // baseline: 6
-      "max-nested-callbacks": ["error", 3], // baseline: 0 — já nasce como gate
-      // baseline: 1 (parceiros-page.js:150) — vira "error" quando zerar
-      "no-irregular-whitespace": "warn",
+      ], // baseline: 6 → 0
+      "max-nested-callbacks": ["error", 3], // baseline: 0 — já nasceu como gate
+      // baseline 1 (parceiros-page.js:150) → zerado na etapa 3 (F1)
+      "no-irregular-whitespace": "error",
       // 18 arquivos acima do teto em 07/09/2026 — esta lista É a fila de
       // trabalho do refactor (prompt 09): cada arquivo refatorado sai daqui.
       // Arquivo novo NÃO entra na lista: o teto já vale como "error" para ele.
@@ -154,7 +159,7 @@ export default defineConfig([
     files: ["src/**/*.jsx"],
     rules: {
       "no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_|^[A-Z]",

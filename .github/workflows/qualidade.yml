@@ -1,0 +1,53 @@
+# Checagem automática de qualidade do Smart RYC.
+#
+# Roda a mesma bateria que se roda à mão antes de cada commit. Ela AVISA,
+# não bloqueia: o deploy da Vercel é independente e continua acontecendo
+# mesmo se algo aqui falhar. Se aparecer um ✗ no GitHub, o código subiu com
+# problema e precisa de correção — não é motivo para reverter às pressas.
+#
+# As regras em si vivem em eslint.config.mjs e eslint-rules/; este arquivo
+# só as executa. Ver a seção "Qualidade de código" do CLAUDE.md.
+
+name: Qualidade
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # permite rodar à mão pelo site do GitHub
+
+jobs:
+  verificar:
+    name: Lint, handlers, cálculos e build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # Precisa terminar em 0 erros E 0 avisos. Os orçamentos de tamanho
+      # viraram "error" em 11/09/2026, então avisos não deveriam existir —
+      # o --max-warnings 0 garante que nenhuma regra volte a passar batido.
+      - name: Lint (0 erros e 0 avisos)
+        run: npm run lint -- --max-warnings 0
+
+      # Todo onclick="..." das strings HTML acha sua função em window.*
+      - name: Handlers dos botões
+        run: npm run verify:handlers
+
+      # classifyStatus, calcKPIs, datas e BRL idênticos à fotografia
+      # gravada em scripts/baseline/
+      - name: Cálculos não mudaram
+        run: npm run verify:kpis
+
+      - name: Build de produção
+        run: npm run build
