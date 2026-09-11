@@ -162,9 +162,17 @@ relatorio_marketing/
 │   │   ├── parseBSC.js       # Parse do Balanced Scorecard
 │   │   ├── parseParceiros.js # Parse do CSV "Relatório de produção - Parceiros"
 │   │   └── storage.js        # Persistência em localStorage
-│   ├── services/
+│   ├── services/             # ÚNICA camada que fala com o banco (gate de lint)
 │   │   ├── auth.js           # Login, logout, sessão, loadUserProfile
+│   │   │                     #   auth/auth-state.js (store A), auth-theme.js, boot-data.js
 │   │   ├── supabase.js       # Inicialização do cliente Supabase (credenciais hardcoded)
+│   │   ├── admin-svc.js      # Admin: profiles, grupos e Edge Functions invite/delete-user
+│   │   ├── liberacao-svc.js  # Liberação de Margem: CRUD de liberacao_margem_master
+│   │   ├── boletos-svc.js    # Quitação de Boleto: CRUD + RPC boleto_mudar_status
+│   │   ├── uni-svc.js        # Universidade: cursos, aulas, progresso e provas
+│   │   ├── uni-admin-svc.js  # Criador de Cursos: escrita das tabelas uni_*
+│   │   ├── uni-upload-svc.js # Uploads da Universidade (TUS/Bunny, PDF, imagem)
+│   │   ├── uni-gam-svc.js    # Gamificação: configuração e pontuação
 │   │   ├── snapshot.js       # Save/load de snapshot no Supabase (debounced 2s)
 │   │   ├── meta-ads.js       # Sync Meta Ads via Edge Function
 │   │   ├── kolmeya.js        # Sync relatórios de SMS via Edge Function kolmeya-reports
@@ -183,6 +191,12 @@ relatorio_marketing/
 │   │   ├── action-log.js     # Log de eventos do sistema
 │   │   └── session-timeout.js# Auto-logout por inatividade
 │   ├── pages/                # Uma função renderXxx() por página
+│   │   │                     # ⚠️ Desde o refactor (set/2026) as telas grandes são
+│   │   │                     # ORQUESTRADOR + PASTA: xxx-page.js re-exporta os nomes
+│   │   │                     # públicos e os blocos vivem em pages/<feature>/.
+│   │   │                     # Pastas: admin/ bm/ boletos/ bsc/ conteudo/ liberacao/
+│   │   │                     # overview/ parceiros/ perfil/ procv/ propostas/
+│   │   │                     # quitacoes/ uni/ uni-admin/ uni-gam/
 │   │   ├── home-page.js      # Home: boas-vindas + atalhos por permissão (login cai aqui; F5 mantém a tela)
 │   │   ├── import-page.js    # Upload e processamento de Excel
 │   │   ├── overview.js       # Dashboard de KPIs
@@ -337,9 +351,18 @@ npm run build
 
 # Preview do build local
 npm run preview
+
+# Gates de qualidade — rodar ANTES de commitar
+npm run lint             # ESLint: precisa terminar em 0 erros E 0 avisos
+npm run verify:handlers  # todo onclick="..." do HTML acha sua função em window.*
+npm run verify:kpis      # cálculos (classifyStatus, calcKPIs, datas, BRL) idênticos à fotografia
 ```
 
 O dev server usa polling de arquivos (`usePolling: true`) — necessário no Windows para hot reload funcionar corretamente.
+
+⚠️ O projeto vive num **drive de rede** (`Z:` → `\\26.69.179.214\marketing`). Com o polling, o Vite leva **40 segundos ou mais** para subir — não é travamento, é só esperar a linha `Local: http://localhost:5173/` aparecer.
+
+⚠️ **Não existe banco de teste**: `src/services/supabase.js` tem um único `createClient` fixo. Rodar em `localhost` grava **na produção** — importar planilha, classificar, mexer em resíduos ou permissões afeta todos os usuários na hora. Validar sempre com o trabalho real do dia, nunca com dado inventado.
 
 ---
 
@@ -354,6 +377,68 @@ O dev server usa polling de arquivos (`usePolling: true`) — necessário no Win
 - **Sem TypeScript no frontend**: o app é JS/JSX; TypeScript só aparece nas Edge Functions do Supabase (Deno, `.ts`). Sem JSDoc sistemático
 - **Formulários herdam a fonte do app**: regra global em `base.css` (`input, select, textarea, button { font-family: inherit }` + `accent-color` da marca em checkbox/radio) — nunca deixar campo com fonte de sistema. `modal-kit.css` aplica blur de fundo e animação de entrada a todos os modais; as regras de campo de cada modal vivem no CSS da própria feature (padrão: fundo `--surface`, campo `--surface2`, foco `--red`)
 - **Filtro de período** (desde 02/09/2026): o seletor de datas **não fica mais no header** — cada tela de período (Visão Geral, Ranking, Perfil, Gestão, Propostas, Tráfego) imprime a própria barra via `src/components/period-bar.js` (reutiliza as classes visuais `date-filter`/`qf-*`; eventos por delegação global, sem IDs fixos). **Toda mudança de período passa por `setPeriodo()` em `navigation.js`** — nunca gravar `state.filterDates` ou campos de data na mão. Tela nova que use o período: imprimir a barra e adicionar a seção em `PERIOD_SECS`. Metas fica fora (tem seletor de mês próprio). Perfil e Tráfego renderizam em contêiner interno (`perfil-body`/`trafego-body`) para a barra sobreviver ao redesenho
+
+---
+
+## Qualidade de código — gates automáticos (desde 07/09/2026)
+
+O projeto tem ESLint 9 (flat config em `eslint.config.mjs`) com três regras próprias em `eslint-rules/`. Em **11/09/2026 o lint está em 0 erros e 0 avisos** — esse é o estado a preservar: `npm run lint` limpo é pré-requisito de qualquer commit.
+
+### Regras que REPROVAM (error — quebram o lint)
+
+| Regra | Limite | O que significa |
+|---|---|---|
+| `quality/max-lines` | **350 linhas por arquivo** | Arquivo maior que isso reprova. Só `src/pages/residuos-page.js` está isento (de propósito — não tem costura natural) |
+| `quality/no-direct-data-access` | — | **Tela não fala com o banco.** Proibido importar `sb` de `services/supabase.js` dentro de `src/pages/` ou `src/components/` — todo acesso passa por um serviço em `src/services/` |
+| `quality/no-direct-console` | — | `console.log` proibido. `warn`/`error`/`info` são permitidos (é o logging do projeto e a instrumentação da Fase 3) |
+| `max-nested-callbacks` | 3 | Callbacks aninhados além disso reprovam |
+| `no-var` | — | Só `const`/`let` |
+
+### Orçamentos de tamanho (warn — hoje todos em zero)
+
+| Regra | Limite |
+|---|---|
+| `complexity` | 12 (atenção: `?.` conta como desvio) |
+| `max-statements` | 20 por função |
+| `max-depth` | 4 |
+| `max-params` | 4 — acima disso, usar **objeto de opções** |
+| `max-lines-per-function` | 150 |
+
+Estão como aviso só por herança da instalação; como a contagem zerou, a política escrita no próprio `eslint.config.mjs` é promovê-los a `error`. **Trate-os como obrigatórios.**
+
+### Dívida aceita — não "consertar" estes arquivos
+
+Oito arquivos têm os orçamentos **desligados de propósito** (bloco de override no `eslint.config.mjs`): `core/buildResult.js`, `core/calcKPIs.js`, `services/auth.js`, `services/auth/boot-data.js`, `services/classifications.js`, `services/propostas-store.js`, `services/snapshot.js`, `pages/residuos-page.js`.
+
+É o coração da persistência e dos cálculos de dinheiro: quebrar essas funções para caber na métrica traz risco real de regressão sem ganho funcional. **Arquivo novo não entra nessa lista.**
+
+---
+
+## Como criar uma feature nova
+
+Receita derivada das etapas 2 e 3 do refactor (18 arquivos gigantes divididos em 60+ módulos, 185 avisos zerados).
+
+**1. Serviço primeiro.** Antes da tela, crie `src/services/<feature>-svc.js` com as funções de banco (`fetchX`, `insertX`, `updateX`, `deleteX`). A tela importa o serviço, nunca o `sb`. Isso não é estilo — é gate de lint.
+
+**2. Uma pasta por feature quando passar de um arquivo.** O padrão já em uso em `src/pages/`: `admin/`, `bm/`, `boletos/`, `bsc/`, `conteudo/`, `liberacao/`, `overview/`, `parceiros/`, `perfil/`, `procv/`, `propostas/`, `quitacoes/`, `uni/`, `uni-admin/`, `uni-gam/`. Divisão típica: `<f>-core.js` (estado + helpers), `<f>-tabela.js`, `<f>-modais.js`, `<f>-acoes.js`, `<f>-import.js`.
+
+**3. O arquivo da página vira orquestrador + barrel.** `src/pages/<feature>-page.js` importa os módulos e **re-exporta os nomes públicos originais**, para que `main.js` e os `onclick` das strings HTML não mudem. Exemplo real em `liberacao-page.js`.
+
+**4. Estado de módulo é UM objeto mutável, não `let` solto.** Bindings ESM são somente-leitura no importador: reatribuir uma variável importada quebra. Use o padrão `export const S = { ... }` de `lib-core.js` e escreva `S.campo = x`. As stores existentes: `S` (liberação), `Q` (quitações), `C` (conteúdo), `BO` (boletos), `B` (BMs), `A` (auth), `UV` (universidade).
+
+**5. Sem ciclos de import.** `<f>-core.js` é a base: todos importam dele, ele não importa de ninguém da feature. Quando um módulo precisa chamar outro "para cima", injete por callback (como `onAbrirCard` na Esteira).
+
+**6. Função grande vira helpers nomeados, não comentários de seção.** Se estourar o orçamento, extraia `_nomeDoPasso()` — os `_` marcam uso interno. Cadeia de `if` repetitiva vira tabela de lookup (padrão `EVENTO_FMT`, `ERROS_BANCO`, `RENDER_POR_SECAO`). Mais de 4 parâmetros vira objeto de opções.
+
+### O que NUNCA fazer
+
+- **Renomear função exposta em `window.*`** sem trocar os `onclick` das strings HTML junto. Pior ainda: há nomes passados como **string-dado** (`libToggleOk` via `setAttribute`, `bolSalvarCliente`/`bolSalvarEdicao` em `onSaverFn`) — esses têm comentário `NÃO RENOMEAR` no código. `npm run verify:handlers` é a rede de proteção.
+- **Mexer na ordem dos passos de persistência.** Em `classifyFromProcv`, `undoFromClientes` e `processAll` a sequência (salvar → marcar flags → sincronizar) é deliberada e protege contra o bug histórico de classificação que some. Há comentário no código avisando.
+- **Salvar decisão do usuário só no localStorage** — ver a seção do bug recorrente abaixo.
+
+### Ao mudar algo com cálculo ou HTML gerado
+
+Quando o refactor não pode mudar comportamento, prove: carregue a versão antiga com `git show HEAD:arquivo`, rode as duas com a mesma entrada e compare com `JSON.stringify`. Foi assim que se provou que `calcFunil`, `calcPerfil`, `parseParceiros`, `parseBSC` e a tabela do PROCV ficaram **idênticos byte a byte**.
 
 ---
 
