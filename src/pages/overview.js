@@ -120,7 +120,6 @@ export function renderOverview(k, fd) {
   h += _todasOrigensHTML(k);
 
   h += _avisoSemValorHTML(fd);
-  h += _kolmeyaHTML();
 
   // ── 7. GRÁFICO ───────────────────────────────────────────────────────────
   h += sectionTitle('Evolução Diária');
@@ -184,20 +183,5 @@ function _avisoSemValorHTML(fd) {
           </div>
         </div>
       </div>
-    </div>`;
-}
-
-// ── 6. SMS KOLMEYA ──────────────────────────────────────────────────────────
-function _kolmeyaHTML() {
-  if (!state.kolmeya) return '';
-  const km = state.kolmeya;
-  const txEntrega = km.enviados > 0 ? ((km.entregues / km.enviados) * 100).toFixed(1) + '%' : '—';
-  return sectionTitle('SMS — Kolmeya') + `<div class="kpi-grid">
-      ${kpiCard('Enviados', fmtN(km.enviados), { meta: `período ${km.period}` })}
-      ${kpiCard('Entregues', fmtN(km.entregues), { meta: `taxa ${txEntrega}` })}
-      ${kpiCard('Não Entregues', fmtN(km.naoEntregues), { meta: 'falha na entrega' })}
-      ${kpiCard('Respostas', fmtN(km.respostas), { meta: 'respostas dos destinatários' })}
-      ${kpiCard('Acessos no Link', fmtN(km.acessos), { meta: 'cliques no encurtador' })}
-      ${kpiCard('Custo SMS', fmtBRL(km.valorPago), { meta: 'valor pago no período' })}
     </div>`;
 }

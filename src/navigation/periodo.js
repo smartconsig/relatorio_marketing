@@ -4,7 +4,6 @@
 import { state } from '../state.js';
 import { saveState } from '../core/storage.js';
 import { syncMetaAds } from '../services/meta-ads.js';
-import { syncKolmeya } from '../services/kolmeya.js';
 import { syncPeriodBars } from '../components/period-bar.js';
 import { renderTrafego } from '../pages/trafego-page.js';
 import { renderAll } from './render-all.js';
@@ -14,11 +13,9 @@ export function setPeriodo(start, end) {
   syncPeriodBars();
   if (state.result) {
     state.metaAds  = null; // limpa dados antigos para evitar período errado
-    state.kolmeya  = null;
     renderAll();
     saveState();
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
   }
   renderTrafego(); // fora do if: a tela de Tráfego funciona mesmo sem import processado
 }

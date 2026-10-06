@@ -52,11 +52,11 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
   - **Senha direta** (padrão desde ago/2026): o admin define a senha inicial na hora; a função usa `auth.admin.createUser` com `email_confirm: true` e o usuário entra direto, sem e-mail. A resposta traz o marcador `mode: 'password'` — o frontend só confirma sucesso se ele vier (blindagem contra função desatualizada no painel).
   - **Convite por e-mail** (fluxo legado, mantido como opção): `inviteUserByEmail` → usuário recebe link → tela "definir senha" em `auth.js`. Se o e-mail já existir, envia link de redefinição.
 - **Database**: tabelas abaixo; RLS habilitado
-- **Edge Functions** (em `supabase/functions/`): `smart-sync` (busca leads da API Smart Consig), `invite-user`, `delete-user`, `kolmeya-reports` (relatórios de SMS Kolmeya). A função `meta-ads` é invocada pelo código (`sb.functions.invoke('meta-ads')`) mas **não está versionada no repo** — vive apenas no painel do Supabase
+- **Edge Functions** (em `supabase/functions/`): `smart-sync` (busca leads da API Smart Consig), `invite-user`, `delete-user`. A função `meta-ads` é invocada pelo código (`sb.functions.invoke('meta-ads')`) mas **não está versionada no repo** — vive apenas no painel do Supabase
 - ⚠️ **Deploy de Edge Function é manual**: o push na `main` só publica o frontend (Vercel). Qualquer mudança em `supabase/functions/*` precisa ser reimplantada à mão no painel do Supabase (Edge Functions → função → Code → colar → Deploy) ou via `supabase functions deploy <nome>` — senão produção continua rodando a versão antiga
 - **Snapshots**: o estado completo da aplicação é serializado em JSON e salvo na tabela `snapshots` a cada 2 segundos (debounced) após qualquer classificação ou alteração. Desde 29/08/2026 o payload vai **comprimido com gzip nativo** (prefixo `gz1:`, ~92% menor; helpers em `src/utils/gzip.js`) e a leitura aceita os dois formatos; o cache do localStorage usa a mesma compressão. ⚠️ O snapshot está em processo de aposentadoria — ver seção **"Migração do snapshot (Fase 3)"**
 - Credenciais do cliente (anon key) estão **hardcoded** em `src/services/supabase.js` — não colocar em `.env`
-- Secrets das Edge Functions (SMART_USERNAME, SMART_PASSWORD, SERVICE_ROLE_KEY, KOLMEYA_TOKEN, entre outros) ficam no painel do Supabase
+- Secrets das Edge Functions (SMART_USERNAME, SMART_PASSWORD, SERVICE_ROLE_KEY, entre outros) ficam no painel do Supabase
 
 ### Vercel
 - Deploy automático via `vercel.json` (installCommand: `npm install`, buildCommand: `npm run build`, outputDirectory: `dist`)
@@ -70,11 +70,8 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 ### API Smart Consig (interna)
 - **Não utilizada atualmente** — os dados do sistema Smart são carregados manualmente via planilha Excel
 
-### Kolmeya (SMS)
-- Provedor de disparo de SMS marketing; a integração puxa **relatórios de volume de SMS** por período
-- Cliente em `src/services/kolmeya.js` → Edge Function `kolmeya-reports` → API `kolmeya.com.br/api/v1/sms/reports/quantity-jobs`
-- Sincronização por período no formato `YYYY-MM`, derivado do filtro de datas ativo (`state.filterDates`)
-- Secret `KOLMEYA_TOKEN` fica no painel do Supabase
+### Kolmeya (SMS) — REMOVIDA em 06/10/2026
+- A integração de relatórios de SMS foi retirada do app a pedido do responsável (dava erro 500 a cada login e não era mais usada). A Edge Function `kolmeya-reports` e o secret `KOLMEYA_TOKEN` podem continuar no painel do Supabase até serem apagados à mão — o app não os chama mais
 
 ### Bunny.net
 - CDN de vídeo para o módulo Universidade
@@ -138,7 +135,7 @@ relatorio_marketing/
 ├── public/
 │   └── template_liberacao.xlsx # Template de planilha de liberação de margem
 ├── supabase/
-│   ├── functions/            # Edge Functions: smart-sync, invite-user, delete-user, kolmeya-reports
+│   ├── functions/            # Edge Functions: smart-sync, invite-user, delete-user
 │   ├── migrations/           # SQL de criação de tabelas e RLS
 │   │                         # 002, 003, 005, 006 (Esteira de Conteúdo), 004 (BMs)
 │   └── quitacoes_clientes.sql # SQL solto (fora de migrations/) da tabela quitacoes_clientes
@@ -176,7 +173,6 @@ relatorio_marketing/
 │   │   ├── uni-gam-svc.js    # Gamificação: configuração e pontuação
 │   │   ├── snapshot.js       # Save/load de snapshot no Supabase (debounced 2s)
 │   │   ├── meta-ads.js       # Sync Meta Ads via Edge Function
-│   │   ├── kolmeya.js        # Sync relatórios de SMS via Edge Function kolmeya-reports
 │   │   ├── permissions.js    # can() + objeto perm com atalhos (perm.isAdmin()…)
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI

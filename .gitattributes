@@ -1,0 +1,4 @@
+# A fotografia dos calculos e comparada byte a byte pelo verify:kpis,
+# que gera LF; sem isto o checkout no Windows (autocrlf) a converte
+# para CRLF e o teste acusa divergencia falsa.
+scripts/baseline/*.json text eol=lf

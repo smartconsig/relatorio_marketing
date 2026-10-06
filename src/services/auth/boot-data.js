@@ -21,7 +21,6 @@ import { initBSC } from '../../pages/bsc-page.js';
 import { initParceiros } from '../../pages/parceiros-page.js';
 import { renderLastSystemEvent, logAction } from '../action-log.js';
 import { syncMetaAds } from '../meta-ads.js';
-import { syncKolmeya } from '../kolmeya.js';
 import { can, perm, usaDadosMarketing } from '../permissions.js';
 import { A } from './auth-state.js';
 
@@ -127,7 +126,6 @@ export async function onAuthenticated() {
     renderAll();
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
     return;
   }
 
@@ -140,7 +138,6 @@ export async function onAuthenticated() {
       console.warn('[Fase3/B1] classificação feita durante o carregamento — fichas não aplicadas nesta sessão');
       toast('Dados carregados ⚡');
       syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-      syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
       return;
     }
     if (fichas) {
@@ -158,7 +155,6 @@ export async function onAuthenticated() {
       navigate(lastSection);
       toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
       syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-      syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
       return;
     }
   }
@@ -178,7 +174,6 @@ export async function onAuthenticated() {
     else {
       toast('Dados carregados ⚡');
       syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-      syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
     }
     return;
   }
@@ -189,7 +184,6 @@ export async function onAuthenticated() {
     if (synced > 0) { saveState(); renderAll(); }
     toast('Dados carregados ⚡');
     syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-    syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
     return;
   }
 
@@ -244,7 +238,6 @@ export async function onAuthenticated() {
   navigate(lastSection);
   toast(hasLocal ? 'Dados sincronizados ☁️' : 'Dados carregados do servidor ☁️');
 
-  // Sincroniza Meta Ads e Kolmeya em background — re-renderiza quando chegar
+  // Sincroniza Meta Ads em background — re-renderiza quando chegar
   syncMetaAds().then(ok => { if (ok && state.result) renderAll(); });
-  syncKolmeya().then(ok => { if (ok && state.result) renderAll(); });
 }
