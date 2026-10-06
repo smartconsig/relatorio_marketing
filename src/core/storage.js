@@ -113,6 +113,13 @@ export function loadImportStamp() {
   return localStorage.getItem(STORE_FICHAS) || null;
 }
 
+/** Apaga do navegador as propostas em cache (usuário sem acesso aos dados de marketing). */
+export function clearMarketingCache() {
+  [STORE_RESULT, STORE_OVR, STORE_SNAP_TS, STORE_FICHAS].forEach(k => {
+    try { localStorage.removeItem(k); } catch {}
+  });
+}
+
 export function clearState() {
   [STORE_RESULT, STORE_FILTER, STORE_OVR, STORE_SNAP_TS, STORE_FICHAS, 'sc_last_section'].forEach(k => localStorage.removeItem(k));
   state.result = null;

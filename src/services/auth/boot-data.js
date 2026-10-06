@@ -13,7 +13,7 @@ import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts } from '
 import { loadTrafego } from '../trafego-svc.js';
 import { syncPeriodBars } from '../../components/period-bar.js';
 import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSnapshotTimestamp,
-         saveImportStamp, loadImportStamp } from '../../core/storage.js';
+         saveImportStamp, loadImportStamp, clearMarketingCache } from '../../core/storage.js';
 import { renderAll, navigate } from '../../navigation.js';
 import { renderDiag } from '../../pages/overview.js';
 import { populateGoalsForm } from '../../pages/goals-page.js';
@@ -22,7 +22,7 @@ import { initParceiros } from '../../pages/parceiros-page.js';
 import { renderLastSystemEvent, logAction } from '../action-log.js';
 import { syncMetaAds } from '../meta-ads.js';
 import { syncKolmeya } from '../kolmeya.js';
-import { can, perm } from '../permissions.js';
+import { can, perm, usaDadosMarketing } from '../permissions.js';
 import { A } from './auth-state.js';
 
 /** Reaplica o filtro de período salvo no navegador nas barras de período das telas. */
@@ -87,6 +87,14 @@ export async function onAuthenticated() {
     || defaultSec;
   A.freshLogin = false;
   navigate(lastSection);
+
+  // Sem nenhuma tela de marketing (parceiros etc.): não baixa as milhares de
+  // propostas nem o snapshot — eram a origem das falhas "fichas indisponíveis"
+  // nos logins de parceiro. Apaga o que tiver ficado em cache de sessões antigas.
+  if (!usaDadosMarketing()) {
+    clearMarketingCache();
+    return;
+  }
 
   // 2. Carrega cache local e preenche os dados
   const hasLocal = (await loadState()) && (state.result?.smartLeads?.length > 0);

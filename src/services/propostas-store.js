@@ -172,12 +172,32 @@ export function resetManualMarks(entries) {
   }
 }
 
+const TENTATIVAS   = 3;
+const ESPERA_MS    = 2000;
+const esperar = ms => new Promise(r => setTimeout(r, ms));
+
 /**
  * Monta um objeto no formato de state.result a partir das tabelas normalizadas.
  * Filtra pelo import_id apontado por import_meta (nunca vê import pela metade).
  * Retorna null em qualquer falha — o chamador decide o fallback.
+ *
+ * Tenta de novo antes de desistir: rede instável, ou um import terminando no
+ * meio da leitura (apaga as fichas antigas → contagem não bate). Na tentativa
+ * seguinte o ponteiro já aponta para as fichas novas.
  */
 export async function loadImportData() {
+  for (let t = 1; t <= TENTATIVAS; t++) {
+    const fichas = await _loadImportDataOnce();
+    if (fichas) return fichas;
+    if (t < TENTATIVAS) {
+      console.warn(`loadImportData: tentativa ${t} falhou — tentando de novo em ${ESPERA_MS / 1000}s`);
+      await esperar(ESPERA_MS);
+    }
+  }
+  return null;
+}
+
+async function _loadImportDataOnce() {
   try {
     const { data: meta, error } = await sb.from('import_meta').select('*').eq('id', 1).maybeSingle();
     if (error || !meta?.import_id) return null;

@@ -71,6 +71,18 @@ export const perm = {
   isAdmin:             () => can('admin_usuarios') || can('admin_grupos'),
 };
 
+// Telas que leem as propostas/leads de marketing (state.result). Quem não tem
+// nenhuma delas (parceiros, alunos, esteira…) não baixa esses dados no login.
+const CHAVES_DADOS_MARKETING = [
+  'visao_geral', 'ranking', 'propostas', 'perfil_visualizar', 'metas_visualizar',
+  'gestao_procv_visualizar', 'gestao_revisao_visualizar', 'gestao_clientes',
+  'importacao_processar', 'admin_usuarios', 'admin_grupos',
+];
+
+export function usaDadosMarketing() {
+  return CHAVES_DADOS_MARKETING.some(can);
+}
+
 /**
  * Retorna true se o usuário tem acesso à seção 'gestao'
  * (basta ter acesso a qualquer sub-aba)
