@@ -89,7 +89,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `snapshots` | Estado serializado da aplicação (JSON pesado) |
 | `classifications` | Overrides manuais de status por CPF |
 | `action_logs` | Log de ações (`action-log.js`): classificações por CPF e eventos de sistema com `cpf = '__system__'`/`'__import__'`/`'__goals__'`; os alarmes da Fase 3 têm `action = 'fase3_sombra'` e a mensagem em `client_name` |
-| `quitacoes_clientes` | Registros de quitação/pagamento |
+| `quitacoes_clientes` | Registros da antiga tela Quitações — **tela removida em 07/10/2026**; os dados seguem no banco, sem uso no app |
 | `quitacao_boletos` | Quitação de Boleto: fases do boleto por parceiro; status só muda via RPC `boleto_mudar_status` (migration 006) |
 | `boleto_docs` | Metadados dos PDFs (boletos/faturas) anexados aos clientes da Quitação de Boleto pelos lotes ZIP (migration 012); o arquivo em si fica no bucket `boletos-docs`. Anexar o 1º doc em cliente `boleto_solicitado` promove para `boleto_enviado` (trigger) |
 | `residuos` | Resíduos v2: 1 linha por cliente vindo da **Liberação de Margem** via RPC `liberacao_para_residuo`; status `residuo_pendente → residuo_solicitado → residuo_pago` (RPC `residuo_mudar_status`). Ao pagar, volta automático para a Liberação com obs "RESÍDUO PAGO em dd/mm/aaaa" |
@@ -176,8 +176,7 @@ relatorio_marketing/
 │   │   ├── permissions.js    # can() + objeto perm com atalhos (perm.isAdmin()…)
 │   │   ├── classifications.js# Overrides de status por CPF
 │   │   ├── goals-svc.js      # Metas de KPI
-│   │   ├── quitacoes-service.js # Serviço de quitações
-│   │   ├── residuos-svc.js   # Resíduos v2: CRUD + RPCs (liberacao_para_residuo, residuo_mudar_status)
+│   │   ├── paginacao.js      # lerTudo(): lê tabela grande em páginas de 1000 EM PARALELO + log [desempenho]
 │   │   ├── boleto-docs-svc.js# Docs da Quitação de Boleto: upload p/ Storage e análise dos ZIPs (fflate + pdf.js sob demanda)
 │   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
@@ -193,7 +192,7 @@ relatorio_marketing/
 │   │   │                     # públicos e os blocos vivem em pages/<feature>/.
 │   │   │                     # Pastas: admin/ bm/ boletos/ bsc/ conteudo/ liberacao/
 │   │   │                     # overview/ parceiros/ perfil/ procv/ propostas/
-│   │   │                     # quitacoes/ uni/ uni-admin/ uni-gam/
+│   │   │                     # uni/ uni-admin/ uni-gam/
 │   │   ├── home-page.js      # Home: boas-vindas + atalhos por permissão (login cai aqui; F5 mantém a tela)
 │   │   ├── import-page.js    # Upload e processamento de Excel
 │   │   ├── overview.js       # Dashboard de KPIs
@@ -206,9 +205,7 @@ relatorio_marketing/
 │   │   ├── goals-page.js     # Configuração de metas
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
-│   │   ├── quitacoes-page.js # Gestão de quitações
 │   │   ├── boletos-page.js   # Quitação de Boleto (fases por parceiro; importa lotes ZIP de docs; regras nas migrations 006/012)
-│   │   ├── residuos-page.js  # Resíduos v2 (lista de controle pendente/solicitado/pago, ligada à Liberação)
 │   │   ├── parceiros-page.js # Ranking de Parceiros (pódio + lista + overlay "Top Parceiros")
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
@@ -387,7 +384,7 @@ O projeto tem ESLint 9 (flat config em `eslint.config.mjs`) com três regras pr�
 
 | Regra | Limite | O que significa |
 |---|---|---|
-| `quality/max-lines` | **350 linhas por arquivo** | Arquivo maior que isso reprova. Só `src/pages/residuos-page.js` está isento (de propósito — não tem costura natural) |
+| `quality/max-lines` | **350 linhas por arquivo** | Arquivo maior que isso reprova |
 | `quality/no-direct-data-access` | — | **Tela não fala com o banco.** Proibido importar `sb` de `services/supabase.js` dentro de `src/pages/` ou `src/components/` — todo acesso passa por um serviço em `src/services/` |
 | `quality/no-direct-console` | — | `console.log` proibido. `warn`/`error`/`info` são permitidos (é o logging do projeto e a instrumentação da Fase 3) |
 | `max-nested-callbacks` | 3 | Callbacks aninhados além disso reprovam |
@@ -413,7 +410,7 @@ Não há hook de commit, e o build da Vercel (`vite build`) **não** chama o lin
 
 ### Dívida aceita — não "consertar" estes arquivos
 
-Oito arquivos têm os orçamentos **desligados de propósito** (bloco de override no `eslint.config.mjs`): `core/buildResult.js`, `core/calcKPIs.js`, `services/auth.js`, `services/auth/boot-data.js`, `services/classifications.js`, `services/propostas-store.js`, `services/snapshot.js`, `pages/residuos-page.js`.
+Sete arquivos têm os orçamentos **desligados de propósito** (bloco de override no `eslint.config.mjs`): `core/buildResult.js`, `core/calcKPIs.js`, `services/auth.js`, `services/auth/boot-data.js`, `services/classifications.js`, `services/propostas-store.js`, `services/snapshot.js` (o `pages/residuos-page.js` saiu junto com a tela em 07/10/2026).
 
 É o coração da persistência e dos cálculos de dinheiro: quebrar essas funções para caber na métrica traz risco real de regressão sem ganho funcional. **Arquivo novo não entra nessa lista.**
 
@@ -426,8 +423,10 @@ Aprovado pelo responsável a partir de duas referências (Roomify: tema claro, A
 - **Referência visual** (fora do build, só consulta): `design-system/vitrine.html` (componentes + login), `design-system/prototipo.html` (Liberação e Boletos navegáveis, visão Smart/Parceiro) e `design-system/ds.css`. Para abrir: launch `vitrine-ds` (porta 5180).
 - **No código**: tokens `--ds-*` e classes `.ds-*` em `src/styles/ds/`; peças JS em `src/components/ds/` (importar de `index.js`): `dsForm` (formulário com obrigatórios), `dsConfirm`, `dsToast`, `dsImportReport` (conferência → progresso → falhas), `dsMenu`/`initDsMenus`, `dsChips`, `dsBadge`, `dsSteps`, `dsKv`, `dsWait`, `dsBtn`, `dsEmpty`. Página de teste: `ds-demo.html` (só no `npm run dev`).
 - **Regras de usabilidade aprovadas**: ação do dia a dia fica NA LINHA, em 1 clique, numa coluna "Ação" com verbo ("Marcar como enviado") — nunca o rótulo "próximo passo"; clicar na linha abre o detalhe; ações raras ficam dentro da linha aberta ou no ⋯; todo mundo vê todos os status, e quando a etapa é da Smart o parceiro vê "Aguardando Smart"; ação em lote por caixinhas; **todo aviso, confirmação e relatório de importação segue o design novo**.
-- **Fases**: 0 base (✅ produção 06/10, `e3e3ca2b`) → 1A moldura: login, menu, topo com tema, avisos/confirmação (✅ produção 07/10, `66630569`) → 1B paleta em todas as telas (`ds-palette.css`) → 2 Quitação de Boleto + Exportar Lote ZIP + Importar Respaldo → 3 Liberação com resíduo em 4 etapas + alerta 7 dias úteis + Importar Pendências → 4 remove a tela Resíduos → 5 demais telas. **1B, 2, 3 e 4 estão commitadas localmente e NÃO publicadas (07/10/2026)**, aguardando o teste do responsável (`design-system/ROTEIRO-TESTE.md`).
-- ⚠️ **Antes de publicar 2 e 3**: rodar no SQL Editor `supabase/migrations/014_boletos_respaldo.sql` e `015_liberacao_residuo.sql` (ambas só acrescentam; trazem bloco ROLLBACK). Rodar a 015 e publicar o site na sequência: o site antigo esconde linhas `em_residuo` e a tela Resíduos antiga usa outra RPC.
+- **Fases**: 0 base (✅ produção 06/10, `e3e3ca2b`) → 1A moldura: login, menu, topo com tema, avisos/confirmação (✅ produção 07/10, `66630569`) → 1B paleta em todas as telas (`ds-palette.css`) → 2 Quitação de Boleto + Exportar Lote ZIP + Importar Respaldo → 3 Liberação com resíduo em 4 etapas + alerta 7 dias úteis + Importar Pendências → 4 remove a tela Resíduos → 5 demais telas. **1B, 2, 3 e 4 ✅ produção 07/10/2026** (roteiro de teste: `design-system/ROTEIRO-TESTE.md`). No mesmo dia a tela **Quitações foi removida** a pedido do responsável — o Financeiro ficou só com Liberação de Margem e Quitação de Boleto.
+- ✅ Migrations `014_boletos_respaldo.sql`, `015_liberacao_residuo.sql`, `016_indices_financeiro.sql` e `017_rls_boletos_rapido.sql` rodadas em produção em 07/10/2026.
+- **Desempenho da Liberação/Boletos (07/10/2026)**: carga via `lerTudo()` (`services/paginacao.js`, páginas em paralelo; console mostra `[desempenho] tabela: N linhas em X ms`); depois de uma ação, `recarregarLinhas(ids)` busca só as linhas mudadas; ao voltar para a tela, `temCache()` mostra os dados em memória do MESMO usuário na hora e atualiza por trás ("Atualizando…"). Medido: ~1,1 s para ~4 mil linhas. Carregar só 25 linhas por vez foi avaliado e **descartado**: contadores, filtros, "Em alerta", exportações e lote dependem da lista inteira.
+- ⚠️ **Lição de RLS (017)**: policy que chama função (`is_admin_user()`, `empresa_do_usuario()`, `tem_permissao()`) **direto** é reexecutada POR LINHA — a Quitação de Boleto levava 11,4 s e `boleto_docs` estourava o `statement timeout` (erro 500). Sempre escrever `(SELECT is_admin_user())`: o Postgres calcula uma vez por consulta. Policies antigas de `residuos`, `profiles`/`grupos_acesso` ainda usam a forma lenta (tabelas pequenas, sem urgência).
 - **Resíduo (desde a 015)**: vive na própria linha da Liberação (`residuo_status`/`residuo_*` em `liberacao_margem_master`, espelho da tabela `residuos`, que segue como histórico). Muda só pelas RPCs `liberacao_residuo_iniciar` (valor + enquadrada obrigatórios) e `liberacao_residuo_avancar`; trigger bloqueia edição direta. Etapa "enviado" só Smart (`is_admin_user()` ou `residuos_editar`). Alerta calculado na tela (`lib-status.js`). As RPCs antigas `liberacao_para_residuo`/`residuo_mudar_status` ficam no banco sem uso.
 - Decisões detalhadas na memória do projeto.
 
@@ -439,7 +438,7 @@ Receita derivada das etapas 2 e 3 do refactor (18 arquivos gigantes divididos em
 
 **1. Serviço primeiro.** Antes da tela, crie `src/services/<feature>-svc.js` com as funções de banco (`fetchX`, `insertX`, `updateX`, `deleteX`). A tela importa o serviço, nunca o `sb`. Isso não é estilo — é gate de lint.
 
-**2. Uma pasta por feature quando passar de um arquivo.** O padrão já em uso em `src/pages/`: `admin/`, `bm/`, `boletos/`, `bsc/`, `conteudo/`, `liberacao/`, `overview/`, `parceiros/`, `perfil/`, `procv/`, `propostas/`, `quitacoes/`, `uni/`, `uni-admin/`, `uni-gam/`. Divisão típica: `<f>-core.js` (estado + helpers), `<f>-tabela.js`, `<f>-modais.js`, `<f>-acoes.js`, `<f>-import.js`.
+**2. Uma pasta por feature quando passar de um arquivo.** O padrão já em uso em `src/pages/`: `admin/`, `bm/`, `boletos/`, `bsc/`, `conteudo/`, `liberacao/`, `overview/`, `parceiros/`, `perfil/`, `procv/`, `propostas/`, `uni/`, `uni-admin/`, `uni-gam/`. Divisão típica: `<f>-core.js` (estado + helpers), `<f>-tabela.js`, `<f>-modais.js`, `<f>-acoes.js`, `<f>-import.js`.
 
 **3. O arquivo da página vira orquestrador + barrel.** `src/pages/<feature>-page.js` importa os módulos e **re-exporta os nomes públicos originais**, para que `main.js` e os `onclick` das strings HTML não mudem. Exemplo real em `liberacao-page.js`.
 
