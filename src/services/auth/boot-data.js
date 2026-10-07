@@ -55,7 +55,7 @@ export async function onAuthenticated() {
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','quitacoes','conteudo','liberacao','boletos','universidade']);
+  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','conteudo','liberacao','boletos','universidade']);
   const defaultSec = can('home')                                     ? 'home'
     : can('visao_geral')                                             ? 'overview'
     : (can('liberacao_margem') || perm.isAdmin())                    ? 'liberacao'
@@ -73,7 +73,6 @@ export async function onAuthenticated() {
     if (sec === 'conteudo')     return perm.conteudoVisualizar();
     if (sec === 'trafego')      return perm.trafegoVisualizar();
     if (sec === 'bms')          return perm.bmVisualizar();
-    if (sec === 'quitacoes')    return can('quitacoes_visualizar');
     return true;
   };
   const hashSec   = window.location.hash.replace('#', '');

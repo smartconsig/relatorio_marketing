@@ -8,7 +8,6 @@
 // './navigation.js' continua funcionando sem mudar uma linha.
 import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { renderAdminPage } from './pages/admin-page.js';
-import { renderQuitacoes } from './pages/quitacoes-page.js';
 import { renderConteudo } from './pages/conteudo-page.js';
 import { renderBMs } from './pages/bm-page.js';
 import { initGoalsPage } from './pages/goals-page.js';
@@ -43,7 +42,6 @@ const GROUP_MAP = {
   trafego:   'marketing',
   bms:       'marketing',
   conteudo:  'tarefas',
-  quitacoes: 'financeiro',
   liberacao: 'financeiro',
   boletos:   'financeiro',
 };
@@ -56,7 +54,6 @@ const TITLES = {
   trafego:      'Tráfego (Ads)',
   perfil:       'Perfil de Cliente',
   gestao:       'Gestão de Classificações',
-  quitacoes:    'Quitações',
   conteudo:     'Esteira de Conteúdo',
   bms:          'Central de BMs',
   propostas:    'Propostas de Marketing',
@@ -147,7 +144,6 @@ const RENDER_POR_SECAO = {
   admin:             renderAdminPage,
   home:              renderHome,
   trafego:           renderTrafego,
-  quitacoes:         renderQuitacoes,
   conteudo:          renderConteudo,
   bms:               renderBMs,
   liberacao:         renderLiberacao,

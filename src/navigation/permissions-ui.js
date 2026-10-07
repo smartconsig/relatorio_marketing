@@ -14,7 +14,6 @@ export function applyPermissionsToUI() {
     ranking:   () => can('ranking'),
     trafego:   () => perm.trafegoVisualizar(),
     gestao:    () => canSeeGestao(),
-    quitacoes: () => can('quitacoes_visualizar'),
     conteudo:  () => perm.conteudoVisualizar(),
     bms:       () => perm.bmVisualizar(),
     perfil:    () => can('perfil_visualizar'),

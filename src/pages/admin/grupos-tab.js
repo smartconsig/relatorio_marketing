@@ -63,7 +63,6 @@ function _summarizePerms(permissoes) {
     { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
     { key: 'parceiros',            label: 'Parceiros' },
-    { key: 'quitacoes_visualizar',     label: 'Quitações' },
     { key: 'conteudo_visualizar',      label: 'Conteúdo' },
     { key: 'trafego_visualizar',       label: 'Tráfego' },
     { key: 'bm_visualizar',            label: 'BMs' },

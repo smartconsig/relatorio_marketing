@@ -26,8 +26,6 @@ const ATALHOS = [
     svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
   { sec: 'parceiros',    titulo: 'Ranking Parceiros', desc: 'Produção por parceiro',            pode: () => perm.parceiros(),
     svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>' },
-  { sec: 'quitacoes',    titulo: 'Quitações',         desc: 'Gestão de quitações',              pode: () => can('quitacoes_visualizar'),
-    svg: '<path d="M9 14l2 2 4-4"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>' },
   { sec: 'liberacao',    titulo: 'Lib. Margem',       desc: 'Liberação de Margem Master',       pode: () => can('liberacao_margem') || perm.isAdmin(),
     svg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
   { sec: 'boletos',      titulo: 'Quit. Boleto',      desc: 'Quitação de boletos',              pode: () => can('quitacao_boleto') || perm.isAdmin(),

@@ -32,7 +32,6 @@ const PERM_TREE = [
   { key: 'bsc',                  label: 'Ranking BSC' },
   { key: 'parceiros',            label: 'Ranking Parceiros' },
   { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
-  { key: 'quitacoes_visualizar', label: 'Quitações' },
   { label: 'Esteira de Conteúdo', children: [
     { key: 'conteudo_visualizar', label: 'Visualizar o board' },
     { key: 'conteudo_editar',     label: 'Criar e mover cards' },

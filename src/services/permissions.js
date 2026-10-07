@@ -39,8 +39,6 @@ export const perm = {
   // Dashboard avançado
   perfilCliente:       () => can('perfil_visualizar'),
 
-  // Quitações
-  quitacoesVisualizar: () => can('quitacoes_visualizar'),
 
   // Esteira de Conteúdo
   conteudoVisualizar:  () => can('conteudo_visualizar') || can('admin_usuarios') || can('admin_grupos'),
@@ -116,7 +114,6 @@ export const DEFAULT_PERMISSIONS = {
   bsc: true,
   parceiros: true,
   perfil_visualizar: false,
-  quitacoes_visualizar: false,
   conteudo_visualizar: false,
   conteudo_editar: false,
   conteudo_aprovar: false,
