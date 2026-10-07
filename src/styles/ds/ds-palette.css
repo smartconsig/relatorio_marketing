@@ -1,0 +1,58 @@
+/* ══════════════════════════════════════════════════════════════════════
+   RYC Design System — ENTREGA 1B: paleta nova em TODAS as telas
+   As telas antigas usam os tokens legados (--bg, --surface, --white, --gray,
+   --border, --green…). Aqui eles passam a valer as cores do design system,
+   então Visão Geral, Ranking, Esteira, Universidade etc. ganham o visual novo
+   sem nenhuma mudança de código. --red (#940b10, a marca) NÃO muda.
+   Carregado depois de theme.css; para desfazer a 1B, basta tirar o import.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root:not([data-theme="light"]) {
+  --bg:         #09080a;
+  --surface:    #161417;
+  --surface2:   #1d1b1f;
+  --surface3:   #252228;
+  --chrome:     #121013;
+  --white:      #f3f0f2;
+  --gray:       #7a727a;
+  --gray-light: #b0a8ae;
+  --border:     rgba(255,255,255,0.07);
+  --red-bright: #e5383f;
+  --glow:       rgba(255,59,67,0.28);
+  --green:      #34e3a0;
+  --yellow:     #ffb547;
+  --danger:     #ff5c64;
+  --blue:       #6ea8ff;
+  --purple:     #b69cff;
+}
+
+:root[data-theme="light"] {
+  --bg:         #f3f1f4;
+  --surface:    #ffffff;
+  --surface2:   #f8f6f7;
+  --surface3:   #efebed;
+  --chrome:     #ffffff;
+  --white:      #17121a;
+  --gray:       #958d97;
+  --gray-light: #5d5560;
+  --border:     #ebe6e8;
+  --red-bright: #b4141a;
+  --glow:       rgba(196,18,26,0.22);
+  --green:      #059669;
+  --yellow:     #c2410c;
+  --danger:     #dc2626;
+  --blue:       #1d4ed8;
+  --purple:     #6d28d9;
+}
+
+/* Raios um pouco maiores, como no design system */
+:root { --r-sm: 10px; --r-md: 14px; --r-lg: 20px; }
+
+/* Fundo com as manchas suaves de cor (o mesmo da vitrine) */
+body { background: var(--ds-bg-glow), var(--ds-bg); background-attachment: fixed; }
+:root .content { background: transparent; }
+:root[data-theme="light"] .content { background: transparent; }
+
+/* Botões genéricos das telas antigas no estilo novo (mesmas classes) */
+:root .btn-primary { background: var(--ds-brand-grad); border: 0; box-shadow: var(--ds-brand-glow); border-radius: var(--ds-r-pill); }
+:root .btn-ghost { border-radius: var(--ds-r-pill); }

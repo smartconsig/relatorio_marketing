@@ -30,6 +30,8 @@ import './styles/carbono.css'; // por último entre os antigos — re-seleciona 
 // Fase 1A do redesenho: moldura (login, menu, topo, confirmação) no visual novo.
 // Precisa vir DEPOIS do carbono.css — só restiliza, não muda comportamento.
 import './styles/ds/ds-chrome.css';
+// Entrega 1B: tokens legados (--bg, --surface, --white…) apontam para a paleta nova.
+import './styles/ds/ds-palette.css';
 
 import { initNavigation, navigate, clearFilter, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
 import { initAuth, doSignIn, doSignOut, toggleTheme, setTheme } from './services/auth.js';
