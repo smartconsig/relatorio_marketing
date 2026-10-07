@@ -69,7 +69,6 @@ function _summarizePerms(permissoes) {
     { key: 'bm_visualizar',            label: 'BMs' },
     { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'quitacao_boleto',          label: 'Quit. Boleto' },
-    { key: 'residuos_visualizar',      label: 'Resíduos' },
     { key: 'universidade_acessar',     label: 'Universidade' },
     { key: 'universidade_criador',     label: 'Criador' },
     { key: 'universidade_gamificacao', label: 'Gamificação' },

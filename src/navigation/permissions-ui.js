@@ -24,7 +24,6 @@ export function applyPermissionsToUI() {
     parceiros:    () => perm.parceiros(),
     liberacao:    () => can('liberacao_margem') || perm.isAdmin(),
     boletos:      () => can('quitacao_boleto') || perm.isAdmin(),
-    residuos:     () => perm.residuosVisualizar(),
     universidade: () => can('universidade_acessar') || perm.isAdmin(),
     'uni-admin':       () => perm.isAdmin(),
     'uni-gamificacao': () => perm.isAdmin(),

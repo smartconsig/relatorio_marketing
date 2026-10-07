@@ -17,7 +17,6 @@ import { renderUniAdmin } from './pages/uni-admin.js';
 import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 import { renderLiberacao } from './pages/liberacao-page.js';
 import { renderBoletos } from './pages/boletos-page.js';
-import { renderResiduos } from './pages/residuos-page.js';
 import { renderTrafego } from './pages/trafego-page.js';
 import { renderHome } from './pages/home-page.js';
 import { syncPeriodBars } from './components/period-bar.js';
@@ -47,7 +46,6 @@ const GROUP_MAP = {
   quitacoes: 'financeiro',
   liberacao: 'financeiro',
   boletos:   'financeiro',
-  residuos:  'financeiro',
 };
 
 const TITLES = {
@@ -67,7 +65,6 @@ const TITLES = {
   parceiros:    'Ranking Parceiros',
   liberacao:    'Liberação de Margem Master',
   boletos:      'Quitação de Boleto',
-  residuos:     'Resíduos',
   universidade: 'Universidade Smart',
   'uni-admin':       'Criador de Cursos',
   'uni-gamificacao': 'Gamificação',
@@ -98,7 +95,7 @@ function _sairDosModosImersivos(sec) {
 function _atualizarChromeDaSecao(sec) {
   // Oculta o filtro de data global na tela de Lib. Margem
   const dateFilter = document.querySelector('.date-filter');
-  if (dateFilter) dateFilter.style.display = (sec === 'liberacao' || sec === 'boletos' || sec === 'residuos') ? 'none' : '';
+  if (dateFilter) dateFilter.style.display = (sec === 'liberacao' || sec === 'boletos') ? 'none' : '';
 
   localStorage.setItem('sc_last_section', sec);
   // Atualiza o hash da URL sem recarregar — sobrevive ao F5
@@ -155,7 +152,6 @@ const RENDER_POR_SECAO = {
   bms:               renderBMs,
   liberacao:         renderLiberacao,
   boletos:           renderBoletos,
-  residuos:          renderResiduos,
   goals:             initGoalsPage,
   universidade:      renderUniversidade,
   'uni-admin':       renderUniAdmin,

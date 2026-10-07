@@ -48,9 +48,10 @@ const PERM_TREE = [
   ]},
   { key: 'liberacao_margem',    label: 'Liberação de Margem Master' },
   { key: 'quitacao_boleto',     label: 'Quitação de Boleto' },
-  { label: 'Resíduos', children: [
-    { key: 'residuos_visualizar', label: 'Visualizar a tela' },
-    { key: 'residuos_editar',     label: 'Mover da Liberação / mudar status' },
+  // Desde out/2026 o resíduo vive dentro da Liberação (a tela Resíduos saiu).
+  // residuos_editar = agir como Smart no resíduo (marcar "Enviado", qualquer etapa).
+  { label: 'Resíduo (na Liberação)', children: [
+    { key: 'residuos_editar',     label: 'Agir como Smart (marcar Enviado)' },
   ]},
   { label: 'Universidade Smart', children: [
     { key: 'universidade_acessar',    label: 'Acessar Universidade' },

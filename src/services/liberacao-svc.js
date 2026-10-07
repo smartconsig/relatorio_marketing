@@ -1,7 +1,7 @@
 // Liberação de Margem — acesso a dados (tabela liberacao_margem_master).
 // Wrappers finos sobre o cliente Supabase, no mesmo padrão do boletos-svc:
 // cada função devolve o { data, error } original; quem trata erro é a tela.
-// (A ida/volta para Resíduos NÃO vive aqui — usa as RPCs do residuos-svc.)
+// Resíduo dentro da Liberação: RPCs liberacao_residuo_* (migration 015), no fim deste arquivo.
 import { sb } from './supabase.js';
 
 const TABELA = 'liberacao_margem_master';

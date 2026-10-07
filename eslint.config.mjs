@@ -84,12 +84,7 @@ export default defineConfig([
         "error",
         {
           max: 350,
-          ignore: [
-            // residuos-page: mantido acima do teto DE PROPÓSITO — a varredura
-            // concluiu que não há costura natural (uma tabela + um modal,
-            // já coeso); dividir só para passar no lint pioraria o código.
-            "src/pages/residuos-page.js", // 384
-          ],
+          ignore: [],
         },
       ],
       // Política acordada em 07/09/2026: console.log proibido; warn/error/info
@@ -136,7 +131,6 @@ export default defineConfig([
       "src/services/classifications.js",
       "src/services/propostas-store.js",
       "src/services/snapshot.js",
-      "src/pages/residuos-page.js",
     ],
     rules: {
       complexity: "off",
