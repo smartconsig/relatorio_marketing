@@ -5,10 +5,12 @@
 import { toast } from '../../utils/ui.js';
 import { dsBtn, dsConfirm } from '../../components/ds/index.js';
 import { rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
-import { BO, loadData } from './bol-core.js';
+import { BO, loadData, filtered } from './bol-core.js';
 import { BOL_ACOES, BOL_STATUS, podeAgir } from './bol-linha.js';
 
-const selecionados = () => BO.registros.filter(r => BO.sel.has(r.id));
+// Só os selecionados que continuam no filtro atual — trocar o filtro nunca deixa
+// o lote agir em cliente escondido.
+const selecionados = () => filtered().filter(r => BO.sel.has(r.id));
 
 function _acaoComum(lista) {
   const status = [...new Set(lista.map(r => r.status))];

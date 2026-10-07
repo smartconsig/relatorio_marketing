@@ -5,7 +5,7 @@
 // Só monta HTML; cliques por delegação em lib-tabela.js.
 // window.* usados aqui: libSalvarAcerto, libEditarCliente, libDeletarCliente — NÃO RENOMEAR.
 import { icon } from '../../utils/icons.js';
-import { dsBadge, dsSteps, dsKv, dsWait, dsBtn } from '../../components/ds/index.js';
+import { dsBadge, dsSteps, dsKv, dsWait, dsBtn, dsDateBtn } from '../../components/ds/index.js';
 import { S, isAdmin, fmtBRL, fmtDate, esc } from './lib-core.js';
 import { LIB_STATUS, LIB_ACOES, statusDe, ehDono, podeAgir, emAlerta, diasUteisDesde, LIMITE_ALERTA } from './lib-status.js';
 
@@ -36,8 +36,9 @@ function _acaoCell(r) {
 
 function _acertoCell(r) {
   if (!ehDono(r)) return `<span class="ds-muted">${fmtDate(r.acerto)}</span>`;
-  const travado = !isAdmin() && r.acerto;
-  return `<input type="date" class="ds-input lib-acerto" value="${r.acerto || ''}"${travado ? ' disabled title="Acerto preenchido — só a Smart altera"' : ` onchange="libSalvarAcerto('${r.id}', this.value)"`} aria-label="Data de acerto">`;
+  const travado = !isAdmin() && !!r.acerto;
+  return dsDateBtn({ valor: r.acerto || '', placeholder: 'Definir', travado,
+    attrs: travado ? 'title="Acerto preenchido — só a Smart altera"' : `data-lib-acerto="${r.id}" title="Escolher data de acerto"` });
 }
 
 export function linhaHTML(r) {

@@ -82,7 +82,7 @@ async function _gerar(itens, clientes, progresso) {
 
 /** Abre a conferência e, confirmando, gera e baixa o ZIP. opts.selecionados = só as linhas marcadas. */
 export async function bolExportarLote({ selecionados = false } = {}) {
-  const base = selecionados ? BO.registros.filter(r => BO.sel.has(r.id)) : filtered();
+  const base = selecionados ? filtered().filter(r => BO.sel.has(r.id)) : filtered();
   const clientes = base.filter(r => (BO.docs.get(r.id) || []).length);
   const semDocs = base.filter(r => !(BO.docs.get(r.id) || []).length);
   if (!clientes.length) { toast('Nenhum cliente com boleto ou fatura anexado neste filtro.', 'warn'); return; }

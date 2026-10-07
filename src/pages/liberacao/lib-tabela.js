@@ -5,7 +5,7 @@
 // libImportarPendencias, libOnPendenciasFile, libExportar, libLimparBase,
 // libAddCliente, libSetEmpresaFiltro, libSetDateManual, libOnImportFile,
 // libOnImportAcertoFile) — NÃO RENOMEAR.
-import { dsChips, dsMenu, dsBtn, dsEmpty, initDsMenus } from '../../components/ds/index.js';
+import { dsChips, dsMenu, dsBtn, dsEmpty, dsSelect, dsCalendario, fmtBr, initDsMenus } from '../../components/ds/index.js';
 import { S, PAGE_SIZE, isAdmin, fmtBRL, esc, PRESETS, presetRange, filtered, loadData } from './lib-core.js';
 import { LIB_STATUS, LIB_ORDEM, LIB_ACOES, statusDe, emAlerta, podeAgir } from './lib-status.js';
 import { linhaHTML, colunas } from './lib-linha.js';
@@ -39,9 +39,11 @@ function _menus() {
 
 function _menuPeriodo() {
   const atual = PRESETS.find(p => p.key === S.preset);
-  const rotulo = atual ? atual.label : (S.dateFrom || S.dateTo ? 'Período escolhido' : 'Todo o período');
+  const intervalo = S.dateFrom || S.dateTo ? `${fmtBr(S.dateFrom) || '…'} – ${fmtBr(S.dateTo) || 'hoje'}` : 'Todo o período';
+  const rotulo = atual ? atual.label : intervalo;
   return dsMenu({ label: rotulo, icon: 'calendar',
-    items: [...PRESETS.map(p => ({ action: 'periodo:' + p.key, label: p.label })), { sep: true }, { action: 'periodo:limpar', label: 'Todo o período' }] });
+    items: [...PRESETS.map(p => ({ action: 'periodo:' + p.key, label: p.label })), { sep: true },
+      { action: 'periodo:custom', label: 'Escolher datas…', icon: 'calendar' }, { action: 'periodo:limpar', label: 'Todo o período' }] });
 }
 
 export function render(el) {
@@ -63,14 +65,14 @@ export function render(el) {
         <div class="ds-tbl__filters ds-filterbar">
           <div id="lib-status-chips"></div>
           <div class="ds-filterbar__right">
-            ${isAdmin() ? '<select class="ds-select" id="lib-empresa-select" onchange="libSetEmpresaFiltro(this.value)"><option value="">Todas as empresas</option></select>' : ''}
-            <div class="ds-dates" title="Filtra pela data quitado">Quitado de <input type="date" id="lib-date-from" onchange="libSetDateManual()"> até <input type="date" id="lib-date-to" onchange="libSetDateManual()"></div>
+            ${isAdmin() ? '<span id="lib-empresa"></span>' : ''}
+            <span class="ds-hint">Período pela data quitado</span>
           </div>
         </div>
         <div id="lib-rows"></div>
         <div id="lib-ver-mais-wrap"></div>
-        <div class="ds-bulk" id="lib-bulk"></div>
       </div>
+      <div class="ds-bulk" id="lib-bulk"></div>
     </div>`;
   _ligarEventos(el);
   updateTable();
@@ -104,13 +106,12 @@ function _chips(base) {
 }
 
 function _selects() {
-  const emp = document.getElementById('lib-empresa-select');
+  const emp = document.getElementById('lib-empresa');
   if (emp) {
     const empresas = [...new Set(S.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
-    emp.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(e => `<option value="${esc(e)}"${e === S.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+    emp.innerHTML = dsSelect({ id: 'empresa', value: S.empresaFiltro, buscar: true, right: true,
+      options: [{ value: '', label: 'Todas as empresas' }, ...empresas.map(e => ({ value: e, label: e }))] });
   }
-  document.getElementById('lib-date-from').value = S.dateFrom || '';
-  document.getElementById('lib-date-to').value = S.dateTo || '';
   document.getElementById('lib-periodo').innerHTML = _menuPeriodo();
 }
 
@@ -127,7 +128,9 @@ function _linhas(list) {
 }
 
 // ── Lote ──────────────────────────────────────────────────────────────────
-const _selecionados = () => S.registros.filter(r => S.sel.has(r.id));
+// Só os selecionados que continuam no filtro atual — trocar o filtro nunca deixa
+// o lote agir em cliente escondido.
+const _selecionados = () => filtered().filter(r => S.sel.has(r.id));
 
 function _acaoComum(lista) {
   const sts = [...new Set(lista.map(statusDe))];
@@ -147,6 +150,7 @@ function _renderBulk() {
   const { acao, nota } = _acaoComum(lista);
   bar.innerHTML = `<b>${lista.length} ${lista.length === 1 ? 'selecionado' : 'selecionados'}</b><span style="opacity:.6">·</span>`
     + (acao ? dsBtn({ label: acao.label, variant: 'primary', size: 'sm', attrs: `data-lib-bulk="${acao.k}"` }) : `<span class="ds-bulk__note">${nota}</span>`)
+    + (lista.every(r => statusDe(r) === 'pendente') ? '<span class="ds-bulk__note">Resíduo: um cliente por vez (pede valor e enquadrada)</span>' : '')
     + dsBtn({ label: 'Limpar seleção', variant: 'ghost', size: 'sm', attrs: 'data-lib-bulk="limpar" style="margin-left:auto"' });
 }
 
@@ -179,8 +183,22 @@ const ACOES_MENU = {
   'ver-mais':       () => { S.page++; updateTable(); },
 };
 
+function _escolherPeriodo() {
+  const botao = document.querySelector('#lib-periodo [data-ds-menu-toggle]');
+  dsCalendario(botao, { range: true, inicio: S.dateFrom, fim: S.dateTo, onEscolher: ({ inicio, fim }) => {
+    S.preset = null; S.dateFrom = inicio; S.dateTo = fim; _resetPage(); updateTable();
+  } });
+}
+
+function _escolherAcerto(btn) {
+  const r = _linhaDe(btn.dataset.libAcerto)[0];
+  if (!r) return;
+  dsCalendario(btn, { valor: r.acerto, onEscolher: v => window.libSalvarAcerto(r.id, v || '') });
+}
+
 function _acaoMenu(action) {
   if (!action.startsWith('periodo:')) { ACOES_MENU[action]?.(); return; }
+  if (action === 'periodo:custom') { setTimeout(_escolherPeriodo, 0); return; }
   const key = action.slice(8);
   const r = key === 'limpar' ? { from: null, to: null } : presetRange(key);
   S.preset = key === 'limpar' ? null : key; S.dateFrom = r.from; S.dateTo = r.to; _resetPage(); updateTable();
@@ -201,6 +219,8 @@ const _linhaDe = id => S.registros.filter(r => String(r.id) === String(id));
 const CLIQUES = [
   ['[data-ds-action]', el => _acaoMenu(el.dataset.dsAction)],
   ['[data-ds-chip]',   el => { S.statusFiltro = el.dataset.dsChip; _resetPage(); updateTable(); }],
+  ['[data-ds-select="empresa"]', el => { S.empresaFiltro = el.dataset.value; _resetPage(); updateTable(); }],
+  ['[data-lib-acerto]', el => _escolherAcerto(el)],
   ['[data-lib-bulk]',  el => _bulk(el.dataset.libBulk)],
   ['[data-lib-acao]',  el => _acao(el.dataset.libAcao, _linhaDe(el.dataset.id))],
   ['[data-lib-abrir]', el => { S.abertos.add(_linhaDe(el.dataset.libAbrir)[0]?.id); updateTable(); }],

@@ -6,7 +6,7 @@
 // bolImportarRespaldo, bolExportar, bolExportarLote, bolLimparBase, bolAddCliente,
 // bolMarcarQuitado, bolSetEmpresaFiltro, bolSetDateManual, bolOnImportFile) — NÃO RENOMEAR.
 import { toast } from '../../utils/ui.js';
-import { dsChips, dsMenu, dsBtn, dsEmpty, initDsMenus } from '../../components/ds/index.js';
+import { dsChips, dsMenu, dsBtn, dsEmpty, dsSelect, dsCalendario, fmtBr, initDsMenus } from '../../components/ds/index.js';
 import { STATUS_ORDER, rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
 import { BO, PAGE_SIZE, isAdmin, esc, PRESETS, presetRange, filtered, loadData } from './bol-core.js';
 import { BOL_STATUS, linhaHTML, colunas } from './bol-linha.js';
@@ -44,9 +44,11 @@ function _menus() {
 
 function _menuPeriodo() {
   const atual = PRESETS.find(p => p.key === BO.preset);
-  const rotulo = atual ? atual.label : (BO.dateFrom || BO.dateTo ? 'Período escolhido' : 'Todo o período');
+  const intervalo = BO.dateFrom || BO.dateTo ? `${fmtBr(BO.dateFrom) || '…'} – ${fmtBr(BO.dateTo) || 'hoje'}` : 'Todo o período';
+  const rotulo = atual ? atual.label : intervalo;
   const itens = PRESETS.map(p => ({ action: 'periodo:' + p.key, label: p.label }));
-  return dsMenu({ label: rotulo, icon: 'calendar', items: [...itens, { sep: true }, { action: 'periodo:limpar', label: 'Todo o período' }] });
+  return dsMenu({ label: rotulo, icon: 'calendar', items: [...itens, { sep: true },
+    { action: 'periodo:custom', label: 'Escolher datas…', icon: 'calendar' }, { action: 'periodo:limpar', label: 'Todo o período' }] });
 }
 
 // ── Shell ───────────────────────────────────────────────────────────────────
@@ -68,15 +70,15 @@ export function render(el) {
         <div class="ds-tbl__filters ds-filterbar">
           <div id="bol-status-chips"></div>
           <div class="ds-filterbar__right">
-            ${isAdmin() ? '<select class="ds-select" id="bol-empresa-select" onchange="bolSetEmpresaFiltro(this.value)"><option value="">Todas as empresas</option></select>' : ''}
-            <select class="ds-select" id="bol-respaldo-select" title="Filtrar por respaldo"></select>
-            <div class="ds-dates">De <input type="date" id="bol-date-from" onchange="bolSetDateManual()"> até <input type="date" id="bol-date-to" onchange="bolSetDateManual()"></div>
+            ${isAdmin() ? '<span id="bol-empresa"></span>' : ''}
+            <span id="bol-respaldo"></span>
+            <span class="ds-hint">Período pela data de cadastro</span>
           </div>
         </div>
         <div id="bol-rows"></div>
         <div id="bol-ver-mais-wrap"></div>
-        <div class="ds-bulk" id="bol-bulk"></div>
       </div>
+      <div class="ds-bulk" id="bol-bulk"></div>
     </div>`;
   _ligarEventos(el);
   updateTable();
@@ -108,18 +110,15 @@ function _chips(base) {
 }
 
 function _selects() {
-  const emp = document.getElementById('bol-empresa-select');
+  const emp = document.getElementById('bol-empresa');
   if (emp) {
     const empresas = [...new Set(BO.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
-    emp.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(e => `<option value="${esc(e)}"${e === BO.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+    emp.innerHTML = dsSelect({ id: 'empresa', value: BO.empresaFiltro, buscar: true, right: true,
+      options: [{ value: '', label: 'Todas as empresas' }, ...empresas.map(e => ({ value: e, label: e }))] });
   }
-  const resp = document.getElementById('bol-respaldo-select');
   const sts = [...new Set(BO.registros.map(r => r.respaldo_status).filter(Boolean))].sort();
-  resp.innerHTML = `<option value="">Respaldo: todos</option><option value="__sem"${BO.respaldoFiltro === '__sem' ? ' selected' : ''}>Sem respaldo</option>`
-    + sts.map(s => `<option value="${esc(s)}"${s === BO.respaldoFiltro ? ' selected' : ''}>${esc(s)}</option>`).join('');
-  resp.style.display = sts.length ? '' : 'none';
-  document.getElementById('bol-date-from').value = BO.dateFrom || '';
-  document.getElementById('bol-date-to').value = BO.dateTo || '';
+  document.getElementById('bol-respaldo').innerHTML = sts.length ? dsSelect({ id: 'respaldo', value: BO.respaldoFiltro, right: true,
+    options: [{ value: '', label: 'Respaldo: todos' }, { value: '__sem', label: 'Sem respaldo' }, ...sts.map(x => ({ value: x, label: x }))] }) : '';
   document.getElementById('bol-periodo').innerHTML = _menuPeriodo();
 }
 
@@ -174,7 +173,15 @@ const ACOES_MENU = {
   'ver-mais':     () => { BO.page++; updateTable(); },
 };
 
+function _escolherPeriodo() {
+  const botao = document.querySelector('#bol-periodo [data-ds-menu-toggle]');
+  dsCalendario(botao, { range: true, inicio: BO.dateFrom, fim: BO.dateTo, onEscolher: ({ inicio, fim }) => {
+    BO.preset = null; BO.dateFrom = inicio; BO.dateTo = fim; _resetPage(); updateTable();
+  } });
+}
+
 function _acaoMenu(action) {
+  if (action === 'periodo:custom') { setTimeout(_escolherPeriodo, 0); return; }
   if (action.startsWith('periodo:')) {
     const key = action.slice(8);
     const r = key === 'limpar' ? { from: null, to: null } : presetRange(key);
@@ -201,6 +208,8 @@ function _alternarLinha(id) {
 const CLIQUES = [
   ['[data-ds-action]', el => _acaoMenu(el.dataset.dsAction)],
   ['[data-ds-chip]',   el => { BO.statusFiltro = el.dataset.dsChip; _resetPage(); updateTable(); }],
+  ['[data-ds-select="empresa"]',  el => { BO.empresaFiltro = el.dataset.value; _resetPage(); updateTable(); }],
+  ['[data-ds-select="respaldo"]', el => { BO.respaldoFiltro = el.dataset.value; _resetPage(); updateTable(); }],
   ['[data-bol-bulk]',  el => executarBulk(el.dataset.bolBulk)],
   ['[data-bol-acao]',  el => _acaoLinha(el.dataset.bolAcao)],
   ['[data-bol-abrir]', el => { BO.abertos.add(el.dataset.bolAbrir); updateTable(); }],
@@ -222,7 +231,6 @@ function _onChange(e) {
     updateTable(); return;
   }
   if (t.dataset.bolSel) { if (t.checked) BO.sel.add(t.dataset.bolSel); else BO.sel.delete(t.dataset.bolSel); renderBulk(); return; }
-  if (t.id === 'bol-respaldo-select') { BO.respaldoFiltro = t.value; _resetPage(); updateTable(); return; }
   if (t.id === 'bol-respaldo-input') window.bolOnRespaldoFile(t);
 }
 

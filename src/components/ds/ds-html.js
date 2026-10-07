@@ -71,6 +71,25 @@ function _menuItem(it) {
     + `${it.icon ? icon(it.icon, 16) : ''}<div>${esc(it.label)}${sub}</div>${tag}</div>`;
 }
 
+/**
+ * Lista de escolha no visual novo (substitui o <select> do navegador).
+ * options: [{ value, label }]. buscar=true põe um campo de busca no topo (listas longas).
+ * O clique numa opção chega à tela como [data-ds-select="<id>"][data-value].
+ */
+export function dsSelect({ id, value = '', options, buscar = false, icon: ic, right = false }) {
+  const atual = options.find(o => String(o.value) === String(value)) || options[0];
+  const busca = buscar ? '<div class="ds-pop__busca"><input class="ds-input" type="text" placeholder="Buscar…" data-ds-filtro></div>' : '';
+  const itens = options.map(o => `<div class="ds-pop__it${String(o.value) === String(value) ? ' is-on' : ''}" role="option" data-ds-select="${esc(id)}" data-value="${esc(o.value)}">${esc(o.label)}</div>`).join('');
+  return `<div class="ds-menu ds-select-menu${right ? ' ds-menu--right' : ''}"><button type="button" class="ds-btn ds-btn--select" data-ds-menu-toggle>${ic ? icon(ic, 16) : ''}<span class="ds-select-menu__txt">${esc(atual?.label || '')}</span>${icon('chevron', 14)}</button>`
+    + `<div class="ds-pop ds-pop--lista" role="listbox">${busca}<div class="ds-pop__itens">${itens}</div></div></div>`;
+}
+
+/** Botão de data que abre o calendário próprio (dsCalendario). attrs identifica o campo para a tela. */
+export function dsDateBtn({ valor = '', placeholder = 'Definir data', attrs = '', travado = false }) {
+  const txt = valor ? `${valor.slice(8, 10)}/${valor.slice(5, 7)}/${valor.slice(0, 4)}` : placeholder;
+  return `<button type="button" class="ds-datebtn${valor ? '' : ' is-vazio'}"${travado ? ' disabled' : ''} ${attrs}>${icon('calendar', 14)}${esc(txt)}</button>`;
+}
+
 /** Estado vazio ("Nenhum cliente neste filtro"). */
 export const dsEmpty = ({ titulo, texto = '', acao = '' }) =>
   `<div class="ds-empty"><div class="ds-empty__ic">${icon('inbox', 24)}</div><h3>${esc(titulo)}</h3>${texto ? `<p>${esc(texto)}</p>` : ''}${acao}</div>`;
