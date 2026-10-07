@@ -3,6 +3,7 @@
 // garantidas no banco (migration 006) — aqui ficam os wrappers finos e os
 // espelhos declarados dessas regras.
 import { sb } from './supabase.js';
+import { lerTudo } from './paginacao.js';
 
 // ── Status ─────────────────────────────────────────────────────────────────
 export const STATUS_META = {
@@ -63,6 +64,17 @@ export function fetchBoletosPage(from, to) {
     .select('*')
     .order('created_at', { ascending: false })
     .range(from, to);
+}
+
+/** Tabela inteira em paralelo (ordem total: created_at, id). */
+export function fetchTodosBoletos() {
+  return lerTudo({ tabela: 'quitacao_boletos', montar: () => sb.from('quitacao_boletos').select('*')
+    .order('created_at', { ascending: false }).order('id', { ascending: true }) });
+}
+
+/** Uma linha (refresca só o cliente que mudou depois de uma ação). */
+export function fetchBoleto(id) {
+  return sb.from('quitacao_boletos').select('*').eq('id', id).maybeSingle();
 }
 
 export function rpcMudarStatus(id, novo, motivo) {

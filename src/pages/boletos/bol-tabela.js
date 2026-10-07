@@ -8,7 +8,7 @@
 import { toast } from '../../utils/ui.js';
 import { dsChips, dsMenu, dsBtn, dsEmpty, dsSelect, dsCalendario, fmtBr, initDsMenus } from '../../components/ds/index.js';
 import { STATUS_ORDER, rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
-import { BO, PAGE_SIZE, isAdmin, esc, PRESETS, presetRange, filtered, loadData } from './bol-core.js';
+import { BO, PAGE_SIZE, isAdmin, esc, PRESETS, presetRange, filtered, loadData, recarregarLinhas } from './bol-core.js';
 import { BOL_STATUS, linhaHTML, colunas } from './bol-linha.js';
 import { renderBulk, executarBulk } from './bol-bulk.js';
 
@@ -56,7 +56,7 @@ export function render(el) {
   initDsMenus();
   el.innerHTML = `
     <div class="ds-page">
-      <div class="ds-page__head"><div><h1>Quitação de boleto</h1><div class="ds-page__count" id="bol-count"></div></div></div>
+      <div class="ds-page__head"><div><h1>Quitação de boleto</h1><div class="ds-page__count"><span id="bol-count"></span> <span class="ds-sync" id="bol-sync" hidden>Atualizando…</span></div></div></div>
       <div class="ds-kpis" id="bol-kpis"></div>
       <div class="ds-tbl">
         <div class="ds-tbl__toolbar">
@@ -152,7 +152,7 @@ export function updateTable() {
 export async function bolMudarStatus(id, novo, motivo = null) {
   const { error } = await rpcMudarStatus(id, novo, motivo);
   if (error) { toast(msgErroBanco(error), 'err'); return false; }
-  await loadData();
+  await recarregarLinhas([id]);   // só a linha que mudou
   updateTable();
   toast(`Status atualizado: ${BOL_STATUS[novo]?.label || novo}`);
   return true;

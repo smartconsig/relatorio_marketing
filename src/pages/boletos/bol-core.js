@@ -3,7 +3,7 @@
 // daqui — nunca o contrário (sem ciclos).
 import { state } from '../../state.js';
 import { perm } from '../../services/permissions.js';
-import { fetchBoletosPage } from '../../services/boletos-svc.js';
+import { fetchTodosBoletos, fetchBoleto } from '../../services/boletos-svc.js';
 import { loadBoletoDocs } from '../../services/boleto-docs-svc.js';
 import { handleError } from '../../utils/ui.js';
 
@@ -24,7 +24,11 @@ export const BO = {
   respaldoFiltro: '',     // '' | status do respaldo | '__sem' (sem respaldo)
   abertos: new Set(),     // ids das linhas expandidas (redesenho, Fase 2)
   sel: new Set(),         // ids selecionados para ação em lote
+  carregadoPor: null,     // id do usuário dono dos dados em memória (nunca mostrar dados de outro login)
 };
+
+/** Há dados em memória deste mesmo usuário (pode mostrar na hora e atualizar por trás). */
+export const temCache = () => BO.carregadoPor && BO.carregadoPor === state.currentUser?.id;
 
 export const PAGE_SIZE = 25;
 
@@ -132,20 +136,23 @@ async function _carregarDocs() {
   }
 }
 
+// Clientes e documentos chegam AO MESMO TEMPO (antes: um depois do outro)
 export async function loadData() {
-  const all = [];
-  let from = 0;
-  const PAGE = 1000;
-  while (true) {
-    const { data, error } = await fetchBoletosPage(from, from + PAGE - 1);
-    if (error) { handleError('Erro ao carregar dados.', error); BO.registros = []; return; }
-    if (data?.length) all.push(...data);
-    if (!data || data.length < PAGE) break;
-    from += PAGE;
-  }
-  BO.registros = all;
+  const [{ data, error }] = await Promise.all([fetchTodosBoletos(), _carregarDocs()]);
+  if (error) { handleError('Erro ao carregar dados.', error); BO.registros = []; BO.carregadoPor = null; return; }
+  BO.registros = data;
+  BO.carregadoPor = state.currentUser?.id || null;
+}
 
-  await _carregarDocs();
+/** Depois de uma ação: busca no banco SÓ as linhas que mudaram (não baixa a tabela toda). */
+export async function recarregarLinhas(ids) {
+  const unicos = [...new Set(ids)];
+  const resps = await Promise.all(unicos.map(id => fetchBoleto(id)));
+  resps.forEach((r, i) => {
+    const pos = BO.registros.findIndex(x => x.id === unicos[i]);
+    if (pos >= 0 && r.data) BO.registros[pos] = r.data;
+    else if (pos >= 0 && !r.error) BO.registros.splice(pos, 1);
+  });
 }
 
 export const spinner = () => `<div style="padding:48px;text-align:center;color:var(--muted)">Carregando…</div>`;

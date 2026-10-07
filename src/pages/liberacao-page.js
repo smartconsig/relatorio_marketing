@@ -11,7 +11,7 @@
 //   lib-pendencias.js importação da planilha de pendências (obs)
 // Este arquivo re-exporta os 23 nomes públicos originais — main.js e os
 // onclick das strings HTML não mudaram uma linha.
-import { S, presetRange, spinner, loadData } from './liberacao/lib-core.js';
+import { S, presetRange, spinner, loadData, temCache } from './liberacao/lib-core.js';
 import { render, updateTable, reloadAndRender } from './liberacao/lib-tabela.js';
 
 export { libImportarPendencias, libOnPendenciasFile } from './liberacao/lib-pendencias.js';
@@ -29,9 +29,20 @@ export async function renderLiberacao() {
   if (!el) return;
   S.page = 1; S.search = ''; S.dateFrom = null; S.dateTo = null; S.preset = null; S.empresaFiltro = '';
   S.statusFiltro = ''; S.abertos = new Set(); S.sel = new Set();
+  if (temCache()) { render(el); _atualizarPorTras(); return; }
   el.innerHTML = spinner();
   await loadData();
   render(el);
+}
+
+// Voltou para a tela: mostra na hora o que já tinha e confere com o banco por trás
+async function _atualizarPorTras() {
+  const sync = document.getElementById('lib-sync');
+  if (sync) sync.hidden = false;
+  await loadData();
+  updateTable();
+  const s2 = document.getElementById('lib-sync');
+  if (s2) s2.hidden = true;
 }
 
 // ── Ações públicas de filtro ───────────────────────────────────────────────

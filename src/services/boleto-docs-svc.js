@@ -14,6 +14,7 @@
 //     CARTÃO, não do CPF). O CPF verdadeiro está no TEXTO do PDF — é dele que
 //     o casamento primário é feito; nome normalizado é o fallback.
 import { sb } from './supabase.js';
+import { lerTudo } from './paginacao.js';
 import { state } from '../state.js';
 import { normCPF } from '../utils/cpf.js';
 
@@ -22,21 +23,10 @@ const BUCKET = 'boletos-docs';
 // ── Metadados ───────────────────────────────────────────────────────────────
 
 export async function loadBoletoDocs() {
-  const all = [];
-  let from = 0;
-  const PAGE = 1000;
-  while (true) {
-    const { data, error } = await sb
-      .from('boleto_docs')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .range(from, from + PAGE - 1);
-    if (error) throw error;
-    if (data?.length) all.push(...data);
-    if (!data || data.length < PAGE) break;
-    from += PAGE;
-  }
-  return all;
+  const { data, error } = await lerTudo({ tabela: 'boleto_docs', montar: () => sb.from('boleto_docs').select('*')
+    .order('created_at', { ascending: true }).order('id', { ascending: true }) });
+  if (error) throw error;
+  return data;
 }
 
 // ── Upload / URL / exclusão ─────────────────────────────────────────────────

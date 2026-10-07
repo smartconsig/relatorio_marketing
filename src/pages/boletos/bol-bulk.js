@@ -5,7 +5,7 @@
 import { toast } from '../../utils/ui.js';
 import { dsBtn, dsConfirm } from '../../components/ds/index.js';
 import { rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
-import { BO, loadData, filtered } from './bol-core.js';
+import { BO, filtered, recarregarLinhas } from './bol-core.js';
 import { BOL_ACOES, BOL_STATUS, podeAgir } from './bol-linha.js';
 
 // Só os selecionados que continuam no filtro atual — trocar o filtro nunca deixa
@@ -55,7 +55,7 @@ async function _status() {
   if (!ok) return;
   const falhas = await _mudarTodos(lista, acao.novo);
   BO.sel.clear();
-  await loadData();
+  await recarregarLinhas(lista.map(r => r.id));
   window.bolRedesenhar?.();
   if (falhas.length) toast(`${lista.length - falhas.length} atualizados, ${falhas.length} falharam: ${falhas.slice(0, 2).join(' | ')}`, 'err');
   else toast(`${lista.length} clientes atualizados`);

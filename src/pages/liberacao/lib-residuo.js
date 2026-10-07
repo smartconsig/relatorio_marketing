@@ -6,7 +6,7 @@
 import { toast } from '../../utils/ui.js';
 import { dsForm, dsConfirm } from '../../components/ds/index.js';
 import { updateLiberacao, rpcResiduoIniciar, rpcResiduoAvancar, msgErroResiduo } from '../../services/liberacao-svc.js';
-import { S, isAdmin, fmtBRL, loadData } from './lib-core.js';
+import { S, isAdmin, fmtBRL, recarregarLinhas } from './lib-core.js';
 import { LIB_STATUS } from './lib-status.js';
 
 const nomes = lista => (lista.length === 1 ? lista[0].nome : `${lista.length} clientes`);
@@ -27,7 +27,7 @@ function _avisarResultado(lista, falhas, ok) {
 
 async function _finalizar(lista, falhas, ok, redesenhar) {
   S.sel.clear();
-  await loadData();
+  await recarregarLinhas(lista.map(r => r.id));   // só as linhas que mudaram
   redesenhar();
   _avisarResultado(lista, falhas, ok);
 }
@@ -67,7 +67,7 @@ async function _residuo(lista, redesenhar) {
     },
   });
   if (!v) return;
-  await loadData();
+  await recarregarLinhas([r.id]);
   redesenhar();
   toast(`${r.nome} em resíduo pendente`);
 }

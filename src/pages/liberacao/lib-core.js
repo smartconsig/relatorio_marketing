@@ -1,7 +1,7 @@
 // Núcleo da Liberação de Margem: estado compartilhado (store S), helpers e
 // carga de dados. Todos os outros módulos lib-* importam daqui — nunca o
 // contrário (sem ciclos).
-import { fetchLiberacoesPage } from '../../services/liberacao-svc.js';
+import { fetchTodasLiberacoes, fetchLiberacao } from '../../services/liberacao-svc.js';
 import { state } from '../../state.js';
 import { handleError } from '../../utils/ui.js';
 import { perm } from '../../services/permissions.js';
@@ -21,7 +21,11 @@ export const S = {
   statusFiltro: '',     // '' | chave de LIB_STATUS | 'alerta' (redesenho, Fase 3)
   abertos: new Set(),   // linhas expandidas
   sel: new Set(),       // selecionadas para ação em lote
+  carregadoPor: null,   // id do usuário dono dos dados em memória (nunca mostrar dados de outro login)
 };
+
+/** Há dados em memória deste mesmo usuário (pode mostrar na hora e atualizar por trás). */
+export const temCache = () => S.carregadoPor && S.carregadoPor === state.currentUser?.id;
 
 export const PAGE_SIZE = 25;
 
@@ -100,20 +104,28 @@ const _casaStatus = r => (S.statusFiltro === 'alerta' ? emAlerta(r) : statusDe(r
 
 // ── Data ──────────────────────────────────────────────────────────────────
 export async function loadData() {
-  const all = [];
-  let from = 0;
-  const PAGE = 1000;
-  while (true) {
-    const { data, error } = await fetchLiberacoesPage(from, from + PAGE - 1);
-    if (error) { handleError('Erro ao carregar dados.', error); S.registros = []; return; }
-    if (data?.length) all.push(...data);
-    if (!data || data.length < PAGE) break;
-    from += PAGE;
-  }
+  const { data: all, error } = await fetchTodasLiberacoes();
+  if (error) { handleError('Erro ao carregar dados.', error); S.registros = []; S.carregadoPor = null; return; }
+  S.carregadoPor = state.currentUser?.id || null;
   // Desde a migration 015 o resíduo é um STATUS da linha (residuo_status) e
   // em_residuo fica sempre false. O filtro abaixo só esconde linhas do fluxo
   // antigo (012) caso o site novo suba antes de a 015 ser rodada.
   S.registros = all.filter(r => !r.em_residuo);
+}
+
+/**
+ * Depois de uma ação (OK, resíduo, acerto…): busca no banco SÓ as linhas que
+ * mudaram e troca na memória — em vez de baixar as ~4 mil linhas de novo.
+ */
+export async function recarregarLinhas(ids) {
+  const resps = await Promise.all([...new Set(ids)].map(id => fetchLiberacao(id)));
+  resps.forEach((r, i) => {
+    const id = [...new Set(ids)][i];
+    const pos = S.registros.findIndex(x => String(x.id) === String(id));
+    const linha = r.data && !r.data.em_residuo ? r.data : null;
+    if (pos >= 0 && linha) S.registros[pos] = linha;
+    else if (pos >= 0 && !r.error) S.registros.splice(pos, 1);   // apagada (ou escondida) no banco
+  });
 }
 
 export const spinner = () => `<div style="padding:48px;text-align:center;color:var(--muted)">Carregando…</div>`;

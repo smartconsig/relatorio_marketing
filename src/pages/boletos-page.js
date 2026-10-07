@@ -15,7 +15,7 @@ import * as XLSX from 'xlsx';
 import { toast, handleError } from '../utils/ui.js';
 import { showConfirm } from '../utils/confirm.js';
 import { STATUS_META, limparBaseBoletos, deleteBoleto } from '../services/boletos-svc.js';
-import { BO, fmtCpf, presetRange, filtered, loadData, spinner } from './boletos/bol-core.js';
+import { BO, fmtCpf, presetRange, filtered, loadData, spinner, temCache } from './boletos/bol-core.js';
 import { render, updateTable } from './boletos/bol-tabela.js';
 import { reloadAndRender } from './boletos/bol-tabela.js';
 
@@ -41,9 +41,20 @@ export async function renderBoletos() {
   BO.page = 1; BO.search = ''; BO.dateFrom = null; BO.dateTo = null; BO.preset = null;
   BO.empresaFiltro = ''; BO.statusFiltro = ''; BO.respaldoFiltro = '';
   BO.abertos = new Set(); BO.sel = new Set();
+  if (temCache()) { render(el); _atualizarPorTras(); return; }
   el.innerHTML = spinner();
   await loadData();
   render(el);
+}
+
+// Voltou para a tela: mostra na hora o que já tinha e confere com o banco por trás
+async function _atualizarPorTras() {
+  const sync = document.getElementById('bol-sync');
+  if (sync) sync.hidden = false;
+  await loadData();
+  updateTable();
+  const s2 = document.getElementById('bol-sync');
+  if (s2) s2.hidden = true;
 }
 
 // ── Filtros ───────────────────────────────────────────────────────────────

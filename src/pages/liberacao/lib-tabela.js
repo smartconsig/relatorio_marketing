@@ -50,7 +50,7 @@ export function render(el) {
   initDsMenus();
   el.innerHTML = `
     <div class="ds-page">
-      <div class="ds-page__head"><div><h1>Liberação de margem</h1><div class="ds-page__count" id="lib-count"></div></div></div>
+      <div class="ds-page__head"><div><h1>Liberação de margem</h1><div class="ds-page__count"><span id="lib-count"></span> <span class="ds-sync" id="lib-sync" hidden>Atualizando…</span></div></div></div>
       <div class="ds-kpis" id="lib-kpis"></div>
       <div class="ds-tbl">
         <div class="ds-tbl__toolbar">

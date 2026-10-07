@@ -6,6 +6,10 @@
 .ds-page__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .ds-page__head h1 { font: 700 26px var(--ds-font-display); font-stretch: 108%; letter-spacing: -.01em; margin: 0; color: var(--ds-ink); }
 .ds-page__count { color: var(--ds-ink-3); font-size: 13px; margin-top: 2px; }
+.ds-sync { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; font-size: 12px; color: var(--ds-ink-3); }
+.ds-sync[hidden] { display: none; }
+.ds-sync::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ds-line-strong); border-top-color: var(--ds-brand); animation: ds-giro .8s linear infinite; }
+@keyframes ds-giro { to { transform: rotate(360deg); } }
 .ds-filterbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .ds-filterbar__right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .ds-select { height: 36px; border-radius: var(--ds-r-pill); border: 1px solid var(--ds-line-strong); background: var(--ds-surface);

@@ -3,6 +3,7 @@
 // cada função devolve o { data, error } original; quem trata erro é a tela.
 // Resíduo dentro da Liberação: RPCs liberacao_residuo_* (migration 015), no fim deste arquivo.
 import { sb } from './supabase.js';
+import { lerTudo } from './paginacao.js';
 
 const TABELA = 'liberacao_margem_master';
 
@@ -14,6 +15,17 @@ export function fetchLiberacoesPage(from, to) {
     .order('data_quitado', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, to);
+}
+
+/** Tabela inteira em paralelo (ordem total: data_quitado, created_at, id). */
+export function fetchTodasLiberacoes() {
+  return lerTudo({ tabela: TABELA, montar: () => sb.from(TABELA).select('*')
+    .order('data_quitado', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: true }) });
+}
+
+/** Uma linha (refresca só o cliente que mudou depois de uma ação). */
+export function fetchLiberacao(id) {
+  return sb.from(TABELA).select('*').eq('id', id).maybeSingle();
 }
 
 export function insertLiberacao(row) {
