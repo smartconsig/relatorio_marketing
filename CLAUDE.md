@@ -419,6 +419,17 @@ Oito arquivos têm os orçamentos **desligados de propósito** (bloco de overrid
 
 ---
 
+## Design system novo (redesenho iniciado em 06/10/2026)
+
+Aprovado pelo responsável a partir de duas referências (Roomify: tema claro, Aura: tema escuro), mantendo a marca: vermelho Smart, Archivo e Instrument Sans.
+
+- **Referência visual** (fora do build, só consulta): `design-system/vitrine.html` (componentes + login), `design-system/prototipo.html` (Liberação e Boletos navegáveis, visão Smart/Parceiro) e `design-system/ds.css`. Para abrir: launch `vitrine-ds` (porta 5180).
+- **No código**: tokens `--ds-*` e classes `.ds-*` em `src/styles/ds/`; peças JS em `src/components/ds/` (importar de `index.js`): `dsForm` (formulário com obrigatórios), `dsConfirm`, `dsToast`, `dsImportReport` (conferência → progresso → falhas), `dsMenu`/`initDsMenus`, `dsChips`, `dsBadge`, `dsSteps`, `dsKv`, `dsWait`, `dsBtn`, `dsEmpty`. Página de teste: `ds-demo.html` (só no `npm run dev`).
+- **Regras de usabilidade aprovadas**: ação do dia a dia fica NA LINHA, em 1 clique, numa coluna "Ação" com verbo ("Marcar como enviado") — nunca o rótulo "próximo passo"; clicar na linha abre o detalhe; ações raras ficam dentro da linha aberta ou no ⋯; todo mundo vê todos os status, e quando a etapa é da Smart o parceiro vê "Aguardando Smart"; ação em lote por caixinhas; **todo aviso, confirmação e relatório de importação segue o design novo**.
+- **Fases**: 0 base (✅ 06/10/2026, sem mudança visual) → 1 base global (login, menu lateral, tema no topo, avisos/confirmação do sistema todo) → 2 Quitação de Boleto → 3 Liberação (resíduo em 4 etapas, alerta de 7 dias úteis) → 4 remover tela Resíduos → 5 demais telas. Decisões detalhadas na memória do projeto.
+
+---
+
 ## Como criar uma feature nova
 
 Receita derivada das etapas 2 e 3 do refactor (18 arquivos gigantes divididos em 60+ módulos, 185 avisos zerados).

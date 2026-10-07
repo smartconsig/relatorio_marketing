@@ -1,0 +1,82 @@
+/* ══════════════════════════════════════════════════════════════════════
+   RYC Design System — TOKENS (Fase 0 do redesenho, out/2026)
+   Referência visual aprovada: design-system/vitrine.html e prototipo.html.
+   Prefixo --ds-* para conviver com os tokens legados (--bg, --surface, --red…)
+   sem colisão: nada no app usa estes nomes até a tela ser migrada.
+   Tema: escuro é o padrão do app (sem atributo); claro = [data-theme="light"].
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ds-brand:       #e5383f;
+  --ds-brand-hover: #f0545a;
+  --ds-brand-soft:  rgba(229,56,63,.14);
+  --ds-brand-text:  #ff8a8f;
+  --ds-brand-grad:  linear-gradient(135deg, #ff5a61 0%, #e5262e 45%, #8f0d13 100%);
+  --ds-brand-glow:  0 8px 20px -10px rgba(255,59,67,.40);
+
+  --ds-bg:          #09080a;
+  --ds-bg-glow:     radial-gradient(900px 560px at 95% -180px, rgba(255,59,67,.14), transparent 66%),
+                    radial-gradient(700px 500px at -10% 30%, rgba(139,92,246,.10), transparent 70%),
+                    radial-gradient(800px 500px at 50% 120%, rgba(255,59,67,.08), transparent 70%);
+  --ds-card-bg:     linear-gradient(180deg, rgba(32,29,35,.92), rgba(20,18,22,.92));
+  --ds-surface:     #161417;
+  --ds-surface-2:   #1d1b1f;
+  --ds-surface-3:   #252228;
+  --ds-ink:         #f3f0f2;
+  --ds-ink-2:       #b0a8ae;
+  --ds-ink-3:       #7a727a;
+  --ds-line:        rgba(255,255,255,.07);
+  --ds-line-strong: #3a363d;
+
+  --ds-ok:   #34e3a0; --ds-ok-bg:   rgba(52,227,160,.13);  --ds-ok-dot:   #34e3a0;
+  --ds-warn: #ffb547; --ds-warn-bg: rgba(255,181,71,.13);  --ds-warn-dot: #ffb547;
+  --ds-info: #6ea8ff; --ds-info-bg: rgba(110,168,255,.14); --ds-info-dot: #6ea8ff;
+  --ds-pur:  #b69cff; --ds-pur-bg:  rgba(182,156,255,.14); --ds-pur-dot:  #b69cff;
+  --ds-bad:  #ff5c64; --ds-bad-bg:  rgba(255,92,100,.15);  --ds-bad-dot:  #ff5c64;
+  --ds-neutral-bg: #232026;
+
+  --ds-shadow:       0 1px 0 rgba(255,255,255,.05) inset, 0 12px 32px -8px rgba(0,0,0,.6);
+  --ds-shadow-hover: 0 1px 0 rgba(255,255,255,.07) inset, 0 18px 44px -10px rgba(0,0,0,.75), 0 0 0 1px rgba(255,90,97,.18);
+  --ds-shadow-pop:   0 24px 56px -10px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.05);
+
+  --ds-r-sm: 12px; --ds-r: 16px; --ds-r-lg: 24px; --ds-r-pill: 999px;
+  --ds-font-display: 'Archivo', system-ui, sans-serif;
+  --ds-font-body:    'Instrument Sans', system-ui, sans-serif;
+  --ds-font-mono:    'JetBrains Mono', ui-monospace, monospace;
+  --ds-dur: 160ms;
+  --ds-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+  --ds-brand:       #940b10;
+  --ds-brand-hover: #7a090d;
+  --ds-brand-soft:  #fbeaea;
+  --ds-brand-text:  #8a0a0f;
+  --ds-brand-grad:  linear-gradient(135deg, #d4161f 0%, #a50d13 48%, #5e060a 100%);
+  --ds-brand-glow:  0 6px 16px -8px rgba(196,18,26,.40), 0 1px 3px rgba(148,11,16,.18);
+
+  --ds-bg:          #f3f1f4;
+  --ds-bg-glow:     radial-gradient(820px 520px at 92% -140px, rgba(229,56,63,.15), transparent 68%),
+                    radial-gradient(760px 520px at -12% 18%, rgba(139,92,246,.09), transparent 70%),
+                    radial-gradient(700px 480px at 60% 110%, rgba(251,146,60,.08), transparent 70%);
+  --ds-card-bg:     rgba(255,255,255,.86);
+  --ds-surface:     #ffffff;
+  --ds-surface-2:   #f8f6f7;
+  --ds-surface-3:   #efebed;
+  --ds-ink:         #17121a;
+  --ds-ink-2:       #5d5560;
+  --ds-ink-3:       #958d97;
+  --ds-line:        #ebe6e8;
+  --ds-line-strong: #d9d2d5;
+
+  --ds-ok:   #059669; --ds-ok-bg:   #d6f5e7; --ds-ok-dot:   #10b981;
+  --ds-warn: #c2410c; --ds-warn-bg: #ffedd5; --ds-warn-dot: #f97316;
+  --ds-info: #1d4ed8; --ds-info-bg: #dbe7ff; --ds-info-dot: #3b82f6;
+  --ds-pur:  #6d28d9; --ds-pur-bg:  #ede6ff; --ds-pur-dot:  #8b5cf6;
+  --ds-bad:  #dc2626; --ds-bad-bg:  #fee2e2; --ds-bad-dot:  #ef4444;
+  --ds-neutral-bg: #efecf0;
+
+  --ds-shadow:       0 1px 2px rgba(23,18,26,.05), 0 6px 16px -4px rgba(23,18,26,.08), 0 24px 48px -16px rgba(60,20,40,.16);
+  --ds-shadow-hover: 0 2px 4px rgba(23,18,26,.06), 0 10px 20px -6px rgba(23,18,26,.10), 0 26px 52px -18px rgba(60,20,40,.20);
+  --ds-shadow-pop:   0 24px 56px -12px rgba(23,18,26,.28), 0 4px 10px rgba(23,18,26,.08);
+}

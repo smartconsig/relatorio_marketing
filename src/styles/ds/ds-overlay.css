@@ -1,0 +1,47 @@
+/* RYC Design System — janelas por cima da tela: modal de formulário,
+   relatório de importação (resumo + lista por motivo + progresso) e aviso rápido. */
+
+.ds-overlay { position: fixed; inset: 0; background: rgba(12,10,13,.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  display: none; place-items: center; z-index: 9000; padding: 16px; }
+.ds-overlay.is-open { display: grid; animation: ds-drop .15s var(--ds-ease); }
+.ds-modal { width: min(480px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; background: var(--ds-surface);
+  color: var(--ds-ink); border: 1px solid var(--ds-line); border-radius: var(--ds-r-lg); box-shadow: var(--ds-shadow-pop); overflow: hidden;
+  font: 14px/1.55 var(--ds-font-body); }
+.ds-modal--wide { width: min(640px, 100%); }
+.ds-modal__head { padding: 20px 22px 6px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ds-modal__eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ds-ink-3); font-weight: 600; }
+.ds-modal__title { font: 650 20px var(--ds-font-display); font-stretch: 108%; margin: 4px 0 0; letter-spacing: -.01em; }
+.ds-modal__body { padding: 10px 22px 18px; display: grid; gap: 16px; overflow: auto; }
+.ds-modal__foot { padding: 14px 22px; border-top: 1px solid var(--ds-line); display: flex; justify-content: flex-end; gap: 8px; background: var(--ds-surface-2); }
+.ds-modal__foot .ds-hint, .ds-modal__foot .ds-err { margin-right: auto; align-self: center; }
+
+/* ── Relatório de importação ── */
+.ds-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.ds-sum > div { border-radius: var(--ds-r); padding: 12px; background: var(--ds-surface-2); border: 1px solid var(--ds-line); }
+.ds-sum b { display: block; font: 650 22px var(--ds-font-display); }
+.ds-sum span { font-size: 12px; color: var(--ds-ink-2); }
+.ds-sum .is-ok b { color: var(--ds-ok); } .ds-sum .is-warn b { color: var(--ds-warn); } .ds-sum .is-bad b { color: var(--ds-bad); }
+.ds-group > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 4px 0; }
+.ds-group > summary::-webkit-details-marker { display: none; }
+.ds-group > summary::after { content: '▾'; color: var(--ds-ink-3); margin-left: auto; transition: transform .2s; }
+.ds-group:not([open]) > summary::after { transform: rotate(-90deg); }
+.ds-list { border: 1px solid var(--ds-line); border-radius: var(--ds-r); overflow: hidden; margin-top: 6px; max-height: 240px; overflow-y: auto; }
+.ds-list > div { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; font-size: 13px; border-bottom: 1px solid var(--ds-line); }
+.ds-list > div:last-child { border-bottom: 0; }
+.ds-list small { color: var(--ds-ink-3); }
+.ds-progress { height: 6px; border-radius: 99px; background: var(--ds-surface-3); overflow: hidden; }
+.ds-progress > i { display: block; height: 100%; width: 0; background: var(--ds-brand-grad); border-radius: inherit; transition: width .25s; }
+
+/* ── Aviso rápido ── */
+.ds-toasts { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 9500; pointer-events: none; }
+.ds-toast { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--ds-r); background: var(--ds-surface);
+  color: var(--ds-ink); border: 1px solid var(--ds-line); box-shadow: var(--ds-shadow-pop); width: min(420px, calc(100vw - 32px));
+  font: 14px/1.45 var(--ds-font-body); pointer-events: auto; animation: ds-toast-in .25s var(--ds-ease); }
+.ds-toast.is-out { opacity: 0; transform: translateY(8px); transition: .2s; }
+.ds-toast__ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--ds-ok-bg); color: var(--ds-ok); }
+.ds-toast--err .ds-toast__ic { background: var(--ds-bad-bg); color: var(--ds-bad); }
+.ds-toast--warn .ds-toast__ic { background: var(--ds-warn-bg); color: var(--ds-warn); }
+.ds-toast__msg { flex: 1; min-width: 0; }
+.ds-toast__msg small { display: block; color: var(--ds-ink-2); font-size: 13px; }
+
+@keyframes ds-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }

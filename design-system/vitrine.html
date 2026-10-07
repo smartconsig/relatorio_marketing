@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RYC Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds.css">
+<style>
+.lg-frame { border-radius: 28px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; grid-template-columns: 1.05fr 1fr; min-height: 560px; background: var(--surface); }
+.lg-brand { position: relative; background: var(--brand-grad); color: #fff; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.lg-brand::before { content: ""; position: absolute; inset: 0; opacity: .14; pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
+  background-size: 28px 28px; mask-image: radial-gradient(120% 90% at 100% 0%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(120% 90% at 100% 0%, #000 20%, transparent 75%); }
+.lg-brand::after { content: ""; position: absolute; width: 420px; height: 420px; right: -140px; bottom: -160px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.18), transparent 65%); }
+.lg-brand > * { position: relative; z-index: 1; }
+.lg-logo { display: flex; align-items: center; gap: 12px; }
+.lg-logo i { width: 40px; height: 40px; border-radius: 13px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3); display: grid; place-items: center; font: 700 17px var(--font-display); font-style: normal; }
+.lg-logo b { font: 700 19px var(--font-display); font-stretch: 115%; }
+.lg-brand h2 { font-size: 34px; line-height: 1.12; font-weight: 700; margin: 0 0 12px; }
+.lg-brand p { margin: 0; opacity: .85; max-width: 380px; }
+.lg-feats { display: grid; gap: 10px; margin-top: 26px; }
+.lg-feats div { display: flex; gap: 10px; align-items: center; font-size: 13.5px; }
+.lg-feats span { width: 26px; height: 26px; border-radius: 9px; background: rgba(255,255,255,.16); display: grid; place-items: center; flex: none; }
+.lg-foot { font-size: 12px; opacity: .7; }
+.lg-form { padding: 48px 44px; display: flex; flex-direction: column; justify-content: center; gap: 18px; background: var(--surface); }
+.lg-form h3 { font: 700 26px var(--font-display); font-stretch: 108%; margin: 0; }
+.lg-pass { position: relative; }
+.lg-pass button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font-size: 12px; font-weight: 600; }
+.lg-err { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--bad-bg); color: var(--bad); font-size: 13px; }
+.lg-big { height: 46px; justify-content: center; font-size: 15px; width: 100%; }
+.lg-tema { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+@media (max-width: 820px) { .lg-frame { grid-template-columns: 1fr; } .lg-brand { padding: 28px; } .lg-brand h2 { font-size: 26px; } .lg-feats, .lg-foot { display: none; } .lg-form { padding: 28px; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11v6"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M9 10v10"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20z" stroke-linejoin="round"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M7 16v-4M12 16V8M17 16v-7"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 13h2M3 10h18"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></symbol>
+</svg>
+
+<div class="wrap">
+
+  <!-- ═══ CABEÇALHO ═══ -->
+  <div class="top">
+    <div>
+      <div class="logo"><i>S</i><b>Smart RYC</b></div>
+      <div class="eyebrow">Design system · proposta v1</div>
+      <h1>Vitrine de componentes</h1>
+      <p>Base visual para redesenhar as telas do RYC. Tema claro inspirado no Roomify, tema escuro inspirado no Aura, com o vermelho Smart como única cor de destaque. Tudo aqui é demonstração: nenhum dado é real e nada é gravado.</p>
+    </div>
+    <div class="seg" id="theme-seg">
+      <button class="on" data-t="light">Claro</button>
+      <button data-t="dark">Escuro</button>
+    </div>
+  </div>
+
+  <!-- ═══ 1. TELA EXEMPLO ═══ -->
+  <section class="sec">
+    <header>
+      <div><div class="eyebrow">01 · Tela de exemplo</div><h2>Quitação de Boleto, no visual novo</h2></div>
+      <span class="muted">Clique nas linhas, nos filtros e nos menus</span>
+    </header>
+
+    <div class="app">
+    <aside class="side">
+      <div class="logo"><i>S</i><b>Smart RYC</b></div>
+      <div class="nav"><svg><use href="#i-home"/></svg>Home</div>
+      <div class="grp">Dashboard</div>
+      <div class="nav"><svg><use href="#i-chart"/></svg>Visão geral</div>
+      <div class="nav"><svg><use href="#i-trophy"/></svg>Ranking</div>
+      <div class="grp">Financeiro</div>
+      <div class="nav"><svg><use href="#i-wallet"/></svg>Liberação de margem<span class="cnt">3</span></div>
+      <div class="nav on"><svg><use href="#i-file"/></svg>Quitação de boleto</div>
+      <div class="grp">Marketing</div>
+      <div class="nav"><svg><use href="#i-layers"/></svg>Esteira de conteúdo</div>
+      <div class="nav"><svg><use href="#i-chart"/></svg>Tráfego (Ads)</div>
+      <div class="me"><div class="av">SC</div><div style="min-width:0"><b style="display:block;font-size:13px">Smart Consig</b><span class="muted" style="font-size:12px">Administrador</span></div></div>
+    </aside>
+    <div class="main">
+    <div class="main-top">
+      <div><div class="crumb">Financeiro / Quitação de boleto</div><h2 style="font-size:24px;margin-top:2px">Quitação de boleto</h2></div>
+      <div class="row"><div class="view-switch">Ver como<div class="seg" id="view-seg"><button class="on" data-v="smart">Smart</button><button data-v="parceiro">Parceiro</button></div></div><button class="btn icon" aria-label="Notificações"><svg><use href="#i-bell"/></svg></button><div class="av">SC</div></div>
+    </div>
+    <div class="grid g4" style="margin-bottom:16px">
+      <div class="card kpi hl lift"><div class="lbl">Clientes no período</div><div class="val">214</div><div class="delta"><b>+18</b> desde ontem</div>
+        <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none"><path d="M0 28 L15 24 L30 26 L45 18 L60 20 L75 12 L90 14 L105 6 L120 8" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2"/></svg></div>
+      <div class="card kpi lift"><div class="lbl">Aguardando boleto <span class="badge b-warn">31</span></div><div class="val">31</div><div class="delta">solicitados à Smart</div>
+        <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none"><defs><linearGradient id="gw" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--warn-dot)" stop-opacity=".35"/><stop offset="1" stop-color="var(--warn-dot)" stop-opacity="0"/></linearGradient></defs><path d="M0 20 L20 22 L40 14 L60 18 L80 10 L100 16 L120 12 L120 34 L0 34Z" fill="url(#gw)"/><path d="M0 20 L20 22 L40 14 L60 18 L80 10 L100 16 L120 12" fill="none" stroke="var(--warn-dot)" stroke-width="2"/></svg></div>
+      <div class="card kpi lift"><div class="lbl">Boletos enviados</div><div class="val">58</div><div class="delta"><b>12</b> com respaldo novo</div>
+        <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none"><defs><linearGradient id="gi" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--info-dot)" stop-opacity=".35"/><stop offset="1" stop-color="var(--info-dot)" stop-opacity="0"/></linearGradient></defs><path d="M0 26 L20 20 L40 22 L60 12 L80 16 L100 8 L120 10 L120 34 L0 34Z" fill="url(#gi)"/><path d="M0 26 L20 20 L40 22 L60 12 L80 16 L100 8 L120 10" fill="none" stroke="var(--info-dot)" stroke-width="2"/></svg></div>
+      <div class="card kpi lift"><div class="lbl">Quitados no mês</div><div class="val">R$ 412 mil</div><div class="delta"><b>+9,4%</b> vs. mês passado</div>
+        <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none"><g fill="var(--ok-dot)"><rect x="2" y="20" width="10" height="14" rx="3" opacity=".35"/><rect x="18" y="16" width="10" height="18" rx="3" opacity=".45"/><rect x="34" y="22" width="10" height="12" rx="3" opacity=".35"/><rect x="50" y="12" width="10" height="22" rx="3" opacity=".55"/><rect x="66" y="14" width="10" height="20" rx="3" opacity=".6"/><rect x="82" y="8" width="10" height="26" rx="3" opacity=".75"/><rect x="98" y="4" width="10" height="30" rx="3"/></g></svg></div>
+    </div>
+
+    <div class="tbl">
+      <div class="toolbar">
+        <label class="search"><svg><use href="#i-search"/></svg><input class="input" placeholder="Buscar nome, CPF ou contrato"></label>
+        <button class="btn"><svg><use href="#i-cal"/></svg>Últimos 30 dias<svg><use href="#i-down"/></svg></button>
+        <div class="menu" data-menu>
+          <button class="btn"><svg><use href="#i-up"/></svg>Importar<svg><use href="#i-down"/></svg></button>
+          <div class="pop">
+            <div class="it"><svg><use href="#i-table"/></svg><div>Planilha de clientes<small>Cadastra clientes em lote</small></div></div>
+            <div class="it"><svg><use href="#i-zip"/></svg><div>Lote ZIP<small>Boletos e faturas em PDF</small></div><span class="tag">ADMIN</span></div>
+            <div class="it"><svg><use href="#i-shield"/></svg><div>Respaldo<small>Relatório de Faturas Smart</small></div><span class="tag">ADMIN</span></div>
+            <div class="sep"></div>
+            <div class="it"><svg><use href="#i-dl"/></svg><div>Baixar modelo da planilha</div></div>
+          </div>
+        </div>
+        <div class="menu" data-menu>
+          <button class="btn"><svg><use href="#i-dl"/></svg>Exportar<svg><use href="#i-down"/></svg></button>
+          <div class="pop">
+            <div class="it"><svg><use href="#i-table"/></svg><div>Excel<small>Todas as colunas do filtro atual</small></div></div>
+            <div class="it"><svg><use href="#i-zip"/></svg><div>Lote ZIP<small>Uma pasta por cliente + resumo.xlsx</small></div></div>
+          </div>
+        </div>
+        <button class="btn primary"><svg><use href="#i-plus"/></svg>Adicionar cliente</button>
+        <div class="menu" data-menu>
+          <button class="btn icon" aria-label="Mais opções"><svg><use href="#i-dots"/></svg></button>
+          <div class="pop" style="left:auto;right:0">
+            <div class="it danger"><svg><use href="#i-trash"/></svg><div>Limpar base<small>Apaga todos os clientes da tela</small></div><span class="tag">ADMIN</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="filters chips" id="chips">
+        <button class="chip on">Todos <span class="n">214</span></button>
+        <button class="chip"><span class="dot" style="background:var(--ink-3)"></span>Solicitar boleto <span class="n">40</span></button>
+        <button class="chip"><span class="dot" style="background:var(--warn-dot)"></span>Solicitado <span class="n">31</span></button>
+        <button class="chip"><span class="dot" style="background:var(--info-dot)"></span>Enviado <span class="n">58</span></button>
+        <button class="chip"><span class="dot" style="background:var(--ok-dot)"></span>Quitado <span class="n">77</span></button>
+        <button class="chip"><span class="dot" style="background:var(--bad-dot)"></span>Reprovado <span class="n">8</span></button>
+      </div>
+
+      <div class="tr head"><div><input type="checkbox" class="cb" id="cb-all" aria-label="Selecionar todos"></div><div>Cliente</div><div>Convênio · produto</div><div>Cadastro</div><div>Status</div><div style="text-align:right">Ação</div><div></div></div>
+
+      <div class="tr item open" data-row="a"><div><input type="checkbox" class="cb" aria-label="Selecionar"></div>
+        <div class="who"><b>Maria Aparecida Souza</b><span>123.***.***-00</span></div>
+        <div class="muted">SIAPE · Cartão benefício</div>
+        <div class="muted">02/10/2026</div>
+        <div><span class="badge b-info">Boleto enviado</span></div>
+        <div class="act" data-who="parceiro"><button class="btn sm primary" data-step="quitar">Marcar como quitado</button><button class="btn sm icon" aria-label="Mais ações" data-step="mais" style="width:30px"><svg><use href="#i-dots"/></svg></button></div><div class="chev"><svg width="16" height="16"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="det open" data-det="a">
+        <div class="timeline" style="margin:12px 0 14px">
+          <div class="step done"><i><svg width="12" height="12"><use href="#i-check"/></svg></i>Solicitar</div><div class="bar done"></div>
+          <div class="step done"><i><svg width="12" height="12"><use href="#i-check"/></svg></i>Solicitado</div><div class="bar done"></div>
+          <div class="step now"><i>3</i>Enviado</div><div class="bar"></div>
+          <div class="step"><i>4</i>Quitado</div>
+        </div>
+        <div class="det-grid">
+          <div class="kv"><span>Contrato</span><b class="mono">CT-0048213</b></div>
+          <div class="kv"><span>Valor da parcela</span><b>R$ 312,40</b></div>
+          <div class="kv"><span>Saldo devedor</span><b>R$ 6.200,00</b></div>
+          <div class="kv"><span>Troco</span><b>R$ 1.840,00</b></div>
+          <div class="kv"><span>Solicitado em</span><b>03/10/2026</b></div>
+          <div class="kv"><span>Enviado em</span><b>04/10/2026</b></div>
+        </div>
+        <div class="blk">
+          <h3><svg width="16" height="16" style="color:var(--brand-text)"><use href="#i-shield"/></svg>Respaldo <span class="badge b-pur" style="margin-left:4px">Enquadrada</span><span class="muted" style="font-weight:400;font-size:12.5px;margin-left:auto">protocolo <span class="mono">2026092919799</span> · importado 06/10</span></h3>
+          <div class="lines">
+            <div>Cartão 5117 · CREDCESTA · Enquadrada · saldo devedor R$ 2.655,66</div>
+            <div>Cartão 3697 · M FÁCIL · Fatura zerada · saldo devedor R$ 0,00</div>
+          </div>
+        </div>
+        <div class="blk">
+          <h3>Documentos</h3>
+          <div class="files">
+            <span class="file"><svg><use href="#i-file"/></svg>Boleto_48213.pdf</span>
+            <span class="file"><svg><use href="#i-file"/></svg>MARIA A SOUZA - 5117.pdf</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn sm">Editar dados</button>
+          <button class="btn sm">Anexar documento</button>
+          <button class="btn sm danger">Reprovar</button>
+          <span class="muted" style="font-size:12.5px;align-self:center;margin-left:auto">Ações menos usadas ficam aqui dentro</span>
+        </div>
+      </div>
+
+      <div class="tr item alert" data-row="b"><div><input type="checkbox" class="cb" aria-label="Selecionar"></div>
+        <div class="who"><b>João Batista da Silva</b><span>987.***.***-00</span></div>
+        <div class="muted">GDF · Cartão consignado</div>
+        <div class="muted">18/09/2026</div>
+        <div><span class="badge b-bad">Em alerta · 9 dias</span></div>
+        <div class="act" data-who="parceiro"><button class="btn sm primary" data-step="ok">Marcar como OK</button></div><div class="chev"><svg width="16" height="16"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="det" data-det="b">
+        <div class="det-grid" style="margin-top:12px">
+          <div class="kv"><span>Resíduo pago em</span><b>23/09/2026</b></div>
+          <div class="kv"><span>Dias úteis sem OK</span><b style="color:var(--bad)">9 de 7</b></div>
+        </div>
+        <div class="actions"><button class="btn sm">Ver histórico do resíduo</button></div>
+      </div>
+
+      <div class="tr item" data-row="c"><div><input type="checkbox" class="cb" aria-label="Selecionar"></div>
+        <div class="who"><b>Ana Paula Pereira</b><span>111.***.***-44</span></div>
+        <div class="muted">SIAPE · Cartão benefício</div>
+        <div class="muted">30/09/2026</div>
+        <div><span class="badge b-warn">Boleto solicitado</span></div>
+        <div class="act" data-who="smart"><span class="wait"><svg width="14" height="14"><use href="#i-clock"/></svg>Aguardando Smart</span><button class="btn sm primary" data-step="enviar">Marcar como enviado</button><button class="btn sm icon" aria-label="Mais ações" data-step="mais" style="width:30px"><svg><use href="#i-dots"/></svg></button></div><div class="chev"><svg width="16" height="16"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="det" data-det="c"><div class="det-grid" style="margin-top:12px"><div class="kv"><span>Saldo devedor</span><b>R$ 4.100,00</b></div><div class="kv"><span>Solicitado em</span><b>01/10/2026</b></div></div></div>
+
+      <div class="tr item" data-row="d"><div><input type="checkbox" class="cb" aria-label="Selecionar"></div>
+        <div class="who"><b>Carlos Eduardo Lima</b><span>555.***.***-88</span></div>
+        <div class="muted">GOV SP · Cartão benefício</div>
+        <div class="muted">27/09/2026</div>
+        <div><span class="badge b-ok">Quitado</span></div>
+        <div class="act"><span class="done-txt">Concluído</span></div><div class="chev"><svg width="16" height="16"><use href="#i-down"/></svg></div>
+      </div>
+      <div class="det" data-det="d"><div class="det-grid" style="margin-top:12px"><div class="kv"><span>Quitado em</span><b>05/10/2026</b></div></div></div>
+
+      <div class="pager"><span>Mostrando 4 de 214</span><button class="btn sm">Ver mais</button></div>
+      <div class="bulk" id="bulk"><b id="bulk-n">0 selecionados</b><span style="opacity:.6">·</span><button class="btn sm primary" id="bulk-go">Marcar como enviado</button><button class="btn sm ghost">Exportar lote ZIP</button><button class="btn sm ghost" id="bulk-clear" style="margin-left:auto">Limpar seleção</button></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2. CORES ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">02 · Cores</div><h2>Uma cor de destaque, status com significado</h2></div></header>
+    <div class="grid g4">
+      <div class="sw"><i style="background:var(--brand)"></i><div><b>Vermelho Smart</b><span class="muted">Ação principal, destaques</span></div></div>
+      <div class="sw"><i style="background:var(--ink)"></i><div><b>Tinta</b><span class="muted">Textos e filtro ativo</span></div></div>
+      <div class="sw"><i style="background:var(--surface-3)"></i><div><b>Superfícies</b><span class="muted">Fundos e cartões</span></div></div>
+      <div class="sw"><i style="background:var(--line-strong)"></i><div><b>Linhas</b><span class="muted">Bordas e divisões</span></div></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin-bottom:12px">Status do sistema</h3>
+      <div class="row">
+        <span class="badge b-neutral">Pendente</span>
+        <span class="badge b-warn">Solicitado</span>
+        <span class="badge b-info">Enviado</span>
+        <span class="badge b-ok">OK · Quitado</span>
+        <span class="badge b-bad">Reprovado · Em alerta</span>
+        <span class="badge b-pur">Respaldo</span>
+        <span class="badge b-brand">Resíduo pendente</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 3. TIPOGRAFIA ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">03 · Tipografia</div><h2>Archivo nos títulos e números, Instrument Sans no texto</h2></div></header>
+    <div class="card">
+      <div class="type-row"><div class="meta">Título de tela · 34</div><h1>Liberação de Margem</h1></div>
+      <div class="type-row"><div class="meta">Número de KPI · 30</div><div class="kpi" style="padding:0"><div class="val" style="margin:0">R$ 1.284.900</div></div></div>
+      <div class="type-row"><div class="meta">Título de seção · 20</div><h2>Clientes do período</h2></div>
+      <div class="type-row"><div class="meta">Texto · 14</div><div>O respaldo mais recente substitui o anterior e aparece na linha aberta do cliente.</div></div>
+      <div class="type-row"><div class="meta">CPF, protocolo · mono</div><div class="mono">123.456.789-00 · 2026092839807</div></div>
+    </div>
+  </section>
+
+  <!-- ═══ 4. BOTÕES E CAMPOS ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">04 · Botões e campos</div><h2>No máximo um botão vermelho por tela</h2></div></header>
+    <div class="grid g3">
+      <div class="card">
+        <h3 style="margin-bottom:14px">Botões</h3>
+        <div class="row" style="margin-bottom:10px">
+          <button class="btn primary">Salvar</button>
+          <button class="btn">Cancelar</button>
+          <button class="btn ghost">Ver detalhes</button>
+        </div>
+        <div class="row">
+          <button class="btn sm primary">Enviado →</button>
+          <button class="btn sm">Editar</button>
+          <button class="btn sm danger">Excluir</button>
+          <button class="btn icon" aria-label="Mais"><svg><use href="#i-dots"/></svg></button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:14px">Campos</h3>
+        <div class="field" style="margin-bottom:12px"><label>Nome do cliente</label><input class="input" placeholder="Maria Aparecida Souza"></div>
+        <div class="field"><label>Valor pago</label><input class="input" value="R$ 1.840,00"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:14px">Abas</h3>
+        <div class="seg" style="margin-bottom:14px"><button class="on">Hoje</button><button>7 dias</button><button>30 dias</button><button>Mês</button></div>
+        <div class="chips">
+          <button class="chip on">Todos <span class="n">412</span></button>
+          <button class="chip alert"><svg width="14" height="14"><use href="#i-alert"/></svg>Em alerta <span class="n">3</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 5. MODAL DE CONFERÊNCIA ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">05 · Importação</div><h2>Conferência antes de gravar</h2></div><span class="muted">Mesmo padrão para lote ZIP, respaldo e pendências</span></header>
+    <div class="stage">
+      <div class="modal">
+        <div class="mh">
+          <div><div class="eyebrow">Importar respaldo</div><h2 style="margin-top:4px">Relatorio Faturas Smart lote 03.xlsx</h2></div>
+          <button class="btn icon ghost" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+        </div>
+        <div class="mb">
+          <div class="sum">
+            <div><b style="color:var(--ok)">88</b><span>prontos para gravar</span></div>
+            <div><b style="color:var(--warn)">5</b><span>sem proposta aberta</span></div>
+            <div><b style="color:var(--bad)">2</b><span>CPF não encontrado</span></div>
+          </div>
+          <div class="list">
+            <div><span>Maria Aparecida Souza</span><span class="badge b-pur">Enquadrada</span></div>
+            <div><span>Ana Paula Pereira</span><span class="badge b-pur">Emitida</span></div>
+            <div><span class="muted">CPF 444.***.***-12</span><span class="badge b-bad">Não encontrado</span></div>
+          </div>
+          <div class="progress"><i></i></div>
+          <div class="muted" style="font-size:12.5px;margin-top:6px">Gravando 55 de 88…</div>
+        </div>
+        <div class="mf"><button class="btn">Cancelar</button><button class="btn primary">Gravar 88 respaldos</button></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ 5b. MODAL OBRIGATÓRIO DO RESÍDUO ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">05b · Liberação de margem</div><h2>Colocar em resíduo pendente</h2></div><span class="muted">Obrigatório: só confirma com os dois campos preenchidos</span></header>
+    <div class="stage">
+      <div class="modal" style="width:min(460px,100%)">
+        <div class="mh">
+          <div><div class="eyebrow">Resíduo pendente</div><h2 style="margin-top:4px">Maria Aparecida Souza</h2><div class="hint mono" style="margin-top:2px">123.***.***-00 · SIAPE · Cartão benefício</div></div>
+          <button class="btn icon ghost" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+        </div>
+        <div class="mb" style="display:grid;gap:16px">
+          <div class="field"><label>Valor que ficou pendente<span class="req">*</span></label><input class="input" id="rp-valor" placeholder="R$ 0,00" inputmode="decimal"><span class="err" id="rp-valor-err">Informe o valor pendente.</span></div>
+          <div class="field"><label>A conta está enquadrada?<span class="req">*</span></label><div class="yn" id="rp-yn"><button data-v="sim">Sim</button><button data-v="nao">Não</button></div><span class="err" id="rp-yn-err">Escolha Sim ou Não.</span></div>
+          <div class="hint">O cliente continua na Liberação com o status Resíduo pendente. Depois vêm Solicitado (parceiro), Enviado (Smart) e Pago (parceiro).</div>
+        </div>
+        <div class="mf"><button class="btn">Cancelar</button><button class="btn primary" id="rp-ok">Confirmar resíduo</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 6. AVISOS ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">06 · Avisos</div><h2>Mensagens curtas e diretas</h2></div></header>
+    <div class="grid g3">
+      <div class="toast"><div class="ic" style="background:var(--ok-bg);color:var(--ok)"><svg><use href="#i-check"/></svg></div><div><b>Lote exportado</b><div class="muted" style="font-size:13px">37 clientes, 52 documentos</div></div></div>
+      <div class="toast"><div class="ic" style="background:var(--bad-bg);color:var(--bad)"><svg><use href="#i-alert"/></svg></div><div><b>Não foi possível salvar</b><div class="muted" style="font-size:13px">Verifique a conexão e tente de novo.</div></div></div>
+      <div class="card empty"><div class="ic"><svg><use href="#i-inbox"/></svg></div><h3>Nenhum cliente neste filtro</h3><div class="muted" style="font-size:13px;margin:4px 0 14px">Troque o período ou limpe a busca.</div><button class="btn sm">Limpar filtros</button></div>
+    </div>
+  </section>
+
+  <!-- ═══ 7. LOGIN ═══ -->
+  <section class="sec">
+    <header><div><div class="eyebrow">07 · Login</div><h2>Tela de entrada, no visual novo</h2></div><span class="muted">Mesmos campos e mesmo funcionamento de hoje</span></header>
+    <div class="lg-frame">
+      <div class="lg-brand">
+        <div class="lg-logo"><i>S</i><b>Smart RYC</b></div>
+        <div>
+          <h2>Tudo da operação<br>em um só lugar.</h2>
+          <p>Liberação de margem, quitação de boletos, resultados de marketing e a Universidade Smart.</p>
+          <div class="lg-feats">
+            <div><span><svg width="14" height="14"><use href="#i-check"/></svg></span>Status de cada cliente, em tempo real</div>
+            <div><span><svg width="14" height="14"><use href="#i-shield"/></svg></span>Cada parceiro vê só os próprios clientes</div>
+            <div><span><svg width="14" height="14"><use href="#i-chart"/></svg></span>Indicadores e alertas no mesmo painel</div>
+          </div>
+        </div>
+        <div class="lg-foot">Smart Consig · uso interno e parceiros autorizados</div>
+      </div>
+      <div class="lg-form">
+        <div><div class="eyebrow">Bem-vindo de volta</div><h3 style="margin-top:6px">Entrar no RYC</h3></div>
+        <div class="field"><label>E-mail</label><input class="input" placeholder="seu@email.com" autocomplete="off"></div>
+        <div class="field"><label>Senha</label><div class="lg-pass"><input class="input" type="password" value="12345678" style="width:100%;padding-right:64px"><button type="button">Mostrar</button></div></div>
+        <div class="lg-err"><svg width="16" height="16"><use href="#i-alert"/></svg>E-mail ou senha incorretos. Tente de novo.</div>
+        <button class="btn primary lg-big">Entrar</button>
+        <div class="lg-tema"><span>Problemas para entrar? Fale com o administrador.</span></div>
+      </div>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin-top:10px">A mensagem vermelha aparece só quando o login falha. A tela de "criar sua senha" (primeiro acesso por convite) segue o mesmo visual, com os campos Nova senha e Confirmar senha.</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const seg = document.getElementById('theme-seg');
+  try { const t = localStorage.getItem('ryc-ds-theme'); if (t) root.dataset.theme = t; } catch (e) {}
+  const sync = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === root.dataset.theme));
+  sync();
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    root.dataset.theme = b.dataset.t; sync();
+    try { localStorage.setItem('ryc-ds-theme', b.dataset.t); } catch (e) {}
+  });
+
+
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-live';
+  toast.innerHTML = '<div class="ic" style="background:var(--ok-bg);color:var(--ok)"><svg><use href="#i-check"/></svg></div><div><b id="tl-t"></b><div class="muted" style="font-size:13px">Clique em Desfazer se foi engano</div></div><button class="btn sm" style="margin-left:8px">Desfazer</button>';
+  document.body.appendChild(toast);
+  let tt;
+  const avisar = t => { document.getElementById('tl-t').textContent = t; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toast.classList.remove('show'), 3200); };
+  const PASSOS = {
+    enviar: { badge: ['b-info', 'Boleto enviado'], prox: '<button class="btn sm primary" data-step="quitar">Marcar como quitado</button>', who: 'parceiro', msg: 'Ana Paula marcada como Boleto enviado' },
+    quitar: { badge: ['b-ok', 'Quitado'], prox: '<span class="done-txt">Concluído</span>', msg: 'Marcado como Quitado' },
+    ok:     { badge: ['b-ok', 'OK'], prox: '<span class="done-txt">Concluído</span>', msg: 'João Batista marcado como OK — alerta resolvido' },
+  };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-step]'); if (!b) return;
+    e.stopPropagation();
+    const row = b.closest('.tr');
+    if (b.dataset.step === 'mais') { row.click(); return; }
+    const p = PASSOS[b.dataset.step]; if (!p) return;
+    const badge = row.querySelector('.badge');
+    badge.className = 'badge ' + p.badge[0]; badge.textContent = p.badge[1];
+    row.classList.remove('alert');
+    const a = b.closest('.act'); a.innerHTML = p.prox; a.dataset.who = p.who || 'feito';
+    row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+    avisar(p.msg);
+  }, true);
+
+
+  const vs = document.getElementById('view-seg');
+  vs.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    document.documentElement.dataset.view = b.dataset.v;
+    vs.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+  const bulk = document.getElementById('bulk');
+  const cbs = () => [...document.querySelectorAll('.tr.item .cb')];
+  const syncBulk = () => { const n = cbs().filter(c => c.checked).length;
+    document.getElementById('bulk-n').textContent = n + (n === 1 ? ' selecionado' : ' selecionados');
+    bulk.classList.toggle('show', n > 0); };
+  document.querySelectorAll('.cb').forEach(c => c.addEventListener('click', e => e.stopPropagation()));
+  document.getElementById('cb-all').addEventListener('change', e => { cbs().forEach(c => c.checked = e.target.checked); syncBulk(); });
+  cbs().forEach(c => c.addEventListener('change', syncBulk));
+  document.getElementById('bulk-clear').addEventListener('click', () => { cbs().forEach(c => c.checked = false); document.getElementById('cb-all').checked = false; syncBulk(); });
+  document.getElementById('bulk-go').addEventListener('click', () => { const n = cbs().filter(c => c.checked).length; avisar(n + ' clientes marcados como Boleto enviado'); });
+  let rpEnq = null;
+  document.getElementById('rp-yn').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    rpEnq = b.dataset.v; document.querySelectorAll('#rp-yn button').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('rp-yn-err').classList.remove('show'); });
+  document.getElementById('rp-valor').addEventListener('input', () => document.getElementById('rp-valor-err').classList.remove('show'));
+  document.getElementById('rp-ok').addEventListener('click', () => {
+    const v = document.getElementById('rp-valor').value.replace(/[^0-9,]/g, '');
+    document.getElementById('rp-valor-err').classList.toggle('show', !v);
+    document.getElementById('rp-yn-err').classList.toggle('show', !rpEnq);
+    if (v && rpEnq) avisar('Resíduo pendente registrado · ' + (rpEnq === 'sim' ? 'enquadrada' : 'não enquadrada'));
+  });
+
+  document.querySelectorAll('[data-row]').forEach(r => r.addEventListener('click', () => {
+    const d = document.querySelector('[data-det="' + r.dataset.row + '"]');
+    r.classList.toggle('open'); d.classList.toggle('open');
+  }));
+
+  const menus = document.querySelectorAll('[data-menu]');
+  menus.forEach(m => m.querySelector('button').addEventListener('click', e => {
+    e.stopPropagation();
+    const was = m.classList.contains('open');
+    menus.forEach(x => x.classList.remove('open'));
+    if (!was) m.classList.add('open');
+  }));
+  document.addEventListener('click', () => menus.forEach(x => x.classList.remove('open')));
+
+  document.querySelectorAll('.chips').forEach(g => g.addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    g.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); c.classList.add('on');
+  }));
+  document.querySelectorAll('.seg:not(#theme-seg)').forEach(g => g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  }));
+})();
+</script>
+</body>
+</html>

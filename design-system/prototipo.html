@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light" data-view="smart">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RYC Protótipo Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds.css">
+<style>
+body { min-height: 100vh; }
+.shell { display: grid; grid-template-columns: 248px minmax(0,1fr); min-height: 100vh; }
+.shell .side { position: sticky; top: 0; height: 100vh; border-radius: 0; }
+.shell .main { padding: 24px 28px 120px; }
+.toolbar-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.tr { grid-template-columns: var(--cols) !important; }
+.tr .acerto { height: 32px; border-radius: 10px; padding: 0 8px; font-size: 13px; width: 100%; max-width: 150px; }
+.tr .acerto[disabled] { opacity: .7; }
+.act { flex-wrap: nowrap; }
+.act .btn.alt { background: transparent; }
+.pill-who { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--ink-3); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+.overlay { position: fixed; inset: 0; background: rgba(12,10,13,.45); backdrop-filter: blur(3px); display: none; place-items: center; z-index: 60; padding: 16px; }
+.overlay.show { display: grid; animation: drop .15s ease-out; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); margin: 4px 0 16px; align-items: center; }
+.legend .arrow { color: var(--ink-3); }
+.who-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; padding: 1px 6px; border-radius: 6px; margin-left: 4px; vertical-align: 1px; }
+.who-tag.s { background: var(--brand-soft); color: var(--brand-text); }
+.who-tag.p { background: var(--info-bg); color: var(--info); }
+.who-tag.a { background: var(--surface-3); color: var(--ink-2); }
+.res-blk .kv b small { font-weight: 400; color: var(--ink-3); }
+.obs { font-size: 13px; color: var(--ink-2); white-space: pre-line; }
+.bulk .note { opacity: .75; font-size: 12.5px; }
+.empresa { font-size: 12.5px; color: var(--ink-2); }
+@media (max-width: 1000px) { .shell { grid-template-columns: 1fr; } .shell .side { display: none; } .shell .main { padding: 16px; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11v6"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 10h18M9 10v10"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20z" stroke-linejoin="round"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M7 16v-4M12 16V8M17 16v-7"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 13h2M3 10h18"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="shell">
+  <aside class="side">
+    <div class="logo"><i>S</i><b>Smart RYC</b></div>
+    <div class="nav"><svg><use href="#i-home"/></svg>Home</div>
+    <div class="grp">Dashboard</div>
+    <div class="nav"><svg><use href="#i-chart"/></svg>Visão geral</div>
+    <div class="grp">Financeiro</div>
+    <div class="nav on" data-screen="lib"><svg><use href="#i-wallet"/></svg>Liberação de margem<span class="cnt" id="nav-alert" style="display:none"></span></div>
+    <div class="nav" data-screen="bol"><svg><use href="#i-file"/></svg>Quitação de boleto</div>
+    <div class="grp">Marketing</div>
+    <div class="nav"><svg><use href="#i-layers"/></svg>Esteira de conteúdo</div>
+    <div class="me"><div class="av" id="me-av">SC</div><div style="min-width:0"><b style="display:block;font-size:13px" id="me-nome">Smart Consig</b><span class="muted" style="font-size:12px" id="me-papel">Administrador</span></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="main-top">
+      <div><div class="crumb" id="crumb">Financeiro / Liberação de margem</div><h1 style="font-size:28px;margin-top:2px" id="titulo">Liberação de margem</h1></div>
+      <div class="row">
+        <div class="view-switch">Ver como<div class="seg" id="view-seg"><button class="on" data-v="smart">Smart</button><button data-v="parceiro">Parceiro</button></div></div>
+        <div class="seg" id="theme-seg"><button class="on" data-t="light">Claro</button><button data-t="dark">Escuro</button></div>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="grid g4" id="kpis" style="margin-bottom:16px"></div>
+    <div class="tbl">
+      <div class="toolbar toolbar-row" id="toolbar"></div>
+      <div class="filters chips" id="chips"></div>
+      <div id="rows"></div>
+      <div class="pager"><span id="pager-txt"></span><span class="muted" style="font-size:12px">Protótipo · dados fictícios · nada é gravado</span></div>
+      <div class="bulk" id="bulk"></div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast toast-live" id="toast"><div class="ic" style="background:var(--ok-bg);color:var(--ok)"><svg><use href="#i-check"/></svg></div><div><b id="toast-t"></b><div class="muted" style="font-size:13px" id="toast-s"></div></div></div>
+
+<script>
+(function () {
+// ════════════ DADOS FICTÍCIOS ════════════
+const HOJE = new Date(2026, 9, 6);
+const PARCEIRO = 'GR PROMOTORA';
+const d = s => { const [a, m, dd] = s.split('-').map(Number); return new Date(a, m - 1, dd); };
+const fmtD = x => x ? x.toLocaleDateString('pt-BR') : '—';
+const brl = v => v == null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const isoHoje = '2026-10-06';
+
+const LIB = [
+  { id: 1, nome: 'Maria Aparecida Souza', cpf: '123.***.***-00', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', dq: d('2026-10-02'), acerto: '', ok: false, res: null, saldo: 6200, troco: 1840, trocoLiq: 1610, total: 8040, com: 110.4, obs: 'Credcesta: Cartao Credcesta com divida R$ 2.519,81 (final 5117)' },
+  { id: 2, nome: 'João Batista da Silva', cpf: '987.***.***-00', conv: 'GDF', prod: 'Cartão consignado', emp: 'GR PROMOTORA', dq: d('2026-09-12'), acerto: '', ok: false, res: { st: 'pago', valor: 920, enq: true, dPend: d('2026-09-15'), dSol: d('2026-09-16'), dEnv: d('2026-09-19'), dPago: d('2026-09-23'), valorPago: 920 }, saldo: 3100, troco: 920, trocoLiq: 800, total: 4020, com: 55.2, obs: 'RESÍDUO PAGO em 23/09/2026' },
+  { id: 3, nome: 'Ana Paula Pereira', cpf: '111.***.***-44', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', dq: d('2026-09-30'), acerto: '', ok: false, res: { st: 'solicitado', valor: 1310, enq: false, dPend: d('2026-10-01'), dSol: d('2026-10-02') }, saldo: 4100, troco: 2310, trocoLiq: 2010, total: 6410, com: 138.6, obs: '' },
+  { id: 4, nome: 'Carlos Eduardo Lima', cpf: '555.***.***-88', conv: 'GOV SP', prod: 'Cartão benefício', emp: 'RZ CRED', dq: d('2026-09-25'), acerto: '2026-09-30', ok: true, res: null, saldo: 3050, troco: 640, trocoLiq: 560, total: 3690, com: 38.4, obs: '' },
+  { id: 5, nome: 'Fernanda Rocha Alves', cpf: '222.***.***-31', conv: 'PREF SP', prod: 'Cartão benefício', emp: 'GR PROMOTORA', dq: d('2026-10-01'), acerto: '', ok: false, res: { st: 'enviado', valor: 480, enq: true, dPend: d('2026-09-28'), dSol: d('2026-09-29'), dEnv: d('2026-10-03') }, saldo: 2900, troco: 480, trocoLiq: 410, total: 3380, com: 28.8, obs: '' },
+  { id: 6, nome: 'Roberto Nunes Prado', cpf: '333.***.***-07', conv: 'GOV PR', prod: 'Cartão consignado', emp: 'TEM CREDITO', dq: d('2026-10-03'), acerto: '', ok: false, res: { st: 'pendente', valor: 2150, enq: false, dPend: d('2026-10-05') }, saldo: 7300, troco: 2150, trocoLiq: 1900, total: 9450, com: 129, obs: 'Mfacil: 1 contrato(s) Mfacil ativo(s) (VP R$ 1.980,00)' },
+  { id: 7, nome: 'Luciana Martins Reis', cpf: '444.***.***-19', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', dq: d('2026-10-05'), acerto: '', ok: false, res: { st: 'pago', valor: 300, enq: true, dPend: d('2026-09-30'), dSol: d('2026-10-01'), dEnv: d('2026-10-02'), dPago: d('2026-10-03'), valorPago: 300 }, saldo: 1800, troco: 300, trocoLiq: 260, total: 2100, com: 18, obs: 'RESÍDUO PAGO em 03/10/2026' },
+  { id: 8, nome: 'Paulo Henrique Dias', cpf: '666.***.***-52', conv: 'GDF', prod: 'Cartão benefício', emp: 'RZ CRED', dq: d('2026-10-04'), acerto: '', ok: false, res: null, saldo: 5200, troco: 1200, trocoLiq: 1050, total: 6400, com: 72, obs: '' },
+];
+const BOL = [
+  { id: 1, nome: 'Maria Aparecida Souza', cpf: '123.***.***-00', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', cad: d('2026-10-02'), st: 'enviado', contrato: 'CT-0048213', parcela: 312.4, saldo: 6200, troco: 1840, dSol: d('2026-10-03'), dEnv: d('2026-10-04'), respaldo: { prot: '2026092919799', st: 'ENQUADRADA', cards: ['Cartão 5117 · CREDCESTA · Enquadrada · saldo devedor R$ 2.655,66', 'Cartão 3697 · M FÁCIL · Fatura zerada · saldo devedor R$ 0,00'] }, docs: ['Boleto_48213.pdf', 'MARIA A SOUZA - 5117.pdf'] },
+  { id: 2, nome: 'Ana Paula Pereira', cpf: '111.***.***-44', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', cad: d('2026-09-30'), st: 'solicitado', contrato: 'CT-0047711', parcela: 198.9, saldo: 4100, troco: 2310, dSol: d('2026-10-01'), respaldo: null, docs: [] },
+  { id: 3, nome: 'Roberto Nunes Prado', cpf: '333.***.***-07', conv: 'GOV PR', prod: 'Cartão consignado', emp: 'TEM CREDITO', cad: d('2026-10-03'), st: 'solicitar', contrato: 'CT-0049002', parcela: 402, saldo: 7300, troco: 2150, respaldo: null, docs: [] },
+  { id: 4, nome: 'Fernanda Rocha Alves', cpf: '222.***.***-31', conv: 'PREF SP', prod: 'Cartão benefício', emp: 'GR PROMOTORA', cad: d('2026-10-01'), st: 'solicitar', contrato: 'CT-0048800', parcela: 155, saldo: 2900, troco: 480, respaldo: null, docs: [] },
+  { id: 5, nome: 'Carlos Eduardo Lima', cpf: '555.***.***-88', conv: 'GOV SP', prod: 'Cartão benefício', emp: 'RZ CRED', cad: d('2026-09-27'), st: 'quitado', contrato: 'CT-0046540', parcela: 220, saldo: 3050, troco: 640, dSol: d('2026-09-28'), dEnv: d('2026-09-29'), dQuit: d('2026-10-05'), respaldo: { prot: '2026092551717', st: 'FATURA ZERADA', cards: ['Cartão 4160 · CARTÃO DÉBITO · Fatura zerada · saldo devedor R$ 0,00'] }, docs: ['Boleto_46540.pdf'] },
+  { id: 6, nome: 'Luciana Martins Reis', cpf: '444.***.***-19', conv: 'SIAPE', prod: 'Cartão benefício', emp: 'GR PROMOTORA', cad: d('2026-09-26'), st: 'reprovado', contrato: 'CT-0046222', parcela: 180, saldo: 1800, troco: 300, dSol: d('2026-09-27'), dEnv: d('2026-09-29'), dRep: d('2026-10-01'), motivo: 'Cliente desistiu da portabilidade', respaldo: null, docs: ['Boleto_46222.pdf'] },
+  { id: 7, nome: 'Paulo Henrique Dias', cpf: '666.***.***-52', conv: 'GDF', prod: 'Cartão benefício', emp: 'RZ CRED', cad: d('2026-10-04'), st: 'enviado', contrato: 'CT-0049310', parcela: 260, saldo: 5200, troco: 1200, dSol: d('2026-10-04'), dEnv: d('2026-10-05'), respaldo: { prot: '2026092839807', st: 'EMITIDA', cards: ['Cartão 5200 · CREDCESTA · Emitida · saldo devedor R$ 1.120,40'] }, docs: ['Boleto_49310.pdf', 'PAULO H DIAS - 5200.pdf'] },
+];
+
+// ════════════ REGRAS ════════════
+const diasUteis = (de, ate) => { let n = 0; const x = new Date(de); while (x < ate) { x.setDate(x.getDate() + 1); const w = x.getDay(); if (w && w !== 6) n++; } return n; };
+const libStatus = r => r.ok ? 'ok' : (r.res ? 'res_' + r.res.st : 'pendente');
+const libAlerta = r => !r.ok && r.res && r.res.st === 'pago' && diasUteis(r.res.dPago, HOJE) > 7;
+
+const META = {
+  lib: {
+    pendente: ['Pendente', 'b-neutral'], ok: ['OK', 'b-ok'],
+    res_pendente: ['Resíduo pendente', 'b-brand'], res_solicitado: ['Resíduo solicitado', 'b-warn'],
+    res_enviado: ['Resíduo enviado', 'b-info'], res_pago: ['Resíduo pago', 'b-pur'],
+  },
+  bol: {
+    solicitar: ['Solicitar boleto', 'b-neutral'], solicitado: ['Boleto solicitado', 'b-warn'],
+    enviado: ['Boleto enviado', 'b-info'], quitado: ['Quitado', 'b-ok'], reprovado: ['Reprovado', 'b-bad'],
+  },
+};
+// Ação de cada status: quem faz (s = só Smart, p = parceiro, a = ambos; a Smart sempre pode)
+const ACOES = {
+  lib: {
+    pendente:       [{ k: 'ok', label: 'Marcar como OK', who: 'a' }, { k: 'residuo', label: 'Resíduo', who: 'a', sec: true }],
+    res_pendente:   [{ k: 'res_sol', label: 'Marcar como solicitado', who: 'p' }],
+    res_solicitado: [{ k: 'res_env', label: 'Marcar como enviado', who: 's' }],
+    res_enviado:    [{ k: 'res_pago', label: 'Marcar como pago', who: 'p' }],
+    res_pago:       [{ k: 'ok', label: 'Marcar como OK', who: 'a' }],
+    ok: [],
+  },
+  bol: {
+    solicitar:  [{ k: 'b_sol', label: 'Marcar como solicitado', who: 's' }],
+    solicitado: [{ k: 'b_env', label: 'Marcar como enviado', who: 's' }],
+    enviado:    [{ k: 'b_quit', label: 'Marcar como quitado', who: 'p' }],
+    quitado: [], reprovado: [],
+  },
+};
+const ORDEM = { lib: ['pendente', 'res_pendente', 'res_solicitado', 'res_enviado', 'res_pago', 'ok'], bol: ['solicitar', 'solicitado', 'enviado', 'quitado', 'reprovado'] };
+
+// ════════════ ESTADO DA TELA ════════════
+const S = { tela: 'lib', view: 'smart', filtro: '', busca: '', abertos: new Set([2]), sel: new Set() };
+const isSmart = () => S.view === 'smart';
+const pode = who => isSmart() || who !== 's';
+const dados = () => (S.tela === 'lib' ? LIB : BOL).filter(r => isSmart() || r.emp === PARCEIRO);
+const statusDe = r => S.tela === 'lib' ? libStatus(r) : r.st;
+const filtrados = () => dados().filter(r => {
+  if (S.busca && !(r.nome + r.cpf).toLowerCase().includes(S.busca.toLowerCase())) return false;
+  if (!S.filtro) return true;
+  if (S.filtro === 'alerta') return S.tela === 'lib' && libAlerta(r);
+  return statusDe(r) === S.filtro;
+});
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ════════════ RENDER ════════════
+function render() {
+  const lib = S.tela === 'lib';
+  $('titulo').textContent = lib ? 'Liberação de margem' : 'Quitação de boleto';
+  $('crumb').textContent = 'Financeiro / ' + $('titulo').textContent;
+  document.querySelectorAll('[data-screen]').forEach(n => n.classList.toggle('on', n.dataset.screen === S.tela));
+  $('me-nome').textContent = isSmart() ? 'Smart Consig' : PARCEIRO;
+  $('me-papel').textContent = isSmart() ? 'Administrador' : 'Parceiro';
+  $('me-av').textContent = isSmart() ? 'SC' : 'GR';
+  renderLegend(); renderKpis(); renderToolbar(); renderChips(); renderRows(); renderBulk();
+  const nAl = LIB.filter(r => (isSmart() || r.emp === PARCEIRO) && libAlerta(r)).length;
+  $('nav-alert').style.display = nAl ? '' : 'none'; $('nav-alert').textContent = nAl;
+}
+
+function renderLegend() {
+  const tag = w => `<span class="who-tag ${w}">${w === 's' ? 'SMART' : w === 'p' ? 'PARCEIRO' : 'AMBOS'}</span>`;
+  $('legend').innerHTML = S.tela === 'lib'
+    ? `<b style="color:var(--ink)">Fluxo:</b> Pendente <span class="arrow">→</span> Resíduo pendente ${tag('a')} <span class="arrow">→</span> Solicitado ${tag('p')} <span class="arrow">→</span> Enviado ${tag('s')} <span class="arrow">→</span> Pago ${tag('p')} <span class="arrow">→</span> OK ${tag('a')} <span class="muted">· sem resíduo: Pendente → OK</span>`
+    : `<b style="color:var(--ink)">Fluxo:</b> Solicitar boleto <span class="arrow">→</span> Solicitado ${tag('s')} <span class="arrow">→</span> Enviado ${tag('s')} <span class="muted">(ou ao importar o lote ZIP)</span> <span class="arrow">→</span> Quitado ${tag('p')} <span class="muted">· ou Reprovado</span>`;
+}
+
+function renderKpis() {
+  const rs = dados();
+  const card = (lbl, val, sub, hl) => `<div class="card kpi lift${hl ? ' hl' : ''}"><div class="lbl">${lbl}</div><div class="val">${val}</div><div class="delta">${sub}</div></div>`;
+  if (S.tela === 'lib') {
+    const al = rs.filter(libAlerta).length, emRes = rs.filter(r => !r.ok && r.res).length;
+    $('kpis').innerHTML = card('Clientes', rs.length, 'no período', true)
+      + card('Aguardando OK', rs.filter(r => !r.ok).length, 'pendentes ou em resíduo')
+      + card('Em resíduo', emRes, brl(rs.filter(r => !r.ok && r.res).reduce((s, r) => s + (r.res.valor || 0), 0)) + ' pendentes')
+      + card('Em alerta', `<span style="color:${al ? 'var(--bad)' : 'inherit'}">${al}</span>`, 'pagos há mais de 7 dias úteis sem OK');
+  } else {
+    const c = st => rs.filter(r => r.st === st).length;
+    $('kpis').innerHTML = card('Clientes', rs.length, 'no período', true)
+      + card('Aguardando Smart', c('solicitar') + c('solicitado'), 'solicitar ou enviar boleto')
+      + card('Boletos enviados', c('enviado'), 'aguardando quitação')
+      + card('Quitados', c('quitado'), c('reprovado') + ' reprovados');
+  }
+}
+
+function menu(id, icon, label, itens) {
+  const vis = itens.filter(i => !i.admin || isSmart());
+  if (!vis.length) return '';
+  return `<div class="menu" data-menu><button class="btn"><svg><use href="#${icon}"/></svg>${label}<svg><use href="#i-down"/></svg></button><div class="pop"${id === 'mais' ? ' style="left:auto;right:0"' : ''}>`
+    + vis.map(i => i.sep ? '<div class="sep"></div>' : `<div class="it${i.danger ? ' danger' : ''}" data-menu-act="${esc(i.label)}"><svg><use href="#${i.icon}"/></svg><div>${i.label}${i.sub ? `<small>${i.sub}</small>` : ''}</div>${i.admin ? '<span class="tag">SMART</span>' : ''}</div>`).join('')
+    + '</div></div>';
+}
+
+function renderToolbar() {
+  const lib = S.tela === 'lib';
+  const imp = lib
+    ? [{ label: 'Planilha de clientes', sub: 'Cadastra clientes em lote', icon: 'i-table' },
+       { label: 'Planilha de acerto', sub: 'Preenche as datas de acerto', icon: 'i-cal', admin: true },
+       { label: 'Pendências', sub: 'Motivo de a margem não liberar', icon: 'i-note', admin: true },
+       { sep: true }, { label: 'Baixar modelo da planilha', icon: 'i-dl' }]
+    : [{ label: 'Planilha de clientes', sub: 'Cadastra clientes em lote', icon: 'i-table' },
+       { label: 'Lote ZIP', sub: 'Boletos e faturas em PDF', icon: 'i-zip', admin: true },
+       { label: 'Respaldo', sub: 'Relatório de Faturas Smart', icon: 'i-shield', admin: true },
+       { sep: true }, { label: 'Baixar modelo da planilha', icon: 'i-dl' }];
+  const exp = lib
+    ? [{ label: 'Excel', sub: 'Todas as colunas, inclusive valores', icon: 'i-table', admin: true }]
+    : [{ label: 'Excel', sub: 'Todas as colunas do filtro atual', icon: 'i-table', admin: true },
+       { label: 'Lote ZIP', sub: 'Uma pasta por cliente + resumo.xlsx', icon: 'i-zip' }];
+  const mais = [{ label: 'Limpar base', sub: 'Apaga todos os clientes da tela', icon: 'i-trash', admin: true, danger: true }];
+  $('toolbar').innerHTML = `<label class="search"><svg><use href="#i-search"/></svg><input class="input" id="busca" placeholder="Buscar nome ou CPF" value="${esc(S.busca)}"></label>`
+    + `<button class="btn"><svg><use href="#i-cal"/></svg>Este mês<svg><use href="#i-down"/></svg></button>`
+    + menu('imp', 'i-up', 'Importar', imp) + menu('exp', 'i-dl', 'Exportar', exp)
+    + `<button class="btn primary" data-menu-act="Adicionar cliente"><svg><use href="#i-plus"/></svg>Adicionar cliente</button>`
+    + (isSmart() ? menu('mais', 'i-dots', '', mais).replace('<svg><use href="#i-dots"/></svg><svg><use href="#i-down"/></svg>', '<svg><use href="#i-dots"/></svg>').replace('class="btn"', 'class="btn icon" aria-label="Mais opções"') : '');
+  $('busca').addEventListener('input', e => { S.busca = e.target.value; renderRows(); renderChips(); });
+}
+
+function renderChips() {
+  const base = dados().filter(r => !S.busca || (r.nome + r.cpf).toLowerCase().includes(S.busca.toLowerCase()));
+  const cnt = st => base.filter(r => statusDe(r) === st).length;
+  const dot = cls => ({ 'b-neutral': 'var(--ink-3)', 'b-ok': 'var(--ok-dot)', 'b-brand': 'var(--brand)', 'b-warn': 'var(--warn-dot)', 'b-info': 'var(--info-dot)', 'b-pur': 'var(--pur-dot)', 'b-bad': 'var(--bad-dot)' }[cls]);
+  let h = `<button class="chip${!S.filtro ? ' on' : ''}" data-f="">Todos <span class="n">${base.length}</span></button>`;
+  ORDEM[S.tela].forEach(st => { const [lbl, cls] = META[S.tela][st];
+    h += `<button class="chip${S.filtro === st ? ' on' : ''}" data-f="${st}"><span class="dot" style="background:${dot(cls)}"></span>${lbl} <span class="n">${cnt(st)}</span></button>`; });
+  if (S.tela === 'lib') h += `<button class="chip alert${S.filtro === 'alerta' ? ' on' : ''}" data-f="alerta"><svg width="14" height="14"><use href="#i-alert"/></svg>Em alerta <span class="n">${base.filter(libAlerta).length}</span></button>`;
+  $('chips').innerHTML = h;
+}
+
+function cols() {
+  const emp = isSmart() ? ' minmax(0,1fr)' : '';
+  return S.tela === 'lib'
+    ? `22px minmax(0,2fr) minmax(0,1.3fr)${emp} minmax(0,.8fr) 140px minmax(0,1.2fr) 290px 36px`
+    : `22px minmax(0,2fr) minmax(0,1.3fr)${emp} minmax(0,.9fr) minmax(0,1.2fr) 210px 36px`;
+}
+
+function acaoCell(r) {
+  const st = statusDe(r);
+  const acts = ACOES[S.tela][st] || [];
+  if (!acts.length) {
+    const txt = st === 'reprovado' ? 'Reprovado' : 'Concluído';
+    return `<div class="act"><span class="done-txt">${txt}</span></div>`;
+  }
+  const btns = acts.filter(a => pode(a.who));
+  if (!btns.length) return `<div class="act"><span class="wait" style="display:inline-flex"><svg width="14" height="14"><use href="#i-clock"/></svg>Aguardando Smart</span></div>`;
+  return '<div class="act">' + btns.map(a => `<button class="btn sm ${a.sec ? 'alt' : 'primary'}" data-act="${a.k}" data-id="${r.id}">${a.label}</button>`).join('')
+    + `<button class="btn sm icon" style="width:30px" aria-label="Mais ações" data-act="abrir" data-id="${r.id}"><svg><use href="#i-dots"/></svg></button></div>`;
+}
+
+function statusBadge(r) {
+  if (S.tela === 'lib' && libAlerta(r)) return `<span class="badge b-bad">Em alerta · ${diasUteis(r.res.dPago, HOJE)} dias úteis</span>`;
+  const [lbl, cls] = META[S.tela][statusDe(r)];
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function linha(r) {
+  const lib = S.tela === 'lib';
+  const al = lib && libAlerta(r);
+  const parceiroDono = isSmart() || r.emp === PARCEIRO;
+  let h = `<div class="tr item${S.abertos.has(r.id) ? ' open' : ''}${al ? ' alert' : ''}" data-row="${r.id}" style="--cols:${cols()}">`
+    + `<div><input type="checkbox" class="cb" data-sel="${r.id}"${S.sel.has(r.id) ? ' checked' : ''} aria-label="Selecionar"></div>`
+    + `<div class="who"><b>${esc(r.nome)}</b><span>${r.cpf}</span></div>`
+    + `<div class="muted">${r.conv} · ${r.prod}</div>`
+    + (isSmart() ? `<div class="empresa">${r.emp}</div>` : '');
+  if (lib) {
+    h += `<div class="muted">${fmtD(r.dq)}</div>`
+      + `<div><input type="date" class="input acerto" data-acerto="${r.id}" value="${r.acerto}"${r.acerto && !isSmart() ? ' disabled' : ''} aria-label="Data de acerto"></div>`;
+  } else {
+    h += `<div class="muted">${fmtD(r.cad)}</div>`;
+  }
+  h += `<div>${statusBadge(r)}</div><div>${parceiroDono ? acaoCell(r) : ''}</div><div class="chev"><svg width="16" height="16"><use href="#i-down"/></svg></div></div>`;
+  h += `<div class="det${S.abertos.has(r.id) ? ' open' : ''}">${lib ? detLib(r) : detBol(r)}</div>`;
+  return h;
+}
+
+function timeline(passos, atual) {
+  return '<div class="timeline" style="margin:12px 0 14px">' + passos.map((p, i) => {
+    const cls = i < atual ? 'done' : i === atual ? 'now' : '';
+    const ic = i < atual ? '<svg width="12" height="12"><use href="#i-check"/></svg>' : i + 1;
+    return (i ? `<div class="bar${i <= atual ? ' done' : ''}"></div>` : '') + `<div class="step ${cls}"><i>${ic}</i>${p}</div>`;
+  }).join('') + '</div>';
+}
+
+function detLib(r) {
+  const kv = (l, v) => `<div class="kv"><span>${l}</span><b>${v}</b></div>`;
+  let h = '<div class="det-grid" style="margin-top:12px">'
+    + kv('Saldo devedor', brl(r.saldo)) + kv('Troco', brl(r.troco))
+    + (isSmart() ? kv('Troco líquido', brl(r.trocoLiq)) : '')
+    + kv('Saldo total', brl(r.total)) + kv('Comissão 6%', brl(r.com)) + kv('Data quitado', fmtD(r.dq)) + '</div>';
+  if (r.res) {
+    const passos = ['Pendente', 'Solicitado', 'Enviado', 'Pago', 'OK'];
+    const idx = r.ok ? 5 : { pendente: 0, solicitado: 1, enviado: 2, pago: 3 }[r.res.st];
+    h += `<div class="blk res-blk"><h3><svg width="16" height="16" style="color:var(--brand-text)"><use href="#i-coin"/></svg>Resíduo</h3>`
+      + timeline(passos, Math.min(idx, 5))
+      + '<div class="det-grid">' + kv('Valor pendente', brl(r.res.valor)) + kv('Enquadrada', r.res.enq ? 'Sim' : 'Não')
+      + kv('Pendente em', fmtD(r.res.dPend)) + kv('Solicitado em', fmtD(r.res.dSol)) + kv('Enviado em', fmtD(r.res.dEnv))
+      + kv('Pago em', fmtD(r.res.dPago) + (r.res.valorPago ? ` <small>· ${brl(r.res.valorPago)}</small>` : ''))
+      + (libAlerta(r) ? kv('Dias úteis sem OK', `<span style="color:var(--bad)">${diasUteis(r.res.dPago, HOJE)} de 7</span>`) : '')
+      + '</div></div>';
+  }
+  h += `<div class="blk"><h3><svg width="16" height="16" style="color:var(--brand-text)"><use href="#i-note"/></svg>Observação</h3><div class="obs">${r.obs ? esc(r.obs).replace(/ · /g, '\n') : '<span class="muted">Sem observação</span>'}</div></div>`;
+  h += `<div class="actions"><button class="btn sm" data-menu-act="Editar dados">Editar dados</button>${isSmart() ? '<button class="btn sm danger" data-menu-act="Excluir cliente">Excluir</button>' : ''}<span class="muted" style="font-size:12.5px;align-self:center;margin-left:auto">Ações menos usadas ficam aqui dentro</span></div>`;
+  return h;
+}
+
+function detBol(r) {
+  const kv = (l, v) => `<div class="kv"><span>${l}</span><b>${v}</b></div>`;
+  const idx = { solicitar: 0, solicitado: 1, enviado: 2, quitado: 4, reprovado: 3 }[r.st];
+  let h = timeline(['Solicitar', 'Solicitado', 'Enviado', r.st === 'reprovado' ? 'Reprovado' : 'Quitado'], idx)
+    + '<div class="det-grid">' + kv('Contrato', `<span class="mono">${r.contrato}</span>`) + kv('Valor da parcela', brl(r.parcela))
+    + kv('Saldo devedor', brl(r.saldo)) + kv('Troco', brl(r.troco)) + kv('Solicitado em', fmtD(r.dSol)) + kv('Enviado em', fmtD(r.dEnv))
+    + (r.dQuit ? kv('Quitado em', fmtD(r.dQuit)) : '') + (r.dRep ? kv('Reprovado em', fmtD(r.dRep)) : '') + '</div>';
+  if (r.motivo) h += `<div class="blk"><h3 style="color:var(--bad)">Motivo da reprovação</h3><div class="obs">${esc(r.motivo)}</div></div>`;
+  h += r.respaldo
+    ? `<div class="blk"><h3><svg width="16" height="16" style="color:var(--brand-text)"><use href="#i-shield"/></svg>Respaldo <span class="badge b-pur" style="margin-left:4px">${r.respaldo.st}</span><span class="muted" style="font-weight:400;font-size:12.5px;margin-left:auto">protocolo <span class="mono">${r.respaldo.prot}</span></span></h3><div class="lines">${r.respaldo.cards.map(c => `<div>${c}</div>`).join('')}</div></div>`
+    : `<div class="blk"><h3><svg width="16" height="16" style="color:var(--ink-3)"><use href="#i-shield"/></svg>Respaldo</h3><div class="muted" style="font-size:13px">Ainda não importado</div></div>`;
+  h += `<div class="blk"><h3>Documentos</h3>${r.docs.length ? `<div class="files">${r.docs.map(f => `<span class="file"><svg><use href="#i-file"/></svg>${f}</span>`).join('')}</div>` : '<div class="muted" style="font-size:13px">Nenhum boleto ou fatura anexado</div>'}</div>`;
+  const podeRep = r.st === 'enviado';
+  h += `<div class="actions"><button class="btn sm" data-menu-act="Editar dados">Editar dados</button>${podeRep ? `<button class="btn sm danger" data-act="b_rep" data-id="${r.id}">Reprovar</button>` : ''}${isSmart() ? '<button class="btn sm danger" data-menu-act="Excluir cliente">Excluir</button>' : ''}<span class="muted" style="font-size:12.5px;align-self:center;margin-left:auto">Ações menos usadas ficam aqui dentro</span></div>`;
+  return h;
+}
+
+function renderRows() {
+  const rs = filtrados();
+  const lib = S.tela === 'lib';
+  const head = `<div class="tr head" style="--cols:${cols()}"><div><input type="checkbox" class="cb" id="cb-all" aria-label="Selecionar todos"${rs.length && rs.every(r => S.sel.has(r.id)) ? ' checked' : ''}></div><div>Cliente</div><div>Convênio · produto</div>${isSmart() ? '<div>Empresa</div>' : ''}${lib ? '<div>Data quitado</div><div>Acerto</div>' : '<div>Cadastro</div>'}<div>Status</div><div style="text-align:right">Ação</div><div></div></div>`;
+  $('rows').innerHTML = head + (rs.length ? rs.map(linha).join('')
+    : `<div class="empty"><div class="ic"><svg><use href="#i-search"/></svg></div><h3>Nenhum cliente neste filtro</h3><div class="muted" style="font-size:13px;margin-top:4px">Troque o filtro ou limpe a busca.</div></div>`);
+  $('pager-txt').textContent = `Mostrando ${rs.length} de ${dados().length}`;
+}
+
+function renderBulk() {
+  const sel = dados().filter(r => S.sel.has(r.id));
+  const b = $('bulk');
+  b.classList.toggle('show', sel.length > 0);
+  if (!sel.length) return;
+  const sts = [...new Set(sel.map(statusDe))];
+  let acoes = '';
+  if (sts.length === 1) {
+    const acts = (ACOES[S.tela][sts[0]] || []).filter(a => pode(a.who) && a.k !== 'residuo');
+    acoes = acts.map(a => `<button class="btn sm primary" data-bulk="${a.k}">${a.label}</button>`).join('');
+    if (!acoes && (ACOES[S.tela][sts[0]] || []).length) acoes = '<span class="note">Esta etapa é da Smart</span>';
+  } else acoes = '<span class="note">Selecione clientes no mesmo status para mudar em lote</span>';
+  if (S.tela === 'bol') acoes += '<button class="btn sm ghost" data-menu-act="Exportar lote ZIP">Exportar lote ZIP</button>';
+  b.innerHTML = `<b>${sel.length} ${sel.length === 1 ? 'selecionado' : 'selecionados'}</b><span style="opacity:.6">·</span>${acoes}<button class="btn sm ghost" data-bulk="limpar" style="margin-left:auto">Limpar seleção</button>`;
+}
+
+// ════════════ AÇÕES ════════════
+let tt;
+function avisar(t, s) { $('toast-t').textContent = t; $('toast-s').textContent = s || ''; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 3000); }
+const obsAdd = (r, txt) => { r.obs = r.obs ? r.obs + ' · ' + txt : txt; };
+
+function modal({ eyebrow, titulo, sub, corpo, ok, onOk }) {
+  $('modal').innerHTML = `<div class="mh"><div><div class="eyebrow">${eyebrow}</div><h2 style="margin-top:4px">${titulo}</h2>${sub ? `<div class="hint" style="margin-top:2px">${sub}</div>` : ''}</div><button class="btn icon ghost" aria-label="Fechar" data-close><svg><use href="#i-x"/></svg></button></div>`
+    + `<div class="mb" style="display:grid;gap:16px">${corpo}</div><div class="mf"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="m-ok">${ok}</button></div>`;
+  $('modal').style.width = 'min(480px,100%)';
+  $('ov').classList.add('show');
+  $('modal').querySelectorAll('[data-close]').forEach(x => x.onclick = fechar);
+  $('modal').querySelectorAll('.yn').forEach(g => g.onclick = e => { const b = e.target.closest('button'); if (!b) return; g.dataset.v = b.dataset.v; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); g.nextElementSibling.classList.remove('show'); });
+  $('modal').querySelectorAll('input,textarea').forEach(i => i.oninput = () => i.nextElementSibling && i.nextElementSibling.classList.remove('show'));
+  $('m-ok').onclick = () => { if (onOk() !== false) fechar(); };
+  setTimeout(() => { const f = $('modal').querySelector('input,textarea'); if (f) f.focus(); }, 50);
+}
+function fechar() { $('ov').classList.remove('show'); }
+const num = v => { const n = parseFloat(String(v).replace(/[^\d,]/g, '').replace(',', '.')); return isNaN(n) ? null : n; };
+const nomes = rs => rs.length === 1 ? rs[0].nome : rs.length + ' clientes';
+
+function executar(k, rs) {
+  const lib = S.tela === 'lib';
+  const pronto = (msg, sub) => { S.sel.clear(); render(); avisar(msg, sub); };
+  if (k === 'ok') { rs.forEach(r => { r.ok = true; if (!r.acerto) r.acerto = isoHoje; }); return pronto(nomes(rs) + ' marcado como OK', 'Alerta resolvido se havia'); }
+  if (k === 'residuo') {
+    const r = rs[0];
+    return modal({ eyebrow: 'Resíduo pendente', titulo: esc(r.nome), sub: `${r.cpf} · ${r.conv} · ${r.prod}`,
+      corpo: `<div class="field"><label>Valor que ficou pendente<span class="req">*</span></label><input class="input" id="f-valor" placeholder="R$ 0,00" inputmode="decimal"><span class="err">Informe o valor pendente.</span></div>
+        <div class="field"><label>A conta está enquadrada?<span class="req">*</span></label><div class="yn" id="f-enq"><button data-v="sim">Sim</button><button data-v="nao">Não</button></div><span class="err">Escolha Sim ou Não.</span></div>
+        <div class="hint">O cliente continua aqui na Liberação, com o status Resíduo pendente.</div>`,
+      ok: 'Confirmar resíduo',
+      onOk: () => { const v = num($('f-valor').value), e = $('f-enq').dataset.v;
+        $('f-valor').nextElementSibling.classList.toggle('show', v == null); $('f-enq').nextElementSibling.classList.toggle('show', !e);
+        if (v == null || !e) return false;
+        r.res = { st: 'pendente', valor: v, enq: e === 'sim', dPend: new Date(HOJE) }; S.abertos.add(r.id); pronto(r.nome + ' em resíduo pendente', brl(v) + ' · ' + (e === 'sim' ? 'enquadrada' : 'não enquadrada')); } });
+  }
+  if (k === 'res_sol') { rs.forEach(r => { r.res.st = 'solicitado'; r.res.dSol = new Date(HOJE); }); return pronto(nomes(rs) + ' · resíduo solicitado', 'Agora é a vez da Smart enviar'); }
+  if (k === 'res_env') { rs.forEach(r => { r.res.st = 'enviado'; r.res.dEnv = new Date(HOJE); }); return pronto(nomes(rs) + ' · resíduo enviado', 'O parceiro marca como pago quando receber'); }
+  if (k === 'res_pago') {
+    return modal({ eyebrow: 'Resíduo pago', titulo: nomes(rs), sub: 'A observação ganha "RESÍDUO PAGO em ' + fmtD(HOJE) + '"',
+      corpo: `<div class="field"><label>Valor pago <span class="hint">(opcional)</span></label><input class="input" id="f-pago" placeholder="${rs.length === 1 ? brl(rs[0].res.valor) : 'R$ 0,00'}" inputmode="decimal"><span class="err"></span></div>
+        <div class="hint">Depois do pago, o cliente precisa virar OK em até 7 dias úteis. Se passar disso, ele fica vermelho e entra em “Em alerta”.</div>`,
+      ok: 'Confirmar pagamento',
+      onOk: () => { const v = num($('f-pago').value);
+        rs.forEach(r => { r.res.st = 'pago'; r.res.dPago = new Date(HOJE); r.res.valorPago = v ?? r.res.valor; obsAdd(r, 'RESÍDUO PAGO em ' + fmtD(HOJE)); });
+        pronto(nomes(rs) + ' · resíduo pago', 'Falta marcar como OK'); } });
+  }
+  if (k === 'b_sol') { rs.forEach(r => { r.st = 'solicitado'; r.dSol = new Date(HOJE); }); return pronto(nomes(rs) + ' · boleto solicitado'); }
+  if (k === 'b_env') { rs.forEach(r => { r.st = 'enviado'; r.dEnv = new Date(HOJE); }); return pronto(nomes(rs) + ' · boleto enviado', 'Dica: importar o lote ZIP já faz isso sozinho'); }
+  if (k === 'b_quit') {
+    return modal({ eyebrow: 'Quitação', titulo: nomes(rs), corpo: `<div class="field"><label>Data da quitação<span class="req">*</span></label><input type="date" class="input" id="f-dq" value="${isoHoje}"><span class="err">Informe a data.</span></div>`,
+      ok: 'Marcar como quitado',
+      onOk: () => { const v = $('f-dq').value; $('f-dq').nextElementSibling.classList.toggle('show', !v); if (!v) return false;
+        rs.forEach(r => { r.st = 'quitado'; r.dQuit = d(v); }); pronto(nomes(rs) + ' · quitado'); } });
+  }
+  if (k === 'b_rep') {
+    return modal({ eyebrow: 'Reprovar', titulo: nomes(rs), corpo: `<div class="field"><label>Motivo da reprovação<span class="req">*</span></label><textarea class="input" id="f-mot" style="height:90px;padding:10px 12px" placeholder="Ex.: cliente desistiu"></textarea><span class="err">Escreva o motivo.</span></div>`,
+      ok: 'Reprovar',
+      onOk: () => { const v = $('f-mot').value.trim(); $('f-mot').nextElementSibling.classList.toggle('show', !v); if (!v) return false;
+        rs.forEach(r => { r.st = 'reprovado'; r.dRep = new Date(HOJE); r.motivo = v; }); pronto(nomes(rs) + ' · reprovado'); } });
+  }
+}
+
+const rowById = id => (S.tela === 'lib' ? LIB : BOL).find(r => r.id === Number(id));
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  const menuEl = t.closest('[data-menu]');
+  const menus = document.querySelectorAll('[data-menu]');
+  if (menuEl && t.closest('[data-menu] > button')) { const was = menuEl.classList.contains('open'); menus.forEach(m => m.classList.remove('open')); if (!was) menuEl.classList.add('open'); return; }
+  menus.forEach(m => m.classList.remove('open'));
+  const scr = t.closest('[data-screen]'); if (scr) { S.tela = scr.dataset.screen; S.filtro = ''; S.sel.clear(); S.abertos = new Set(S.tela === 'lib' ? [2] : [1]); render(); return; }
+  const ma = t.closest('[data-menu-act]'); if (ma) { avisar(ma.dataset.menuAct, 'No sistema de verdade, isto abre a função correspondente'); return; }
+  const chip = t.closest('[data-f]'); if (chip) { S.filtro = chip.dataset.f; renderChips(); renderRows(); return; }
+  const bk = t.closest('[data-bulk]'); if (bk) { if (bk.dataset.bulk === 'limpar') { S.sel.clear(); render(); return; } executar(bk.dataset.bulk, dados().filter(r => S.sel.has(r.id))); return; }
+  if (t.closest('.cb') || t.closest('.acerto')) return;
+  const ac = t.closest('[data-act]');
+  if (ac) { const r = rowById(ac.dataset.id); if (ac.dataset.act === 'abrir') { S.abertos.add(r.id); renderRows(); return; } executar(ac.dataset.act, [r]); return; }
+  const row = t.closest('.tr.item'); if (row) { const id = Number(row.dataset.row); S.abertos.has(id) ? S.abertos.delete(id) : S.abertos.add(id); renderRows(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'cb-all') { filtrados().forEach(r => t.checked ? S.sel.add(r.id) : S.sel.delete(r.id)); renderRows(); renderBulk(); return; }
+  if (t.dataset.sel) { t.checked ? S.sel.add(Number(t.dataset.sel)) : S.sel.delete(Number(t.dataset.sel)); renderBulk(); return; }
+  if (t.dataset.acerto) { const r = rowById(t.dataset.acerto); r.acerto = t.value; avisar('Acerto salvo', r.nome + ' · ' + (t.value ? fmtD(d(t.value)) : 'sem data')); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+$('ov').addEventListener('click', e => { if (e.target === $('ov')) fechar(); });
+
+$('view-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  S.view = b.dataset.v; document.documentElement.dataset.view = S.view; S.sel.clear();
+  $('view-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('theme-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.t; $('theme-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+
+render();
+})();
+</script>
+</body>
+</html>

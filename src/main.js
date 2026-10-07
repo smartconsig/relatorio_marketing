@@ -19,6 +19,12 @@ import './styles/period-bar.css';
 import './styles/modal-kit.css';
 import './styles/home.css';
 import './styles/residuos.css';
+// Design system novo (Fase 0 do redesenho): só classes .ds-* e variáveis --ds-*,
+// que nenhuma tela usa ainda — carregar aqui não muda nada visualmente.
+import './styles/ds/ds-tokens.css';
+import './styles/ds/ds-base.css';
+import './styles/ds/ds-table.css';
+import './styles/ds/ds-overlay.css';
 import './styles/carbono.css'; // sempre por último — re-seleciona classes das features (Fase 3c)
 
 import { initNavigation, navigate, clearFilter, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';

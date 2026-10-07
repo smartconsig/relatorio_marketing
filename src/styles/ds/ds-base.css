@@ -1,0 +1,115 @@
+/* RYC Design System — componentes básicos (prefixo .ds-*).
+   Botão, campo, abas, filtros (chips), status (badge), cartão, KPI, menu,
+   aviso vazio. Só se aplica a elementos que usam essas classes. */
+
+/* ── Botão ── */
+.ds-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: var(--ds-r-pill);
+  border: 1px solid var(--ds-line-strong); background: var(--ds-surface); color: var(--ds-ink); font: 500 14px var(--ds-font-body);
+  cursor: pointer; white-space: nowrap; transition: background var(--ds-dur), border-color var(--ds-dur), transform .08s, filter var(--ds-dur); }
+.ds-btn:hover { background: var(--ds-surface-2); border-color: var(--ds-ink-3); }
+.ds-btn:active { transform: scale(.98); }
+.ds-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ds-brand-soft); border-color: var(--ds-brand); }
+.ds-btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+.ds-btn--primary { background: var(--ds-brand-grad); border-color: transparent; color: #fff; box-shadow: var(--ds-brand-glow); }
+.ds-btn--primary:hover { background: var(--ds-brand-grad); border-color: transparent; filter: brightness(1.08); }
+.ds-btn--ghost { background: transparent; border-color: transparent; }
+.ds-btn--ghost:hover { background: var(--ds-surface-2); }
+.ds-btn--quiet { background: transparent; }
+.ds-btn--danger { color: var(--ds-bad); }
+.ds-btn--danger-fill, .ds-btn--danger-fill:hover { background: var(--ds-bad); box-shadow: none; color: #fff; }
+.ds-btn--sm { height: 30px; padding: 0 12px; font-size: 13px; }
+.ds-btn--icon { width: 38px; padding: 0; justify-content: center; }
+.ds-btn--sm.ds-btn--icon { width: 30px; }
+.ds-btn svg { flex: none; }
+
+/* ── Campo ── */
+.ds-field { display: flex; flex-direction: column; gap: 6px; }
+.ds-field > label { font-size: 12px; font-weight: 600; color: var(--ds-ink-2); }
+.ds-req { color: var(--ds-bad); margin-left: 2px; }
+.ds-hint { font-size: 12px; color: var(--ds-ink-3); }
+.ds-input { height: 40px; width: 100%; border-radius: var(--ds-r-sm); border: 1px solid var(--ds-line-strong); background: var(--ds-surface-2);
+  color: var(--ds-ink); padding: 0 12px; font: 14px var(--ds-font-body); outline: none; transition: border-color var(--ds-dur), box-shadow var(--ds-dur); }
+textarea.ds-input { height: auto; min-height: 90px; padding: 10px 12px; resize: vertical; }
+.ds-input:focus { border-color: var(--ds-brand); box-shadow: 0 0 0 3px var(--ds-brand-soft); background: var(--ds-surface); }
+.ds-input.is-invalid { border-color: var(--ds-bad); }
+.ds-err { font-size: 12px; color: var(--ds-bad); }
+.ds-search { position: relative; flex: 1; min-width: 200px; }
+.ds-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ds-ink-3); }
+.ds-search .ds-input { padding-left: 38px; border-radius: var(--ds-r-pill); }
+
+/* ── Sim / Não ── */
+.ds-yn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ds-yn button { height: 44px; border-radius: var(--ds-r-sm); border: 1px solid var(--ds-line-strong); background: var(--ds-surface-2);
+  color: var(--ds-ink-2); font: 600 14px var(--ds-font-body); cursor: pointer; }
+.ds-yn button.is-on { border-color: var(--ds-brand); background: var(--ds-brand-soft); color: var(--ds-brand-text); box-shadow: 0 0 0 3px var(--ds-brand-soft); }
+
+/* ── Abas (segmented) ── */
+.ds-seg { display: inline-flex; padding: 4px; gap: 4px; border-radius: var(--ds-r-pill); background: var(--ds-surface-3); }
+.ds-seg button { border: 0; background: transparent; height: 30px; padding: 0 14px; border-radius: var(--ds-r-pill); cursor: pointer;
+  color: var(--ds-ink-2); font: 500 13px var(--ds-font-body); white-space: nowrap; }
+.ds-seg button.is-on { background: var(--ds-surface); color: var(--ds-ink); box-shadow: var(--ds-shadow); }
+:root:not([data-theme="light"]) .ds-seg button.is-on { background: var(--ds-brand-grad); color: #fff; box-shadow: var(--ds-brand-glow); }
+
+/* ── Filtros (chips) ── */
+.ds-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ds-chip { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 12px; border-radius: var(--ds-r-pill);
+  border: 1px solid var(--ds-line-strong); background: var(--ds-surface); color: var(--ds-ink-2); font: 500 13px var(--ds-font-body); cursor: pointer; }
+.ds-chip:hover { border-color: var(--ds-ink-3); }
+.ds-chip__n { min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--ds-r-pill); background: var(--ds-surface-3); color: var(--ds-ink);
+  font-size: 12px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.ds-chip__dot { width: 8px; height: 8px; border-radius: 50%; }
+.ds-chip.is-on { background: var(--ds-ink); color: var(--ds-surface); border-color: var(--ds-ink); box-shadow: 0 4px 10px -6px rgba(23,18,26,.35); }
+.ds-chip.is-on .ds-chip__n { background: rgba(255,255,255,.18); color: inherit; }
+:root:not([data-theme="light"]) .ds-chip.is-on { background: var(--ds-brand-grad); border-color: transparent; color: #fff; box-shadow: var(--ds-brand-glow); }
+.ds-chip--alert { color: var(--ds-bad); border-color: color-mix(in srgb, var(--ds-bad) 40%, transparent); }
+.ds-chip--alert .ds-chip__n { background: var(--ds-bad-bg); color: var(--ds-bad); }
+
+/* ── Status (badge) ── */
+.ds-badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--ds-r-pill);
+  font: 600 12px var(--ds-font-body); white-space: nowrap; background: var(--ds-neutral-bg); color: var(--ds-ink-2); }
+.ds-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, currentColor);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot, currentColor) 22%, transparent); }
+.ds-badge--info  { background: var(--ds-info-bg); color: var(--ds-info); --dot: var(--ds-info-dot); }
+.ds-badge--pur   { background: var(--ds-pur-bg);  color: var(--ds-pur);  --dot: var(--ds-pur-dot); }
+.ds-badge--warn  { background: var(--ds-warn-bg); color: var(--ds-warn); --dot: var(--ds-warn-dot); }
+.ds-badge--ok    { background: var(--ds-ok-bg);   color: var(--ds-ok);   --dot: var(--ds-ok-dot); }
+.ds-badge--bad   { background: var(--ds-bad-bg);  color: var(--ds-bad);  --dot: var(--ds-bad-dot); }
+.ds-badge--brand { background: var(--ds-brand-soft); color: var(--ds-brand-text); --dot: var(--ds-brand); }
+:root:not([data-theme="light"]) .ds-badge { box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent) inset; }
+
+/* ── Cartão e KPI ── */
+.ds-card { background: var(--ds-card-bg); border: 1px solid var(--ds-line); border-radius: var(--ds-r-lg); box-shadow: var(--ds-shadow);
+  padding: 20px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: box-shadow .2s, transform .2s; }
+.ds-card--lift:hover { box-shadow: var(--ds-shadow-hover); transform: translateY(-2px); }
+.ds-kpis { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.ds-kpi { padding: 18px 20px; color: var(--ds-ink); }
+.ds-kpi__lbl { font-size: 12.5px; color: var(--ds-ink-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ds-kpi__val { font: 650 30px/1.15 var(--ds-font-display); font-stretch: 108%; margin-top: 10px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ds-kpi__sub { margin-top: 6px; font-size: 12.5px; color: var(--ds-ink-3); }
+.ds-kpi--hl { background: var(--ds-brand-grad); border-color: transparent; color: #fff; box-shadow: var(--ds-brand-glow); position: relative; overflow: hidden; }
+.ds-kpi--hl .ds-kpi__lbl, .ds-kpi--hl .ds-kpi__sub { color: rgba(255,255,255,.82); }
+.ds-kpi--hl::after { content: ""; position: absolute; right: -60px; top: -60px; width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%); pointer-events: none; }
+
+/* ── Menu suspenso ── */
+.ds-menu { position: relative; display: inline-block; }
+.ds-pop { position: absolute; top: calc(100% + 8px); left: 0; min-width: 250px; background: var(--ds-surface); border: 1px solid var(--ds-line);
+  border-radius: var(--ds-r); box-shadow: var(--ds-shadow-pop); padding: 6px; z-index: 40; display: none; }
+.ds-menu--right .ds-pop { left: auto; right: 0; }
+.ds-menu.is-open .ds-pop { display: block; animation: ds-drop .15s var(--ds-ease); }
+.ds-pop__it { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; cursor: pointer; color: var(--ds-ink); font-size: 14px; }
+.ds-pop__it:hover { background: var(--ds-surface-2); }
+.ds-pop__it svg { margin-top: 2px; color: var(--ds-ink-2); flex: none; }
+.ds-pop__it small { display: block; color: var(--ds-ink-3); font-size: 12px; }
+.ds-pop__it--danger, .ds-pop__it--danger svg { color: var(--ds-bad); }
+.ds-pop__tag { margin-left: auto; align-self: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--ds-ink-3);
+  border: 1px solid var(--ds-line); padding: 1px 6px; border-radius: 6px; }
+.ds-pop__sep { height: 1px; background: var(--ds-line); margin: 6px 4px; }
+
+/* ── Vazio ── */
+.ds-empty { text-align: center; padding: 36px 20px; color: var(--ds-ink); }
+.ds-empty__ic { width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 12px; background: var(--ds-brand-soft); color: var(--ds-brand-text);
+  display: grid; place-items: center; }
+.ds-empty p { color: var(--ds-ink-2); font-size: 13px; margin: 4px 0 14px; }
+
+@keyframes ds-drop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
