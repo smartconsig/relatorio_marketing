@@ -1,11 +1,16 @@
-// Tabela da Quitação de Boleto: shell, atualização dinâmica (com chips de
-// status), linha e a mudança de status via RPC (o banco valida papel e
-// transição).
-import { state } from '../../state.js';
-import { icon } from '../../utils/icons.js';
+// Tela da Quitação de Boleto no visual novo (Fase 2 do redesenho): cabeçalho,
+// resumo, barra (busca, período, Importar ▾, Exportar ▾, ⋯), filtros de status,
+// linhas que abrem ao clicar e barra de lote. Cliques por delegação na seção.
+// A mudança de status continua só via RPC (o banco valida papel e transição).
+// Funções window.* chamadas daqui (bolImportarPlanilha, bolAbrirLote,
+// bolImportarRespaldo, bolExportar, bolExportarLote, bolLimparBase, bolAddCliente,
+// bolMarcarQuitado, bolSetEmpresaFiltro, bolSetDateManual, bolOnImportFile) — NÃO RENOMEAR.
 import { toast } from '../../utils/ui.js';
-import { STATUS_META, STATUS_ORDER, rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
-import { BO, PAGE_SIZE, isAdmin, fmtBRL, fmtDate, fmtCpf, esc, PRESETS, filtered, loadData } from './bol-core.js';
+import { dsChips, dsMenu, dsBtn, dsEmpty, initDsMenus } from '../../components/ds/index.js';
+import { STATUS_ORDER, rpcMudarStatus, msgErroBanco } from '../../services/boletos-svc.js';
+import { BO, PAGE_SIZE, isAdmin, esc, PRESETS, presetRange, filtered, loadData } from './bol-core.js';
+import { BOL_STATUS, linhaHTML, colunas } from './bol-linha.js';
+import { renderBulk, executarBulk } from './bol-bulk.js';
 
 // Padrão comum pós-escrita: recarrega do banco e redesenha o shell inteiro.
 export async function reloadAndRender() {
@@ -14,292 +19,221 @@ export async function reloadAndRender() {
   if (el) render(el);
 }
 
-// ── Render shell ──────────────────────────────────────────────────────────
-export function render(el) {
+// ── Menus da barra ─────────────────────────────────────────────────────────
+function _menus() {
   const admin = isAdmin();
+  const importar = [
+    { action: 'imp-planilha', label: 'Planilha de clientes', sub: 'Cadastra clientes em lote', icon: 'table' },
+    ...(admin ? [
+      { action: 'imp-lote', label: 'Lote ZIP', sub: 'Boletos e faturas em PDF', icon: 'folder', tag: 'SMART' },
+      { action: 'imp-respaldo', label: 'Respaldo', sub: 'Relatório de Faturas Smart', icon: 'shield', tag: 'SMART' },
+    ] : []),
+    { sep: true },
+    { action: 'modelo', label: 'Baixar modelo da planilha', icon: 'download' },
+  ];
+  const exportar = [
+    ...(admin ? [{ action: 'exp-excel', label: 'Excel', sub: 'Todas as colunas do filtro atual', icon: 'table' }] : []),
+    { action: 'exp-lote', label: 'Lote ZIP', sub: 'Uma pasta por cliente + resumo.xlsx', icon: 'folder' },
+  ];
+  const mais = admin ? dsMenu({ icon: 'dots', right: true, ariaLabel: 'Mais opções',
+    items: [{ action: 'limpar', label: 'Limpar base', sub: 'Apaga todos os clientes da tela', icon: 'trash', danger: true, tag: 'SMART' }] }) : '';
+  return dsMenu({ label: 'Importar', icon: 'upload', items: importar })
+    + dsMenu({ label: 'Exportar', icon: 'download', items: exportar })
+    + dsBtn({ label: 'Adicionar cliente', icon: 'plus', variant: 'primary', attrs: 'data-ds-action="add"' }) + mais;
+}
+
+function _menuPeriodo() {
+  const atual = PRESETS.find(p => p.key === BO.preset);
+  const rotulo = atual ? atual.label : (BO.dateFrom || BO.dateTo ? 'Período escolhido' : 'Todo o período');
+  const itens = PRESETS.map(p => ({ action: 'periodo:' + p.key, label: p.label }));
+  return dsMenu({ label: rotulo, icon: 'calendar', items: [...itens, { sep: true }, { action: 'periodo:limpar', label: 'Todo o período' }] });
+}
+
+// ── Shell ───────────────────────────────────────────────────────────────────
+export function render(el) {
+  initDsMenus();
   el.innerHTML = `
-    <div class="lib-page">
-      <div class="lib-topbar">
-        <div>
-          <h1>Quitação de Boleto</h1>
-          <p class="lib-count bol-count"></p>
-        </div>
-        <div class="lib-topbar-actions">
-          ${admin ? `<button class="lib-btn-limpar" onclick="bolLimparBase()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            Limpar Base
-          </button>` : ''}
-          ${admin ? `<button class="lib-btn-export" onclick="bolExportar()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar
-          </button>` : ''}
-          <a class="lib-btn-modelo" href="/template_boletos.xlsx" download="TEMPLATE_BOLETOS.xlsx" title="Baixar modelo de planilha">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Modelo
-          </a>
-          <button class="lib-btn-import" onclick="bolImportarPlanilha()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar Planilha
-          </button>
+    <div class="ds-page">
+      <div class="ds-page__head"><div><h1>Quitação de boleto</h1><div class="ds-page__count" id="bol-count"></div></div></div>
+      <div class="ds-kpis" id="bol-kpis"></div>
+      <div class="ds-tbl">
+        <div class="ds-tbl__toolbar">
+          <label class="ds-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="ds-input" id="bol-search" type="text" placeholder="Buscar nome, CPF ou contrato" value="${esc(BO.search)}"></label>
+          <span id="bol-periodo">${_menuPeriodo()}</span>
+          ${_menus()}
           <input type="file" id="bol-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="bolOnImportFile(this)" />
-          ${admin ? `<button class="lib-btn-import" onclick="bolAbrirLote()" title="Importar ZIP de boletos ou faturas — os PDFs são anexados aos clientes em Boleto Solicitado/Enviado">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Importar Lote (.zip)
-          </button>` : ''}
-          <button class="lib-btn-add" onclick="bolAddCliente()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Adicionar Cliente
-          </button>
+          <input type="file" id="bol-respaldo-input" accept=".xlsx,.xls" style="display:none" />
         </div>
-      </div>
-
-      <div class="bol-status-chips" id="bol-status-chips"></div>
-
-      <div class="lib-filters">
-        <div class="lib-search-wrap">
-          <svg class="lib-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="lib-search" id="bol-search" type="text" placeholder="Buscar por nome, CPF ou contrato…" oninput="bolSetSearch(this.value)" />
-          <button class="lib-search-clear" id="bol-search-clear" onclick="bolSetSearch('')" title="Limpar busca" style="display:none">×</button>
-        </div>
-
-        ${admin ? `<div class="lib-empresa-filter-wrap">
-          <select class="lib-empresa-select" id="bol-empresa-select" onchange="bolSetEmpresaFiltro(this.value)">
-            <option value="">Todas as empresas</option>
-          </select>
-        </div>` : ''}
-
-        <div class="lib-date-row">
-          <div class="lib-presets">
-            ${PRESETS.map(p => `<button class="lib-preset" data-key="${p.key}" onclick="bolSetPreset('${p.key}')">${p.label}</button>`).join('')}
-            <button class="lib-preset-clear" id="bol-preset-clear" onclick="bolClearDate()" style="display:none">× Limpar</button>
-          </div>
-          <div class="lib-date-inputs">
-            <input type="date" class="lib-date-input" id="bol-date-from" onchange="bolSetDateManual()" />
-            <span class="lib-date-sep">até</span>
-            <input type="date" class="lib-date-input" id="bol-date-to" onchange="bolSetDateManual()" />
+        <div class="ds-tbl__filters ds-filterbar">
+          <div id="bol-status-chips"></div>
+          <div class="ds-filterbar__right">
+            ${isAdmin() ? '<select class="ds-select" id="bol-empresa-select" onchange="bolSetEmpresaFiltro(this.value)"><option value="">Todas as empresas</option></select>' : ''}
+            <select class="ds-select" id="bol-respaldo-select" title="Filtrar por respaldo"></select>
+            <div class="ds-dates">De <input type="date" id="bol-date-from" onchange="bolSetDateManual()"> até <input type="date" id="bol-date-to" onchange="bolSetDateManual()"></div>
           </div>
         </div>
+        <div id="bol-rows"></div>
+        <div id="bol-ver-mais-wrap"></div>
+        <div class="ds-bulk" id="bol-bulk"></div>
       </div>
-
-      <div class="lib-table-wrap">
-        <table class="lib-table">
-          <thead>
-            <tr>
-              ${admin ? '<th>Empresa</th>' : ''}
-              <th>Contrato</th>
-              <th>CPF</th>
-              <th>Nome</th>
-              <th>Convênio</th>
-              <th>Produto</th>
-              <th>Parcela</th>
-              <th>Saldo Devedor</th>
-              <th>Troco</th>
-              <th>Cadastro</th>
-              <th>Status</th>
-              <th>Docs</th>
-              <th>Obs</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="bol-tbody"></tbody>
-        </table>
-      </div>
-      <div id="bol-ver-mais-wrap"></div>
-    </div>
-  `;
+    </div>`;
+  _ligarEventos(el);
   updateTable();
 }
 
-// ── Update dinâmico ───────────────────────────────────────────────────────
-function _atualizarContagem(list) {
-  const countEl = document.querySelector('.bol-count');
-  if (!countEl) return;
-  countEl.textContent = BO.search || BO.dateFrom || BO.dateTo || BO.statusFiltro || BO.empresaFiltro
-    ? `${list.length} resultado${list.length !== 1 ? 's' : ''} de ${BO.registros.length} total`
-    : `${BO.registros.length} cliente${BO.registros.length !== 1 ? 's' : ''} cadastrado${BO.registros.length !== 1 ? 's' : ''}`;
-}
-
-// Chips de status (contadores respeitam os demais filtros, exceto o próprio
-// status — truque de salvar/restaurar BO.statusFiltro, NÃO SIMPLIFICAR)
-function _atualizarChips() {
-  const chipsEl = document.getElementById('bol-status-chips');
-  if (!chipsEl) return;
-  const savedStatus = BO.statusFiltro;
+// ── Atualização ─────────────────────────────────────────────────────────────
+function _semStatus() {
+  const salvo = BO.statusFiltro;
   BO.statusFiltro = '';
   const base = filtered();
-  BO.statusFiltro = savedStatus;
-  const countBy = s => base.filter(r => r.status === s).length;
-  chipsEl.innerHTML = `
-      <button class="bol-chip${!BO.statusFiltro ? ' active' : ''}" onclick="bolSetStatusFiltro('')">Todos <span>${base.length}</span></button>
-      ${STATUS_ORDER.map(s => `
-        <button class="bol-chip ${STATUS_META[s].cls}${BO.statusFiltro === s ? ' active' : ''}" onclick="bolSetStatusFiltro('${s}')">
-          ${STATUS_META[s].label} <span>${countBy(s)}</span>
-        </button>`).join('')}
-    `;
+  BO.statusFiltro = salvo;
+  return base;
 }
 
-function _atualizarTbody(visible, cols, admin) {
-  const tbody = document.getElementById('bol-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = visible.length === 0
-    ? `<tr><td colspan="${cols}" class="lib-empty">
-         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-         <div>Nenhum cliente encontrado.</div>
-       </td></tr>`
-    : visible.map(r => _renderRow(r, admin)).join('');
+function _kpis(base) {
+  const n = st => base.filter(r => r.status === st).length;
+  const card = (lbl, val, sub, hl) => `<div class="ds-card ds-kpi${hl ? ' ds-kpi--hl' : ''}"><div class="ds-kpi__lbl">${lbl}</div><div class="ds-kpi__val">${val}</div><div class="ds-kpi__sub">${sub}</div></div>`;
+  document.getElementById('bol-kpis').innerHTML =
+    card('Clientes', base.length, 'no filtro atual', true)
+    + card('Aguardando Smart', n('solicitar_boleto') + n('boleto_solicitado'), 'solicitar ou enviar boleto')
+    + card('Boletos enviados', n('boleto_enviado'), 'aguardando quitação')
+    + card('Quitados', n('boleto_quitado'), `${n('boleto_reprovado')} reprovados`);
 }
 
-function _atualizarVerMais(list, visible) {
-  const vmWrap = document.getElementById('bol-ver-mais-wrap');
-  if (!vmWrap) return;
-  if (list.length <= visible.length) { vmWrap.innerHTML = ''; return; }
-  const rest = list.length - visible.length;
-  const next = Math.min(PAGE_SIZE, rest);
-  vmWrap.innerHTML = `
-        <div class="lib-ver-mais-wrap">
-          <button class="lib-ver-mais" onclick="bolVerMais()">
-            Mostrar mais ${next} cliente${next !== 1 ? 's' : ''}
-            <span class="lib-ver-mais-sub">${rest} restante${rest !== 1 ? 's' : ''}</span>
-          </button>
-        </div>`;
+function _chips(base) {
+  const itens = [{ value: '', label: 'Todos', count: base.length },
+    ...STATUS_ORDER.map(s => ({ value: s, label: BOL_STATUS[s].label, tone: BOL_STATUS[s].tone, count: base.filter(r => r.status === s).length }))];
+  document.getElementById('bol-status-chips').innerHTML = dsChips(itens, BO.statusFiltro);
 }
 
-function _atualizarFiltrosUI() {
-  const clearSearch = document.getElementById('bol-search-clear');
-  if (clearSearch) clearSearch.style.display = BO.search ? '' : 'none';
-
-  const clearDate = document.getElementById('bol-preset-clear');
-  if (clearDate) clearDate.style.display = (BO.preset || BO.dateFrom || BO.dateTo) ? '' : 'none';
-
-  document.querySelectorAll('#sec-boletos .lib-preset[data-key]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.key === BO.preset);
-  });
-
-  const fromEl = document.getElementById('bol-date-from');
-  const toEl   = document.getElementById('bol-date-to');
-  if (fromEl) fromEl.value = BO.dateFrom || '';
-  if (toEl)   toEl.value   = BO.dateTo   || '';
+function _selects() {
+  const emp = document.getElementById('bol-empresa-select');
+  if (emp) {
+    const empresas = [...new Set(BO.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
+    emp.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(e => `<option value="${esc(e)}"${e === BO.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+  }
+  const resp = document.getElementById('bol-respaldo-select');
+  const sts = [...new Set(BO.registros.map(r => r.respaldo_status).filter(Boolean))].sort();
+  resp.innerHTML = `<option value="">Respaldo: todos</option><option value="__sem"${BO.respaldoFiltro === '__sem' ? ' selected' : ''}>Sem respaldo</option>`
+    + sts.map(s => `<option value="${esc(s)}"${s === BO.respaldoFiltro ? ' selected' : ''}>${esc(s)}</option>`).join('');
+  resp.style.display = sts.length ? '' : 'none';
+  document.getElementById('bol-date-from').value = BO.dateFrom || '';
+  document.getElementById('bol-date-to').value = BO.dateTo || '';
+  document.getElementById('bol-periodo').innerHTML = _menuPeriodo();
 }
 
-function _atualizarEmpresas() {
-  const empSelect = document.getElementById('bol-empresa-select');
-  if (!empSelect) return;
-  const empresas = [...new Set(BO.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
-  empSelect.innerHTML = `<option value="">Todas as empresas</option>` +
-    empresas.map(e => `<option value="${esc(e)}"${e === BO.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+function _linhas(list) {
+  const visible = list.slice(0, BO.page * PAGE_SIZE);
+  const todos = visible.length > 0 && visible.every(r => BO.sel.has(r.id));
+  const head = `<div class="ds-tr ds-tr--head" style="--ds-cols:${colunas()}"><div><input type="checkbox" class="ds-cb" data-bol-all${todos ? ' checked' : ''} aria-label="Selecionar todos"></div>`
+    + `<div>Cliente</div><div>Convênio · produto</div>${isAdmin() ? '<div>Empresa</div>' : ''}<div>Cadastro</div><div>Status</div><div style="text-align:right">Ação</div><div></div></div>`;
+  document.getElementById('bol-rows').innerHTML = head + (visible.length ? visible.map(linhaHTML).join('')
+    : dsEmpty({ titulo: 'Nenhum cliente neste filtro', texto: 'Troque o período ou limpe a busca.' }));
+  const resto = list.length - visible.length;
+  document.getElementById('bol-ver-mais-wrap').innerHTML = resto > 0
+    ? `<div class="ds-more">${dsBtn({ label: `Mostrar mais ${Math.min(PAGE_SIZE, resto)} · ${resto} restantes`, attrs: 'data-ds-action="ver-mais"' })}</div>` : '';
 }
 
 export function updateTable() {
-  const admin    = isAdmin();
-  const list     = filtered();
-  const visible  = list.slice(0, BO.page * PAGE_SIZE);
-  const cols     = admin ? 14 : 13;
-
-  _atualizarContagem(list);
-  _atualizarChips();
-  _atualizarTbody(visible, cols, admin);
-  _atualizarVerMais(list, visible);
-  _atualizarFiltrosUI();
-  _atualizarEmpresas();
+  if (!document.getElementById('bol-rows')) return;
+  const list = filtered();
+  const base = _semStatus();
+  const total = BO.registros.length;
+  document.getElementById('bol-count').textContent = list.length === total
+    ? `${total} cliente${total !== 1 ? 's' : ''}` : `${list.length} de ${total} clientes no filtro`;
+  _kpis(base);
+  _chips(base);
+  _selects();
+  _linhas(list);
+  renderBulk();
 }
 
-// Botões de status conforme fase e papel (o banco revalida tudo)
-function _statusBtnsHTML(r, admin, dono) {
-  if (admin && r.status === 'solicitar_boleto') {
-    return `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_solicitado')" title="Marcar como Boleto Solicitado">Solicitado →</button>`;
-  }
-  if (admin && r.status === 'boleto_solicitado') {
-    return `<button class="bol-btn-step" onclick="bolMudarStatus('${r.id}', 'boleto_enviado')" title="Marcar como Boleto Enviado">Enviado →</button>`;
-  }
-  if (dono && r.status === 'boleto_enviado') {
-    return `
-      <button class="bol-btn-quit" onclick="bolMarcarQuitado('${r.id}')" title="Marcar como Boleto Quitado">${icon('check', 11)} Quitado</button>
-      <button class="bol-btn-rep" onclick="bolAbrirReprovar('${r.id}')" title="Reprovar boleto">${icon('x', 11)} Reprovar</button>`;
-  }
-  return '';
-}
-
-// Documentos anexados pelos lotes (parceiro só recebe os dos próprios
-// clientes — o RLS filtra no banco)
-function _docsCellHTML(r) {
-  const docs = BO.docs.get(r.id) || [];
-  if (!docs.length) return `<span class="res-chip res-chip-none">—</span>`;
-  const nBol = docs.filter(d => d.tipo === 'boleto').length;
-  const nFat = docs.filter(d => d.tipo === 'fatura').length;
-  return `<span class="res-doc-chips" onmouseenter="bolPopShow(event,'${r.id}')" onmouseleave="bolPopLeave()" onclick="bolPopShow(event,'${r.id}',true)">
-         ${nBol ? `<span class="res-chip res-chip-ok">${icon('file', 11)} ${nBol}</span>` : ''}
-         ${nFat ? `<span class="res-chip res-chip-ok">${icon('receipt', 11)} ${nFat}</span>` : ''}
-       </span>`;
-}
-
-function _acoesRowHTML(r, admin, dono, final) {
-  const canEdit = admin || (dono && !final);
-  const editBtn = canEdit
-    ? `<button class="lib-btn-edit" onclick="bolEditarCliente('${r.id}')" title="Editar">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>` : '';
-  const delBtn = admin
-    ? `<button class="lib-btn-del" onclick="bolDeletarCliente('${r.id}', '${esc(r.nome).replace(/'/g, "\\'")}')" title="Excluir">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-      </button>` : '';
-  return `${_statusBtnsHTML(r, admin, dono)}${editBtn}${delBtn}`;
-}
-
-// Data da fase atual + link do motivo (só reprovado com motivo)
-function _statusCellHTML(r, meta) {
-  const statusDate =
-    r.status === 'boleto_quitado'    ? fmtDate(r.data_quitado)    :
-    r.status === 'boleto_reprovado'  ? fmtDate(r.data_reprovado)  :
-    r.status === 'boleto_enviado'    ? fmtDate(r.data_enviado)    :
-    r.status === 'boleto_solicitado' ? fmtDate(r.data_solicitado) : '';
-
-  const motivoBtn = r.status === 'boleto_reprovado' && r.motivo_reprovacao
-    ? `<button class="bol-motivo-link" onclick="bolVerMotivo('${r.id}')" title="Ver motivo da reprovação">motivo</button>`
-    : '';
-
-  return `
-        <span class="bol-badge ${meta.cls}">${meta.label}</span>
-        ${statusDate ? `<span class="bol-badge-date">${statusDate}</span>` : ''}
-        ${motivoBtn}`;
-}
-
-function _celulasIdentidadeHTML(r) {
-  return `<td>${esc(r.contrato || '—')}</td>
-      <td>${fmtCpf(r.cpf)}</td>
-      <td class="lib-nome" title="${esc(r.nome || '')}">${esc(r.nome || '—')}</td>
-      <td class="lib-trunc" title="${esc(r.convenio || '')}">${esc(r.convenio || '—')}</td>
-      <td class="lib-trunc" title="${esc(r.produto || '')}">${esc(r.produto || '—')}</td>`;
-}
-
-function _renderRow(r, admin) {
-  const meta      = STATUS_META[r.status] || STATUS_META.solicitar_boleto;
-  const grupoNome = state.currentUser?.grupoNome || '';
-  const dono      = admin || r.empresa_parceira === grupoNome;
-  const final     = r.status === 'boleto_quitado' || r.status === 'boleto_reprovado';
-
-  return `
-    <tr class="lib-tr bol-tr-${meta.cls}" data-id="${r.id}">
-      ${admin ? `<td><span class="lib-empresa-badge">${esc(r.empresa_parceira)}</span></td>` : ''}
-      ${_celulasIdentidadeHTML(r)}
-      <td class="lib-val">${fmtBRL(r.valor_parcela)}</td>
-      <td class="lib-val lib-val-destaque">${fmtBRL(r.saldo_devedor)}</td>
-      <td class="lib-val">${fmtBRL(r.troco)}</td>
-      <td>${fmtDate((r.created_at || '').slice(0,10))}</td>
-      <td>${_statusCellHTML(r, meta)}
-      </td>
-      <td>${_docsCellHTML(r)}</td>
-      <td class="lib-obs" title="${esc(r.obs || '')}">${esc(r.obs || '—')}</td>
-      <td class="lib-td-actions bol-td-actions">${_acoesRowHTML(r, admin, dono, final)}</td>
-    </tr>`;
-}
-
-// ── Mudança de status (via RPC — o banco valida papel e transição) ────────
+// ── Mudança de status (via RPC — o banco valida papel e transição) ─────────
 export async function bolMudarStatus(id, novo, motivo = null) {
   const { error } = await rpcMudarStatus(id, novo, motivo);
   if (error) { toast(msgErroBanco(error), 'err'); return false; }
-
   await loadData();
   updateTable();
-  toast(`Status atualizado: ${STATUS_META[novo]?.label || novo}.`);
+  toast(`Status atualizado: ${BOL_STATUS[novo]?.label || novo}`);
   return true;
+}
+
+// ── Eventos (delegação; ligados uma vez por render) ────────────────────────
+const _resetPage = () => { BO.page = 1; };
+
+const ACOES_MENU = {
+  'imp-planilha': () => window.bolImportarPlanilha(),
+  'imp-lote':     () => window.bolAbrirLote(),
+  'imp-respaldo': () => window.bolImportarRespaldo(),
+  'modelo':       () => { const a = document.createElement('a'); a.href = '/template_boletos.xlsx'; a.download = 'TEMPLATE_BOLETOS.xlsx'; a.click(); },
+  'exp-excel':    () => window.bolExportar(),
+  'exp-lote':     () => window.bolExportarLote(),
+  'limpar':       () => window.bolLimparBase(),
+  'add':          () => window.bolAddCliente(),
+  'ver-mais':     () => { BO.page++; updateTable(); },
+};
+
+function _acaoMenu(action) {
+  if (action.startsWith('periodo:')) {
+    const key = action.slice(8);
+    const r = key === 'limpar' ? { from: null, to: null } : presetRange(key);
+    BO.preset = key === 'limpar' ? null : key; BO.dateFrom = r.from; BO.dateTo = r.to; _resetPage(); updateTable();
+    return;
+  }
+  ACOES_MENU[action]?.();
+}
+
+function _acaoLinha(id) {
+  const r = BO.registros.find(x => x.id === id);
+  if (!r) return;
+  if (r.status === 'boleto_enviado') { window.bolMarcarQuitado(id); return; }
+  const novo = { solicitar_boleto: 'boleto_solicitado', boleto_solicitado: 'boleto_enviado' }[r.status];
+  if (novo) bolMudarStatus(id, novo);
+}
+
+function _alternarLinha(id) {
+  if (BO.abertos.has(id)) BO.abertos.delete(id); else BO.abertos.add(id);
+  updateTable();
+}
+
+// Ordem importa: o primeiro seletor que casar trata o clique.
+const CLIQUES = [
+  ['[data-ds-action]', el => _acaoMenu(el.dataset.dsAction)],
+  ['[data-ds-chip]',   el => { BO.statusFiltro = el.dataset.dsChip; _resetPage(); updateTable(); }],
+  ['[data-bol-bulk]',  el => executarBulk(el.dataset.bolBulk)],
+  ['[data-bol-acao]',  el => _acaoLinha(el.dataset.bolAcao)],
+  ['[data-bol-abrir]', el => { BO.abertos.add(el.dataset.bolAbrir); updateTable(); }],
+  ['input, select, button, a, .ds-menu, .ds-det', () => {}],
+  ['[data-bol-row]',   el => _alternarLinha(el.dataset.bolRow)],
+];
+
+function _onClick(e) {
+  for (const [sel, fn] of CLIQUES) {
+    const el = e.target.closest(sel);
+    if (el) { fn(el); return; }
+  }
+}
+
+function _onChange(e) {
+  const t = e.target;
+  if (t.matches('[data-bol-all]')) {
+    filtered().slice(0, BO.page * PAGE_SIZE).forEach(r => (t.checked ? BO.sel.add(r.id) : BO.sel.delete(r.id)));
+    updateTable(); return;
+  }
+  if (t.dataset.bolSel) { if (t.checked) BO.sel.add(t.dataset.bolSel); else BO.sel.delete(t.dataset.bolSel); renderBulk(); return; }
+  if (t.id === 'bol-respaldo-select') { BO.respaldoFiltro = t.value; _resetPage(); updateTable(); return; }
+  if (t.id === 'bol-respaldo-input') window.bolOnRespaldoFile(t);
+}
+
+function _ligarEventos(el) {
+  if (el.dataset.dsLigado) return;
+  el.dataset.dsLigado = '1';
+  el.addEventListener('click', _onClick);
+  el.addEventListener('change', _onChange);
+  el.addEventListener('input', e => {
+    if (e.target.id !== 'bol-search') return;
+    BO.search = e.target.value || ''; _resetPage(); updateTable();
+    const inp = document.getElementById('bol-search'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+  });
 }

@@ -10,13 +10,20 @@
 //   bol-import.js  importação de planilha Excel
 //   bol-modais.js  adicionar/editar/quitação/reprovação/motivo
 // Domínio e acesso a dados em services/boletos-svc.js. Este arquivo re-exporta
-// os 34 nomes públicos originais — main.js e o index.html não mudaram.
+// os 34 nomes públicos originais (+5 da Fase 2: lote, respaldo, redesenhar).
 import * as XLSX from 'xlsx';
 import { toast, handleError } from '../utils/ui.js';
 import { showConfirm } from '../utils/confirm.js';
 import { STATUS_META, limparBaseBoletos, deleteBoleto } from '../services/boletos-svc.js';
 import { BO, fmtCpf, presetRange, filtered, loadData, spinner } from './boletos/bol-core.js';
 import { render, updateTable } from './boletos/bol-tabela.js';
+import { reloadAndRender } from './boletos/bol-tabela.js';
+
+export { bolExportarLote } from './boletos/bol-lote-export.js';
+export { bolImportarRespaldo, bolOnRespaldoFile } from './boletos/bol-respaldo.js';
+// Usados pelos módulos de lote/respaldo para redesenhar sem importar a tabela (evita ciclo)
+export const bolRedesenhar = () => updateTable();
+export const bolRecarregar = () => reloadAndRender();
 
 export { bolMudarStatus } from './boletos/bol-tabela.js';
 export { bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc } from './boletos/bol-docs-ui.js';
@@ -32,7 +39,8 @@ export async function renderBoletos() {
   const el = document.getElementById('sec-boletos');
   if (!el) return;
   BO.page = 1; BO.search = ''; BO.dateFrom = null; BO.dateTo = null; BO.preset = null;
-  BO.empresaFiltro = ''; BO.statusFiltro = '';
+  BO.empresaFiltro = ''; BO.statusFiltro = ''; BO.respaldoFiltro = '';
+  BO.abertos = new Set(); BO.sel = new Set();
   el.innerHTML = spinner();
   await loadData();
   render(el);

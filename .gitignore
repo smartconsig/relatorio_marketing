@@ -30,3 +30,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Arquivos temporarios de teste local (podem conter dados reais)
+.tmp-*

@@ -42,6 +42,8 @@ const ERROS_BANCO = [
   ['BOLETO_SEM_PERMISSAO',       'Sem permissão para agir neste registro.'],
   ['BOLETO_REGISTRO_FINALIZADO', 'Registro finalizado — somente admin pode editar.'],
   ['BOLETO_STATUS_SOMENTE_RPC',  'Status não pode ser alterado diretamente.'],
+  ['BOLETO_RESPALDO_SOMENTE_RPC', 'O respaldo só pode ser alterado pela importação.'],
+  ['boleto_importar_respaldo',    'A função de respaldo ainda não existe no banco — rode a migration 014 no Supabase.'],
 ];
 
 export function msgErroBanco(error) {
@@ -65,6 +67,14 @@ export function fetchBoletosPage(from, to) {
 
 export function rpcMudarStatus(id, novo, motivo) {
   return sb.rpc('boleto_mudar_status', { p_id: id, p_novo: novo, p_motivo: motivo });
+}
+
+// Respaldo (migration 014): grava protocolo/status/detalhes nas propostas ABERTAS do CPF.
+// Devolve { data: { ok, propostas }, error }. Só admin (o banco valida).
+export function rpcImportarRespaldo({ cpf, protocolo, status, detalhes, obs }) {
+  return sb.rpc('boleto_importar_respaldo', {
+    p_cpf: cpf, p_protocolo: protocolo, p_status: status, p_detalhes: detalhes, p_obs: obs || null,
+  });
 }
 
 export function limparBaseBoletos() {

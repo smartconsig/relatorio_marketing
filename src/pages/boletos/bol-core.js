@@ -21,6 +21,9 @@ export const BO = {
   preset: null,
   empresaFiltro: '',
   statusFiltro: '',
+  respaldoFiltro: '',     // '' | status do respaldo | '__sem' (sem respaldo)
+  abertos: new Set(),     // ids das linhas expandidas (redesenho, Fase 2)
+  sel: new Set(),         // ids selecionados para ação em lote
 };
 
 export const PAGE_SIZE = 25;
@@ -99,8 +102,14 @@ export function filtered() {
   if (BO.dateTo)        list = list.filter(r => (r.created_at || '').slice(0,10) <= BO.dateTo);
   if (BO.empresaFiltro) list = list.filter(r => r.empresa_parceira === BO.empresaFiltro);
   if (BO.statusFiltro)  list = list.filter(r => r.status === BO.statusFiltro);
+  if (BO.respaldoFiltro) list = list.filter(_casaRespaldo);
   return list;
 }
+
+const _casaRespaldo = r => (BO.respaldoFiltro === '__sem' ? !r.respaldo_status : r.respaldo_status === BO.respaldoFiltro);
+
+// Dono da linha: admin ou a empresa do parceiro logado (o banco revalida tudo)
+export const ehDono = r => isAdmin() || r.empresa_parceira === (state.currentUser?.grupoNome || '');
 
 // Clientes elegíveis para receber documentos de lote
 export const elegiveis = () =>

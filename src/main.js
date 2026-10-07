@@ -25,6 +25,7 @@ import './styles/ds/ds-tokens.css';
 import './styles/ds/ds-base.css';
 import './styles/ds/ds-table.css';
 import './styles/ds/ds-overlay.css';
+import './styles/ds/ds-page.css';
 import './styles/carbono.css'; // por último entre os antigos — re-seleciona classes das features (Fase 3c)
 // Fase 1A do redesenho: moldura (login, menu, topo, confirmação) no visual novo.
 // Precisa vir DEPOIS do carbono.css — só restiliza, não muda comportamento.
@@ -56,7 +57,7 @@ import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 import { q_search, q_openModal, q_openEditModal, q_closeModal, q_save, q_showDetail, q_backToList, q_showComprovante, q_closeComprovante, q_attachDoc, q_toggleDev, q_onDocSelect, q_maskCPF, q_maskCNPJ, q_maskMoney } from './pages/quitacoes-page.js';
 import { libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libImportarAcerto, libOnImportAcertoFile, libDeletarCliente, libLimparBase, libExportar, libEditarCliente, libSalvarEdicao, libSetEmpresaFiltro, libParaResiduo } from './pages/liberacao-page.js';
-import { bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote } from './pages/boletos-page.js';
+import { bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote, bolExportarLote, bolImportarRespaldo, bolOnRespaldoFile, bolRedesenhar, bolRecarregar } from './pages/boletos-page.js';
 import { renderResiduos, resSetSearch, resSetStatusFiltro, resVerMais, resSolicitar, resMarcarPago, resConfirmarPago, resFecharModal, resExcluir } from './pages/residuos-page.js';
 
 // Expose functions called from inline HTML handlers
@@ -172,6 +173,11 @@ window.bolOnZipFile        = bolOnZipFile;
 window.bolAtribuirOrfaoLote = bolAtribuirOrfaoLote;
 window.bolConfirmarLote    = bolConfirmarLote;
 window.bolFecharLote       = bolFecharLote;
+window.bolExportarLote     = bolExportarLote;
+window.bolImportarRespaldo = bolImportarRespaldo;
+window.bolOnRespaldoFile   = bolOnRespaldoFile;
+window.bolRedesenhar       = bolRedesenhar;
+window.bolRecarregar       = bolRecarregar;
 window.resSetSearch        = resSetSearch;
 window.resSetStatusFiltro  = resSetStatusFiltro;
 window.resVerMais          = resVerMais;

@@ -1,0 +1,55 @@
+/* RYC Design System — layout das telas redesenhadas (Fase 2+):
+   cabeçalho da página, barra de filtros, seletor, datas, "ver mais"
+   e detalhes específicos de Boletos/Liberação. */
+
+.ds-page { display: grid; gap: 16px; font-family: var(--ds-font-body); color: var(--ds-ink); }
+.ds-page__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.ds-page__head h1 { font: 700 26px var(--ds-font-display); font-stretch: 108%; letter-spacing: -.01em; margin: 0; color: var(--ds-ink); }
+.ds-page__count { color: var(--ds-ink-3); font-size: 13px; margin-top: 2px; }
+.ds-filterbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.ds-filterbar__right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ds-select { height: 36px; border-radius: var(--ds-r-pill); border: 1px solid var(--ds-line-strong); background: var(--ds-surface);
+  color: var(--ds-ink); padding: 0 12px; font: 500 13px var(--ds-font-body); cursor: pointer; max-width: 220px; }
+.ds-select:focus { outline: none; border-color: var(--ds-brand); box-shadow: 0 0 0 3px var(--ds-brand-soft); }
+.ds-dates { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ds-ink-3); }
+.ds-dates input { height: 32px; border-radius: 10px; border: 1px solid var(--ds-line-strong); background: var(--ds-surface); color: var(--ds-ink);
+  padding: 0 8px; font: 13px var(--ds-font-body); }
+:root:not([data-theme="light"]) .ds-dates input::-webkit-calendar-picker-indicator { filter: invert(.7); }
+.ds-more { display: flex; justify-content: center; padding: 4px 16px 16px; }
+.ds-pop__it.is-on { background: var(--ds-brand-soft); color: var(--ds-brand-text); }
+
+/* Quitação de Boleto */
+.bol-sub { font-size: 11.5px; color: var(--ds-ink-3); margin-top: 4px; }
+.bol-trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bol-mono { font-family: var(--ds-font-mono); font-size: 12.5px; }
+.bol-docs { display: grid; gap: 6px; }
+.bol-doc { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 10px; border-radius: 10px; background: var(--ds-surface-2); color: var(--ds-brand-text); }
+.bol-doc__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--ds-ink); }
+.bol-linhas { display: grid; gap: 4px; font-size: 13px; color: var(--ds-ink-2); }
+.bol-respaldo-meta { margin-left: auto; font-weight: 400; }
+.bol-obs { white-space: pre-line; }
+
+/* Janelas antigas da Liberação/Boletos (adicionar/editar, reprovar, lote ZIP):
+   mesmo funcionamento, acabamento do design system. */
+:root #lib-modal, :root #bol-modal, :root .res-modal { background: rgba(12,10,13,.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); z-index: 9000; }
+:root #lib-modal-content, :root #bol-modal-content, :root .res-modal-box { background: var(--ds-surface); color: var(--ds-ink); border: 1px solid var(--ds-line);
+  border-radius: var(--ds-r-lg); box-shadow: var(--ds-shadow-pop); padding: 24px; font-family: var(--ds-font-body); }
+:root .lib-modal-title { font: 650 20px var(--ds-font-display); font-stretch: 106%; color: var(--ds-ink); }
+:root .lib-form-row label, :root .lib-form-row-2 label { font: 600 12px var(--ds-font-body); text-transform: none; letter-spacing: 0; color: var(--ds-ink-2); }
+:root .lib-form-row input, :root .lib-form-row textarea, :root .lib-form-row select,
+:root .lib-form-row-2 input, :root .lib-form-row-2 textarea, :root .lib-form-row-2 select {
+  background: var(--ds-surface-2); border: 1px solid var(--ds-line-strong); color: var(--ds-ink); border-radius: var(--ds-r-sm); font: 14px var(--ds-font-body); }
+:root .lib-form-row input:focus, :root .lib-form-row textarea:focus, :root .lib-form-row select:focus,
+:root .lib-form-row-2 input:focus, :root .lib-form-row-2 textarea:focus, :root .lib-form-row-2 select:focus {
+  border-color: var(--ds-brand); box-shadow: 0 0 0 3px var(--ds-brand-soft); background: var(--ds-surface); outline: none; }
+:root .lib-modal-actions { gap: 8px; }
+:root .lib-btn-cancel { height: 38px; padding: 0 18px; border-radius: var(--ds-r-pill); background: var(--ds-surface); border: 1px solid var(--ds-line-strong);
+  color: var(--ds-ink); font: 500 14px var(--ds-font-body); }
+:root .lib-btn-save { height: 38px; padding: 0 18px; border-radius: var(--ds-r-pill); background: var(--ds-brand-grad); border: 0; color: #fff;
+  box-shadow: var(--ds-brand-glow); font: 500 14px var(--ds-font-body); }
+:root .lib-btn-save:hover { opacity: 1; filter: brightness(1.08); }
+
+@media (max-width: 768px) {
+  .ds-page__head h1 { font-size: 22px; }
+  .ds-select { max-width: 100%; }
+}

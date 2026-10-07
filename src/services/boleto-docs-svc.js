@@ -84,6 +84,13 @@ export async function getBoletoDocUrl(path, downloadName = null) {
   return data.signedUrl;
 }
 
+/** Baixa o PDF como bytes (Exportar Lote ZIP). Parceiro só consegue os dos próprios clientes (policy do Storage). */
+export async function baixarBoletoDocBytes(path) {
+  const { data, error } = await sb.storage.from(BUCKET).download(path);
+  if (error) throw error;
+  return new Uint8Array(await data.arrayBuffer());
+}
+
 export async function deleteBoletoDoc(doc) {
   await sb.storage.from(BUCKET).remove([doc.storage_path]);
   const { error } = await sb.from('boleto_docs').delete().eq('id', doc.id);
