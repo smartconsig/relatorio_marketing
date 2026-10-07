@@ -1,261 +1,242 @@
-// Tabela da Liberação de Margem: shell (render único), atualização dinâmica
-// e linha. Contrato de DOM com lib-acoes.js: libToggleOk atualiza a linha
-// cirurgicamente (classes lib-tr/lib-btn-ok/lib-badge-*) — manter em sincronia
-// com renderRow.
-import { state } from '../../state.js';
-import { perm } from '../../services/permissions.js';
-import { S, PAGE_SIZE, isAdmin, fmtBRL, fmtDate, esc, PRESETS, filtered, loadData } from './lib-core.js';
+// Tela da Liberação de Margem no visual novo (Fase 3 do redesenho): resumo,
+// barra (busca, período, Importar ▾, Exportar ▾, ⋯), filtros de status com
+// Em alerta, linhas que abrem ao clicar, coluna Ação e barra de lote.
+// window.* chamados daqui (libImportarPlanilha, libImportarAcerto,
+// libImportarPendencias, libOnPendenciasFile, libExportar, libLimparBase,
+// libAddCliente, libSetEmpresaFiltro, libSetDateManual, libOnImportFile,
+// libOnImportAcertoFile) — NÃO RENOMEAR.
+import { dsChips, dsMenu, dsBtn, dsEmpty, initDsMenus } from '../../components/ds/index.js';
+import { S, PAGE_SIZE, isAdmin, fmtBRL, esc, PRESETS, presetRange, filtered, loadData } from './lib-core.js';
+import { LIB_STATUS, LIB_ORDEM, LIB_ACOES, statusDe, emAlerta, podeAgir } from './lib-status.js';
+import { linhaHTML, colunas } from './lib-linha.js';
+import { executarAcao } from './lib-residuo.js';
 
-// Padrão comum pós-escrita: recarrega do banco e redesenha o shell inteiro.
 export async function reloadAndRender() {
   await loadData();
   const el = document.getElementById('sec-liberacao');
   if (el) render(el);
 }
 
-// ── Render shell (once) ───────────────────────────────────────────────────
-export function render(el) {
+// ── Barra ─────────────────────────────────────────────────────────────────
+function _menus() {
   const admin = isAdmin();
+  const importar = [
+    { action: 'imp-planilha', label: 'Planilha de clientes', sub: 'Cadastra clientes em lote', icon: 'table' },
+    ...(admin ? [
+      { action: 'imp-acerto', label: 'Planilha de acerto', sub: 'Preenche as datas de acerto', icon: 'calendar', tag: 'SMART' },
+      { action: 'imp-pendencias', label: 'Pendências', sub: 'Motivo de a margem não liberar', icon: 'note', tag: 'SMART' },
+    ] : []),
+    { sep: true },
+    { action: 'modelo', label: 'Baixar modelo da planilha', icon: 'download' },
+  ];
+  const exportar = admin ? dsMenu({ label: 'Exportar', icon: 'download',
+    items: [{ action: 'exp-excel', label: 'Excel', sub: 'Todas as colunas, inclusive valores e resíduo', icon: 'table' }] }) : '';
+  const mais = admin ? dsMenu({ icon: 'dots', right: true, ariaLabel: 'Mais opções',
+    items: [{ action: 'limpar', label: 'Limpar base', sub: 'Apaga todos os clientes da tela', icon: 'trash', danger: true, tag: 'SMART' }] }) : '';
+  return dsMenu({ label: 'Importar', icon: 'upload', items: importar }) + exportar
+    + dsBtn({ label: 'Adicionar cliente', icon: 'plus', variant: 'primary', attrs: 'data-ds-action="add"' }) + mais;
+}
+
+function _menuPeriodo() {
+  const atual = PRESETS.find(p => p.key === S.preset);
+  const rotulo = atual ? atual.label : (S.dateFrom || S.dateTo ? 'Período escolhido' : 'Todo o período');
+  return dsMenu({ label: rotulo, icon: 'calendar',
+    items: [...PRESETS.map(p => ({ action: 'periodo:' + p.key, label: p.label })), { sep: true }, { action: 'periodo:limpar', label: 'Todo o período' }] });
+}
+
+export function render(el) {
+  initDsMenus();
   el.innerHTML = `
-    <div class="lib-page">
-      <div class="lib-topbar">
-        <div>
-          <h1>Liberação de Margem Master</h1>
-          <p class="lib-count"></p>
-        </div>
-        <div class="lib-topbar-actions">
-          ${admin ? `<button class="lib-btn-limpar" onclick="libLimparBase()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            Limpar Base
-          </button>` : ''}
-          ${admin ? `<button class="lib-btn-export" onclick="libExportar()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar
-          </button>` : ''}
-          <a class="lib-btn-modelo" href="/template_liberacao.xlsx" download="TEMPLATE_LIBERACAO.xlsx" title="Baixar modelo de planilha">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Modelo
-          </a>
-          <button class="lib-btn-import" onclick="libImportarPlanilha()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar Planilha
-          </button>
+    <div class="ds-page">
+      <div class="ds-page__head"><div><h1>Liberação de margem</h1><div class="ds-page__count" id="lib-count"></div></div></div>
+      <div class="ds-kpis" id="lib-kpis"></div>
+      <div class="ds-tbl">
+        <div class="ds-tbl__toolbar">
+          <label class="ds-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="ds-input" id="lib-search" type="text" placeholder="Buscar nome ou CPF" value="${esc(S.search)}"></label>
+          <span id="lib-periodo">${_menuPeriodo()}</span>
+          ${_menus()}
           <input type="file" id="lib-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportFile(this)" />
-          ${admin ? `<button class="lib-btn-import" onclick="libImportarAcerto()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Importar Acerto
-          </button>
-          <input type="file" id="lib-import-acerto-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportAcertoFile(this)" />` : ''}
-          <button class="lib-btn-add" onclick="libAddCliente()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Adicionar Cliente
-          </button>
+          ${isAdmin() ? `<input type="file" id="lib-import-acerto-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="libOnImportAcertoFile(this)" />
+          <input type="file" id="lib-pendencias-input" accept=".xlsx,.xls" style="display:none" />` : ''}
         </div>
-      </div>
-
-      <div class="lib-filters">
-        <div class="lib-search-wrap">
-          <svg class="lib-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="lib-search" id="lib-search" type="text" placeholder="Buscar por nome ou CPF…" oninput="libSetSearch(this.value)" />
-          <button class="lib-search-clear" id="lib-search-clear" onclick="libSetSearch('')" title="Limpar busca" style="display:none">×</button>
-        </div>
-
-        ${admin ? `<div class="lib-empresa-filter-wrap">
-          <select class="lib-empresa-select" id="lib-empresa-select" onchange="libSetEmpresaFiltro(this.value)">
-            <option value="">Todas as empresas</option>
-          </select>
-        </div>` : ''}
-
-        <div class="lib-date-row">
-          <div class="lib-presets">
-            ${PRESETS.map(p => `<button class="lib-preset" data-key="${p.key}" onclick="libSetPreset('${p.key}')">${p.label}</button>`).join('')}
-            <button class="lib-preset-clear" id="lib-preset-clear" onclick="libClearDate()" style="display:none">× Limpar</button>
-          </div>
-          <div class="lib-date-inputs">
-            <input type="date" class="lib-date-input" id="lib-date-from" onchange="libSetDateManual()" />
-            <span class="lib-date-sep">até</span>
-            <input type="date" class="lib-date-input" id="lib-date-to" onchange="libSetDateManual()" />
+        <div class="ds-tbl__filters ds-filterbar">
+          <div id="lib-status-chips"></div>
+          <div class="ds-filterbar__right">
+            ${isAdmin() ? '<select class="ds-select" id="lib-empresa-select" onchange="libSetEmpresaFiltro(this.value)"><option value="">Todas as empresas</option></select>' : ''}
+            <div class="ds-dates" title="Filtra pela data quitado">Quitado de <input type="date" id="lib-date-from" onchange="libSetDateManual()"> até <input type="date" id="lib-date-to" onchange="libSetDateManual()"></div>
           </div>
         </div>
+        <div id="lib-rows"></div>
+        <div id="lib-ver-mais-wrap"></div>
+        <div class="ds-bulk" id="lib-bulk"></div>
       </div>
-
-      <div class="lib-table-wrap">
-        <table class="lib-table">
-          <thead>
-            <tr>
-              ${admin ? '<th>Empresa</th>' : ''}
-              <th>CPF</th>
-              <th>Nome</th>
-              <th>Convênio</th>
-              <th>Produto</th>
-              <th>Saldo Devedor</th>
-              <th>Troco</th>
-              ${admin ? '<th>Troco Líquido</th>' : ''}
-              <th>Saldo Total</th>
-              <th>Comissão 6%</th>
-              <th>Acerto</th>
-              <th>Data Quitado</th>
-              <th>Obs</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="lib-tbody"></tbody>
-        </table>
-      </div>
-      <div id="lib-ver-mais-wrap"></div>
-    </div>
-  `;
+    </div>`;
+  _ligarEventos(el);
   updateTable();
 }
 
-// ── Update dinâmico (sem re-renderizar tudo) ──────────────────────────────
-function _atualizarContagem(list) {
-  const countEl = document.querySelector('.lib-count');
-  if (!countEl) return;
-  countEl.textContent = S.search || S.dateFrom || S.dateTo
-    ? `${list.length} resultado${list.length !== 1 ? 's' : ''} de ${S.registros.length} total`
-    : `${S.registros.length} cliente${S.registros.length !== 1 ? 's' : ''} cadastrado${S.registros.length !== 1 ? 's' : ''}`;
+// ── Atualização ───────────────────────────────────────────────────────────
+function _semStatus() {
+  const salvo = S.statusFiltro;
+  S.statusFiltro = '';
+  const base = filtered();
+  S.statusFiltro = salvo;
+  return base;
 }
 
-function _atualizarTbody(visible, cols, admin) {
-  const tbody = document.getElementById('lib-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = visible.length === 0
-    ? `<tr><td colspan="${cols}" class="lib-empty">
-         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-         <div>Nenhum cliente encontrado.</div>
-       </td></tr>`
-    : visible.map(r => renderRow(r, admin)).join('');
+function _kpis(base) {
+  const emRes = base.filter(r => !r.aprovado && ['pendente', 'solicitado', 'enviado'].includes(r.residuo_status));
+  const alerta = base.filter(emAlerta).length;
+  const card = (lbl, val, sub, hl) => `<div class="ds-card ds-kpi${hl ? ' ds-kpi--hl' : ''}"><div class="ds-kpi__lbl">${lbl}</div><div class="ds-kpi__val">${val}</div><div class="ds-kpi__sub">${sub}</div></div>`;
+  document.getElementById('lib-kpis').innerHTML =
+    card('Clientes', base.length, 'no filtro atual', true)
+    + card('Aguardando OK', base.filter(r => !r.aprovado).length, 'pendentes ou em resíduo')
+    + card('Em resíduo', emRes.length, fmtBRL(emRes.reduce((s, r) => s + (Number(r.residuo_valor) || 0), 0)) + ' pendentes')
+    + card('Em alerta', `<span style="color:${alerta ? 'var(--ds-bad)' : 'inherit'}">${alerta}</span>`, 'pagos há mais de 7 dias úteis sem OK');
 }
 
-function _atualizarVerMais(list, visible) {
-  const vmWrap = document.getElementById('lib-ver-mais-wrap');
-  if (!vmWrap) return;
-  if (list.length <= visible.length) { vmWrap.innerHTML = ''; return; }
-  const rest = list.length - visible.length;
-  const next = Math.min(PAGE_SIZE, rest);
-  vmWrap.innerHTML = `
-        <div class="lib-ver-mais-wrap">
-          <button class="lib-ver-mais" onclick="libVerMais()">
-            Mostrar mais ${next} cliente${next !== 1 ? 's' : ''}
-            <span class="lib-ver-mais-sub">${rest} restante${rest !== 1 ? 's' : ''}</span>
-          </button>
-        </div>`;
+function _chips(base) {
+  const itens = [{ value: '', label: 'Todos', count: base.length },
+    ...LIB_ORDEM.map(s => ({ value: s, label: LIB_STATUS[s].label, tone: LIB_STATUS[s].tone, count: base.filter(r => statusDe(r) === s).length })),
+    { value: 'alerta', label: 'Em alerta', alert: true, count: base.filter(emAlerta).length }];
+  document.getElementById('lib-status-chips').innerHTML = dsChips(itens, S.statusFiltro);
 }
 
-// Botões de limpar, presets ativos e inputs de data refletindo o store S.
-function _atualizarFiltrosUI() {
-  const clearSearch = document.getElementById('lib-search-clear');
-  if (clearSearch) clearSearch.style.display = S.search ? '' : 'none';
-
-  const clearDate = document.getElementById('lib-preset-clear');
-  if (clearDate) clearDate.style.display = (S.preset || S.dateFrom || S.dateTo) ? '' : 'none';
-
-  document.querySelectorAll('.lib-preset[data-key]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.key === S.preset);
-  });
-
-  const fromEl = document.getElementById('lib-date-from');
-  const toEl   = document.getElementById('lib-date-to');
-  if (fromEl) fromEl.value = S.dateFrom || '';
-  if (toEl)   toEl.value   = S.dateTo   || '';
+function _selects() {
+  const emp = document.getElementById('lib-empresa-select');
+  if (emp) {
+    const empresas = [...new Set(S.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
+    emp.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(e => `<option value="${esc(e)}"${e === S.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
+  }
+  document.getElementById('lib-date-from').value = S.dateFrom || '';
+  document.getElementById('lib-date-to').value = S.dateTo || '';
+  document.getElementById('lib-periodo').innerHTML = _menuPeriodo();
 }
 
-// Popula dropdown de empresas (admin)
-function _atualizarEmpresas() {
-  const empSelect = document.getElementById('lib-empresa-select');
-  if (!empSelect) return;
-  const empresas = [...new Set(S.registros.map(r => r.empresa_parceira).filter(Boolean))].sort();
-  const current  = empSelect.value;
-  empSelect.innerHTML = `<option value="">Todas as empresas</option>` +
-    empresas.map(e => `<option value="${esc(e)}"${e === S.empresaFiltro ? ' selected' : ''}>${esc(e)}</option>`).join('');
-  if (current && empresas.includes(current)) empSelect.value = current;
+function _linhas(list) {
+  const visible = list.slice(0, S.page * PAGE_SIZE);
+  const todos = visible.length > 0 && visible.every(r => S.sel.has(r.id));
+  const head = `<div class="ds-tr ds-tr--head" style="--ds-cols:${colunas()}"><div><input type="checkbox" class="ds-cb" data-lib-all${todos ? ' checked' : ''} aria-label="Selecionar todos"></div>`
+    + `<div>Cliente</div><div>Convênio · produto</div>${isAdmin() ? '<div>Empresa</div>' : ''}<div>Quitado</div><div>Acerto</div><div>Status</div><div style="text-align:right">Ação</div><div></div></div>`;
+  document.getElementById('lib-rows').innerHTML = head + (visible.length ? visible.map(linhaHTML).join('')
+    : dsEmpty({ titulo: 'Nenhum cliente neste filtro', texto: 'Troque o período ou limpe a busca.' }));
+  const resto = list.length - visible.length;
+  document.getElementById('lib-ver-mais-wrap').innerHTML = resto > 0
+    ? `<div class="ds-more">${dsBtn({ label: `Mostrar mais ${Math.min(PAGE_SIZE, resto)} · ${resto} restantes`, attrs: 'data-ds-action="ver-mais"' })}</div>` : '';
+}
+
+// ── Lote ──────────────────────────────────────────────────────────────────
+const _selecionados = () => S.registros.filter(r => S.sel.has(r.id));
+
+function _acaoComum(lista) {
+  const sts = [...new Set(lista.map(statusDe))];
+  if (sts.length !== 1) return { nota: 'Selecione clientes no mesmo status para mudar em lote' };
+  const acoes = LIB_ACOES[sts[0]].filter(a => a.k !== 'residuo');
+  if (!acoes.length) return { nota: sts[0] === 'ok' ? 'Clientes já estão OK' : 'O resíduo é aberto um cliente por vez' };
+  const acao = acoes[0];
+  if (!lista.every(r => podeAgir(r, acao))) return { nota: acao.who === 's' ? 'Esta etapa é da Smart' : 'Há clientes de outra empresa na seleção' };
+  return { acao };
+}
+
+function _renderBulk() {
+  const bar = document.getElementById('lib-bulk');
+  const lista = _selecionados();
+  bar.classList.toggle('is-show', lista.length > 0);
+  if (!lista.length) { bar.innerHTML = ''; return; }
+  const { acao, nota } = _acaoComum(lista);
+  bar.innerHTML = `<b>${lista.length} ${lista.length === 1 ? 'selecionado' : 'selecionados'}</b><span style="opacity:.6">·</span>`
+    + (acao ? dsBtn({ label: acao.label, variant: 'primary', size: 'sm', attrs: `data-lib-bulk="${acao.k}"` }) : `<span class="ds-bulk__note">${nota}</span>`)
+    + dsBtn({ label: 'Limpar seleção', variant: 'ghost', size: 'sm', attrs: 'data-lib-bulk="limpar" style="margin-left:auto"' });
 }
 
 export function updateTable() {
-  const admin    = isAdmin();
-  const list     = filtered();
-  const visible  = list.slice(0, S.page * PAGE_SIZE);
-  const cols     = admin ? 15 : 14;
-
-  _atualizarContagem(list);
-  _atualizarTbody(visible, cols, admin);
-  _atualizarVerMais(list, visible);
-  _atualizarFiltrosUI();
-  _atualizarEmpresas();
+  if (!document.getElementById('lib-rows')) return;
+  const list = filtered();
+  const base = _semStatus();
+  const total = S.registros.length;
+  document.getElementById('lib-count').textContent = list.length === total
+    ? `${total} cliente${total !== 1 ? 's' : ''}` : `${list.length} de ${total} clientes no filtro`;
+  _kpis(base);
+  _chips(base);
+  _selects();
+  _linhas(list);
+  _renderBulk();
 }
 
-function _acertoCellHTML(r, admin, canAct) {
-  if (!canAct) return fmtDate(r.acerto);
-  const acertoLocked = !admin && r.acerto;
-  return `<input class="lib-acerto-input" type="date" value="${r.acerto || ''}" ${acertoLocked ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onchange="libSalvarAcerto('${r.id}', this.value)"`} />`;
+// ── Eventos ───────────────────────────────────────────────────────────────
+const _resetPage = () => { S.page = 1; };
+const _acao = (k, lista) => executarAcao(k, lista, { redesenhar: updateTable });
+
+const ACOES_MENU = {
+  'imp-planilha':   () => window.libImportarPlanilha(),
+  'imp-acerto':     () => window.libImportarAcerto(),
+  'imp-pendencias': () => window.libImportarPendencias(),
+  'modelo':         () => { const a = document.createElement('a'); a.href = '/template_liberacao.xlsx'; a.download = 'TEMPLATE_LIBERACAO.xlsx'; a.click(); },
+  'exp-excel':      () => window.libExportar(),
+  'limpar':         () => window.libLimparBase(),
+  'add':            () => window.libAddCliente(),
+  'ver-mais':       () => { S.page++; updateTable(); },
+};
+
+function _acaoMenu(action) {
+  if (!action.startsWith('periodo:')) { ACOES_MENU[action]?.(); return; }
+  const key = action.slice(8);
+  const r = key === 'limpar' ? { from: null, to: null } : presetRange(key);
+  S.preset = key === 'limpar' ? null : key; S.dateFrom = r.from; S.dateTo = r.to; _resetPage(); updateTable();
 }
 
-// ⚠ código-em-string: libToggleOk PRECISA continuar global (main.js)
-function _btnOkHTML(r, admin) {
-  const okLocked = !admin && r.aprovado;   // parceiro: depois de dar OK, não pode remover
-  return `<button class="lib-btn-ok${r.aprovado ? ' ok' : ''}${okLocked ? ' locked' : ''}" ${okLocked ? 'disabled title="OK confirmado — somente admin pode remover"' : `onclick="libToggleOk('${r.id}', ${r.aprovado})" title="${r.aprovado ? 'Remover OK' : 'Marcar como OK'}"`}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      </button>`;
+function _bulk(k) {
+  if (k === 'limpar') { S.sel.clear(); updateTable(); return; }
+  _acao(k, _selecionados());
 }
 
-function _btnEditarHTML(r, admin) {
-  const travado = !admin && r.acerto;
-  return `<button class="lib-btn-edit${travado ? ' disabled' : ''}" ${travado ? 'disabled title="Acerto preenchido — edição bloqueada"' : `onclick="libEditarCliente('${r.id}')" title="Editar"`}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>`;
+function _alternarLinha(id) {
+  if (S.abertos.has(id)) S.abertos.delete(id); else S.abertos.add(id);
+  updateTable();
 }
 
-function _btnExcluirHTML(r, admin) {
-  if (!admin) return '';
-  return `<button class="lib-btn-del" onclick="libDeletarCliente('${r.id}', '${r.nome.replace(/'/g, "\\'")}')" title="Excluir">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-      </button>`;
+const _linhaDe = id => S.registros.filter(r => String(r.id) === String(id));
+
+const CLIQUES = [
+  ['[data-ds-action]', el => _acaoMenu(el.dataset.dsAction)],
+  ['[data-ds-chip]',   el => { S.statusFiltro = el.dataset.dsChip; _resetPage(); updateTable(); }],
+  ['[data-lib-bulk]',  el => _bulk(el.dataset.libBulk)],
+  ['[data-lib-acao]',  el => _acao(el.dataset.libAcao, _linhaDe(el.dataset.id))],
+  ['[data-lib-abrir]', el => { S.abertos.add(_linhaDe(el.dataset.libAbrir)[0]?.id); updateTable(); }],
+  ['input, select, button, a, .ds-menu, .ds-det', () => {}],
+  ['[data-lib-row]',   el => _alternarLinha(_linhaDe(el.dataset.libRow)[0]?.id)],
+];
+
+function _onClick(e) {
+  for (const [sel, fn] of CLIQUES) {
+    const el = e.target.closest(sel);
+    if (el) { fn(el); return; }
+  }
 }
 
-function _acoesCellHTML(r, admin, canAct) {
-  if (!canAct) return '<td></td>';
-  // Cliente com resíduo a pagar sai desta tela para a de Resíduos
-  const residuoBtn = perm.residuosEditar()
-    ? `<button class="bol-btn-residuo" onclick="libParaResiduo('${r.id}')" title="Cliente tem resíduo — enviar para a tela de Resíduos">Resíduo →</button>`
-    : '';
-  return `
-    <td class="lib-td-actions">
-      ${residuoBtn}
-      ${_btnOkHTML(r, admin)}
-      ${_btnEditarHTML(r, admin)}
-      ${_btnExcluirHTML(r, admin)}
-    </td>`;
+function _onChange(e) {
+  const t = e.target;
+  if (t.matches('[data-lib-all]')) {
+    filtered().slice(0, S.page * PAGE_SIZE).forEach(r => (t.checked ? S.sel.add(r.id) : S.sel.delete(r.id)));
+    updateTable(); return;
+  }
+  if (t.dataset.libSel) {
+    const id = _linhaDe(t.dataset.libSel)[0]?.id;
+    if (t.checked) S.sel.add(id); else S.sel.delete(id);
+    _renderBulk(); return;
+  }
+  if (t.id === 'lib-pendencias-input') window.libOnPendenciasFile(t);
 }
 
-// CPF, nome, convênio e produto (mesmos fallbacks e titles de sempre)
-function _celulasIdentidadeHTML(r) {
-  return `<td>${r.cpf || '—'}</td>
-      <td class="lib-nome" title="${esc(r.nome || '')}">${r.nome || '—'}</td>
-      <td class="lib-trunc" title="${esc(r.convenio || '')}">${esc(r.convenio || '—')}</td>
-      <td class="lib-trunc" title="${esc(r.produto || '')}">${esc(r.produto || '—')}</td>`;
+function _ligarEventos(el) {
+  if (el.dataset.dsLigado) return;
+  el.dataset.dsLigado = '1';
+  el.addEventListener('click', _onClick);
+  el.addEventListener('change', _onChange);
+  el.addEventListener('input', e => {
+    if (e.target.id !== 'lib-search') return;
+    S.search = e.target.value || ''; _resetPage(); updateTable();
+  });
 }
 
-function renderRow(r, admin) {
-  const grupoNome = state.currentUser?.grupoNome || '';
-  const canAct    = admin || r.empresa_parceira === grupoNome;
-
-  return `
-    <tr class="lib-tr${r.aprovado ? ' lib-row-ok' : ''}" data-id="${r.id}">
-      ${admin ? `<td><span class="lib-empresa-badge">${esc(r.empresa_parceira)}</span></td>` : ''}
-      ${_celulasIdentidadeHTML(r)}
-      <td class="lib-val">${fmtBRL(r.saldo_devedor)}</td>
-      <td class="lib-val">${fmtBRL(r.troco)}</td>
-      ${admin ? `<td class="lib-val">${fmtBRL(r.troco_liquido)}</td>` : ''}
-      <td class="lib-val lib-val-destaque">${fmtBRL(r.saldo_total)}</td>
-      <td class="lib-val">${fmtBRL(r.comissao_6pct)}</td>
-      <td>${_acertoCellHTML(r, admin, canAct)}</td>
-      <td>${fmtDate(r.data_quitado)}</td>
-      <td class="lib-obs">${r.obs || '—'}</td>
-      <td>${r.aprovado
-        ? '<span class="lib-badge-ok">✓ OK</span>'
-        : '<span class="lib-badge-pen">Pendente</span>'}</td>
-      ${_acoesCellHTML(r, admin, canAct)}
-    </tr>`;
-}

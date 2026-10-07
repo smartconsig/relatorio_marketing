@@ -4,21 +4,31 @@
 //   lib-tabela.js  shell + atualização dinâmica + linha da tabela
 //   lib-modais.js  modais adicionar/editar cliente + preview de cálculo
 //   lib-import.js  importadores de planilha de clientes e de acerto
-//   lib-acoes.js   OK, acerto, resíduo, exportar, excluir, limpar base
+//   lib-acoes.js   acerto, exportar, excluir, limpar base (+ libToggleOk legado)
+//   lib-status.js  status da linha, quem age, alerta de 7 dias úteis (Fase 3)
+//   lib-linha.js   linha e detalhe no visual novo
+//   lib-residuo.js OK e resíduo em 4 etapas (RPCs da migration 015)
+//   lib-pendencias.js importação da planilha de pendências (obs)
 // Este arquivo re-exporta os 23 nomes públicos originais — main.js e os
 // onclick das strings HTML não mudaram uma linha.
 import { S, presetRange, spinner, loadData } from './liberacao/lib-core.js';
-import { render, updateTable } from './liberacao/lib-tabela.js';
+import { render, updateTable, reloadAndRender } from './liberacao/lib-tabela.js';
+
+export { libImportarPendencias, libOnPendenciasFile } from './liberacao/lib-pendencias.js';
+// Usados por módulos que não podem importar a tabela (evita ciclo)
+export const libRedesenhar = () => updateTable();
+export const libRecarregar = () => reloadAndRender();
 
 export { libEditarCliente, libSalvarEdicao, libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente } from './liberacao/lib-modais.js';
 export { libImportarPlanilha, libOnImportFile, libImportarAcerto, libOnImportAcertoFile } from './liberacao/lib-import.js';
-export { libParaResiduo, libExportar, libLimparBase, libDeletarCliente, libToggleOk, libSalvarAcerto } from './liberacao/lib-acoes.js';
+export { libExportar, libLimparBase, libDeletarCliente, libToggleOk, libSalvarAcerto } from './liberacao/lib-acoes.js';
 
 // ── Entry point ───────────────────────────────────────────────────────────
 export async function renderLiberacao() {
   const el = document.getElementById('sec-liberacao');
   if (!el) return;
   S.page = 1; S.search = ''; S.dateFrom = null; S.dateTo = null; S.preset = null; S.empresaFiltro = '';
+  S.statusFiltro = ''; S.abertos = new Set(); S.sel = new Set();
   el.innerHTML = spinner();
   await loadData();
   render(el);

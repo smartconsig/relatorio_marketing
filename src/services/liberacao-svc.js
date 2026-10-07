@@ -36,3 +36,32 @@ export function deleteLiberacao(id) {
 export function limparBaseLiberacao() {
   return sb.from(TABELA).delete().not('id', 'is', null);
 }
+
+// ── Resíduo dentro da Liberação (migration 015) ──────────────────────────
+// Devolvem { data, error }. O banco valida papel (parceiro dono x Smart) e etapa.
+export function rpcResiduoIniciar(id, valor, enquadrada) {
+  return sb.rpc('liberacao_residuo_iniciar', { p_liberacao_id: String(id), p_valor: valor, p_enquadrada: enquadrada });
+}
+
+export function rpcResiduoAvancar(id, novo, valorPago = null) {
+  return sb.rpc('liberacao_residuo_avancar', { p_liberacao_id: String(id), p_novo: novo, p_valor_pago: valorPago });
+}
+
+const ERROS_RESIDUO = [
+  ['RESIDUO_VALOR_OBRIGATORIO',      'Informe o valor que ficou pendente.'],
+  ['RESIDUO_ENQUADRADA_OBRIGATORIA', 'Informe se a conta está enquadrada.'],
+  ['RESIDUO_LIBERACAO_OK',           'Este cliente já está OK — não dá para abrir resíduo.'],
+  ['RESIDUO_JA_EXISTE',              'Este cliente já tem um resíduo em andamento.'],
+  ['RESIDUO_SOMENTE_SMART',          'Só a Smart pode marcar o resíduo como enviado.'],
+  ['RESIDUO_TRANSICAO_INVALIDA',     'Esta mudança não é permitida nesta etapa. Atualize a tela.'],
+  ['RESIDUO_SEM_PERMISSAO',          'Sem permissão para agir neste cliente.'],
+  ['RESIDUO_CPF_INVALIDO',           'CPF do cliente é inválido — corrija antes.'],
+  ['RESIDUO_STATUS_SOMENTE_RPC',     'O resíduo só muda pelos botões da tela.'],
+  ['liberacao_residuo_',             'As funções de resíduo ainda não existem no banco — rode a migration 015 no Supabase.'],
+];
+
+export function msgErroResiduo(error) {
+  const m = error?.message || '';
+  const hit = ERROS_RESIDUO.find(([marca]) => m.includes(marca));
+  return hit ? hit[1] : (m || 'Erro inesperado.');
+}

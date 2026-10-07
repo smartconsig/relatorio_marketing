@@ -29,6 +29,11 @@
 .bol-respaldo-meta { margin-left: auto; font-weight: 400; }
 .bol-obs { white-space: pre-line; }
 
+/* Liberação de margem */
+.lib-acerto.ds-input { height: 32px; padding: 0 8px; font-size: 13px; max-width: 136px; }
+.lib-acerto.ds-input[disabled] { opacity: .65; cursor: not-allowed; }
+:root:not([data-theme="light"]) .lib-acerto::-webkit-calendar-picker-indicator { filter: invert(.7); }
+
 /* Janelas antigas da Liberação/Boletos (adicionar/editar, reprovar, lote ZIP):
    mesmo funcionamento, acabamento do design system. */
 :root #lib-modal, :root #bol-modal, :root .res-modal { background: rgba(12,10,13,.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); z-index: 9000; }

@@ -5,6 +5,7 @@ import { fetchLiberacoesPage } from '../../services/liberacao-svc.js';
 import { state } from '../../state.js';
 import { handleError } from '../../utils/ui.js';
 import { perm } from '../../services/permissions.js';
+import { statusDe, emAlerta } from './lib-status.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 // Objeto único mutável: os módulos leem/escrevem S.campo — reatribuir uma
@@ -17,6 +18,9 @@ export const S = {
   dateTo: null,
   preset: null,
   empresaFiltro: '',
+  statusFiltro: '',     // '' | chave de LIB_STATUS | 'alerta' (redesenho, Fase 3)
+  abertos: new Set(),   // linhas expandidas
+  sel: new Set(),       // selecionadas para ação em lote
 };
 
 export const PAGE_SIZE = 25;
@@ -88,8 +92,11 @@ export function filtered() {
   if (S.dateFrom)      list = list.filter(r => r.data_quitado && r.data_quitado >= S.dateFrom);
   if (S.dateTo)        list = list.filter(r => r.data_quitado && r.data_quitado <= S.dateTo);
   if (S.empresaFiltro) list = list.filter(r => r.empresa_parceira === S.empresaFiltro);
+  if (S.statusFiltro)  list = list.filter(_casaStatus);
   return list;
 }
+
+const _casaStatus = r => (S.statusFiltro === 'alerta' ? emAlerta(r) : statusDe(r) === S.statusFiltro);
 
 // ── Data ──────────────────────────────────────────────────────────────────
 export async function loadData() {
@@ -103,8 +110,9 @@ export async function loadData() {
     if (!data || data.length < PAGE) break;
     from += PAGE;
   }
-  // Cliente em resíduo some desta tela e volta automaticamente quando o
-  // resíduo for pago (com a observação) — ver residuos-page.js / migration 012
+  // Desde a migration 015 o resíduo é um STATUS da linha (residuo_status) e
+  // em_residuo fica sempre false. O filtro abaixo só esconde linhas do fluxo
+  // antigo (012) caso o site novo suba antes de a 015 ser rodada.
   S.registros = all.filter(r => !r.em_residuo);
 }
 

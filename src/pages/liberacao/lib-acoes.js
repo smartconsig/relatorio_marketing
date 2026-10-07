@@ -1,52 +1,34 @@
-// Ações da Liberação de Margem: marcar OK, salvar acerto, enviar para
-// Resíduos, exportar, excluir e limpar base.
+// Ações da Liberação de Margem: marcar OK (legado), salvar acerto, exportar,
+// excluir e limpar base. O resíduo agora vive na própria linha (lib-residuo.js).
 // ⚠ libToggleOk reescreve o próprio onclick via setAttribute com o nome
 // global "libToggleOk" — NÃO RENOMEAR (vigiado por scripts/verifica-handlers).
 import { updateLiberacao, deleteLiberacao, limparBaseLiberacao } from '../../services/liberacao-svc.js';
 import { toast, handleError } from '../../utils/ui.js';
 import { showConfirm } from '../../utils/confirm.js';
 import * as XLSX from 'xlsx';
-import { enviarParaResiduo } from '../../services/residuos-svc.js';
-import { S, isAdmin, filtered, loadData } from './lib-core.js';
+import { S, isAdmin, filtered } from './lib-core.js';
+import { LIB_STATUS, statusDe, emAlerta } from './lib-status.js';
 import { render, updateTable } from './lib-tabela.js';
 
-// ── Enviar para Resíduos (transacional no banco: cria + esconde daqui) ────
-export function libParaResiduo(id) {
-  const r = S.registros.find(x => x.id === id);
-  if (!r) return;
-  showConfirm(
-    'Enviar para Resíduos',
-    `"${r.nome}" tem resíduo a pagar? O cliente sai desta tela e entra em Resíduos como "Resíduo Pendente". Ele volta para cá automaticamente quando o resíduo for pago.`,
-    'Enviar para Resíduos',
-    async () => {
-      try {
-        await enviarParaResiduo(id);
-        toast(`${r.nome} enviado para a tela de Resíduos.`);
-        await loadData();
-        updateTable();
-      } catch (e) {
-        const m = e?.message || '';
-        toast(
-          m.includes('RESIDUO_JA_EXISTE')      ? 'Este cliente já está na tela de Resíduos.' :
-          m.includes('RESIDUO_SEM_PERMISSAO')  ? 'Sem permissão para enviar clientes para Resíduos.' :
-          m.includes('RESIDUO_CPF_INVALIDO')   ? 'CPF do cliente é inválido — corrija antes de enviar.' :
-          m || 'Erro inesperado.', 'err');
-      }
-    }
-  );
-}
-
 // ── Exportar Excel (admin) ────────────────────────────────────────────────
+const _enq = v => (v == null ? '' : (v ? 'Sim' : 'Não'));
+const _colunasResiduo = r => [
+  r.residuo_valor ?? '', _enq(r.residuo_enquadrada), r.residuo_data_pendente || '', r.residuo_data_solicitado || '',
+  r.residuo_data_enviado || '', r.residuo_data_pago || '', r.residuo_valor_pago ?? '', emAlerta(r) ? 'SIM' : '',
+];
+
 export function libExportar() {
   const data = filtered();
   if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
 
-  const headers = ['CPF','NOME','CONVÊNIO','PRODUTO','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS'];
+  const headers = ['CPF','NOME','CONVÊNIO','PRODUTO','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS',
+    'RESÍDUO VALOR PENDENTE','RESÍDUO ENQUADRADA','RESÍDUO PENDENTE EM','RESÍDUO SOLICITADO EM','RESÍDUO ENVIADO EM','RESÍDUO PAGO EM','RESÍDUO VALOR PAGO','EM ALERTA'];
   const rows = data.map(r => [
     r.cpf, r.nome, r.convenio || '', r.produto || '', r.empresa_parceira,
     r.saldo_devedor, r.troco, r.saldo_total, r.comissao_6pct, r.troco_liquido,
     r.acerto || '', r.data_quitado || '', r.obs || '',
-    r.aprovado ? 'OK' : 'Pendente',
+    LIB_STATUS[statusDe(r)].label,
+    ..._colunasResiduo(r),
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
