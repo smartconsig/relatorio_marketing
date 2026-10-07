@@ -4,10 +4,8 @@ export const state = {
   confirmedDivergences: {},
   vendorMappings: {},          // { ecorbanNormName: smartNormName }
   result: null,
-  rankView: 'seller',
   chart: null,
   filterDates: { start: null, end: null },
-  goals: { leads: 0, invest: 0, cpl: 0, approved: 0, paid: 0, value: 0, cac: 0, roas: 0 },
   currentUser: null,        // { id, email, nomeDisplay, grupoNome, permissoes:{}, profile:{} }
   gestaoTab: 'procv',
   procvFilter: 'pending',

@@ -11,7 +11,6 @@ const PERM_TREE = [
     { key: 'importacao_processar', label: 'Processar Dados' },
   ]},
   { key: 'visao_geral', label: 'Visão Geral' },
-  { key: 'ranking',     label: 'Ranking de Vendas' },
   { label: 'Gestão', children: [
     { label: 'PROCV', children: [
       { key: 'gestao_procv_visualizar', label: 'Visualizar' },
@@ -25,13 +24,7 @@ const PERM_TREE = [
     { key: 'gestao_clientes', label: 'Clientes — Visualizar' },
   ]},
   { key: 'propostas',      label: 'Propostas de Marketing' },
-  { label: 'Metas', children: [
-    { key: 'metas_visualizar', label: 'Visualizar' },
-    { key: 'metas_editar',     label: 'Editar' },
-  ]},
   { key: 'bsc',                  label: 'Ranking BSC' },
-  { key: 'parceiros',            label: 'Ranking Parceiros' },
-  { key: 'perfil_visualizar',    label: 'Perfil de Cliente' },
   { label: 'Esteira de Conteúdo', children: [
     { key: 'conteudo_visualizar', label: 'Visualizar o board' },
     { key: 'conteudo_editar',     label: 'Criar e mover cards' },
@@ -51,11 +44,6 @@ const PERM_TREE = [
   // residuos_editar = agir como Smart no resíduo (marcar "Enviado", qualquer etapa).
   { label: 'Resíduo (na Liberação)', children: [
     { key: 'residuos_editar',     label: 'Agir como Smart (marcar Enviado)' },
-  ]},
-  { label: 'Universidade Smart', children: [
-    { key: 'universidade_acessar',    label: 'Acessar Universidade' },
-    { key: 'universidade_criador',    label: 'Criador de Cursos (Admin)' },
-    { key: 'universidade_gamificacao',label: 'Gamificação (Admin)' },
   ]},
   { label: 'Administração', children: [
     { key: 'admin_usuarios', label: 'Gerenciar Usuários' },

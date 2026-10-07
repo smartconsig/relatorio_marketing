@@ -6,7 +6,6 @@
 // comportamento validado em producao (07/09/2026) — NAO reordenar.
 import { state } from '../../state.js';
 import { toast } from '../../utils/ui.js';
-import { loadAllGoals } from '../goals-svc.js';
 import { syncClassificationsFromSupabase, hasLocalEdits } from '../classifications.js';
 import { loadSnapshotFromSupabase, saveSnapshotToSupabase, checkSnapshotTimestamp } from '../snapshot.js';
 import { loadImportData, checkImportMeta, loadUserDicts, applyUserDicts } from '../propostas-store.js';
@@ -16,9 +15,7 @@ import { saveState, loadState, setCacheIndicator, saveSnapshotTimestamp, loadSna
          saveImportStamp, loadImportStamp, clearMarketingCache } from '../../core/storage.js';
 import { renderAll, navigate } from '../../navigation.js';
 import { renderDiag } from '../../pages/overview.js';
-import { populateGoalsForm } from '../../pages/goals-page.js';
 import { initBSC } from '../../pages/bsc-page.js';
-import { initParceiros } from '../../pages/parceiros-page.js';
 import { renderLastSystemEvent, logAction } from '../action-log.js';
 import { syncMetaAds } from '../meta-ads.js';
 import { can, perm, usaDadosMarketing } from '../permissions.js';
@@ -38,36 +35,24 @@ export async function onAuthenticated() {
   // BSC — carrega em paralelo, não bloqueia o resto
   initBSC();
 
-  // Ranking Parceiros — carrega em paralelo, não bloqueia o resto
-  initParceiros();
-
   // Logs de sistema — carrega em paralelo, não bloqueia
   renderLastSystemEvent('import-last-log', '__import__');
-  renderLastSystemEvent('goals-last-log', '__goals__');
 
-  // Metas — carrega todos os períodos
-  const allGoals = await loadAllGoals();
-  state.allGoals = allGoals;
-  const currentPeriodo = new Date().toISOString().slice(0, 7);
-  state.goals = allGoals[currentPeriodo] || {};
-  populateGoalsForm(state.goals);
   await syncClassificationsFromSupabase();
 
   // 1. Navega imediatamente pelo hash da URL (antes de qualquer load de dados)
   //    Garante que o F5 mantém a seção correta independente do estado do cache
-  const VALID_SECS = new Set(['home','import','overview','ranking','perfil','gestao','propostas','goals','bsc','parceiros','trafego','bms','admin','conteudo','liberacao','boletos','universidade']);
+  const VALID_SECS = new Set(['home','import','overview','gestao','propostas','bsc','trafego','bms','admin','conteudo','liberacao','boletos']);
   const defaultSec = can('home')                                     ? 'home'
     : can('visao_geral')                                             ? 'overview'
     : (can('liberacao_margem') || perm.isAdmin())                    ? 'liberacao'
     : perm.conteudoVisualizar()                                      ? 'conteudo'
-    : can('universidade_acessar')                                    ? 'universidade'
     : 'overview';
   // Valida se o usuário tem permissão para acessar a seção
   const canAccessSec = (sec) => {
     if (!sec || !VALID_SECS.has(sec)) return false;
     if (sec === 'home')         return can('home');
     if (sec === 'overview')     return can('visao_geral');
-    if (sec === 'universidade') return can('universidade_acessar') || perm.isAdmin();
     if (sec === 'liberacao')    return can('liberacao_margem') || perm.isAdmin();
     if (sec === 'boletos')      return can('quitacao_boleto') || perm.isAdmin();
     if (sec === 'conteudo')     return perm.conteudoVisualizar();

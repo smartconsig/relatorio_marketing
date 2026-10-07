@@ -3,20 +3,12 @@
 import { state } from '../state.js';
 import { filteredData, calcKPIs } from '../core/calcKPIs.js';
 import { renderOverview } from '../pages/overview.js';
-import { renderRanking } from '../pages/ranking.js';
 import { renderReview } from '../pages/review.js';
 import { renderProcv, procvPendingCount } from '../pages/procv.js';
 import { renderClientes } from '../pages/clientes.js';
 import { renderPropostas } from '../pages/propostas.js';
-import { renderPerfil } from '../pages/perfil.js';
 import { syncPeriodBars } from '../components/period-bar.js';
 import { syncFloatBadges } from './float-rail.js';
-
-function _syncGoalsToPeriodo() {
-  const ref = state.filterDates?.start || new Date().toISOString().slice(0, 10);
-  const periodo = ref.slice(0, 7);
-  state.goals = state.allGoals?.[periodo] || { invest: 0, cpl: 0, approved: 0, paid: 0, cac: 0, roas: 0 };
-}
 
 // Badges de pendência: Revisão Manual, PROCV e o combinado do bottom nav.
 function _atualizarBadges(fd) {
@@ -50,18 +42,15 @@ function _atualizarBadges(fd) {
 }
 
 export function renderAll() {
-  _syncGoalsToPeriodo();
   syncPeriodBars(); // pós-restauração de F5/login, as barras refletem o filtro carregado
   const fd = filteredData();
   if (!fd) return;
   const kpis = calcKPIs(fd.entries, fd.facebook);
   renderOverview(kpis, fd);
-  renderRanking(fd.entries);
   renderReview(kpis.toReview, state.result.unknownStatuses);
   renderProcv(fd.entries);
   renderClientes(fd.entries);
   renderPropostas(fd.entries);
-  renderPerfil(fd.entries);
   switchGestaoTab(state.gestaoTab || 'procv');
   _atualizarBadges(fd);
 }

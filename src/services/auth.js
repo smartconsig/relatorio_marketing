@@ -12,7 +12,6 @@ import { state } from '../state.js';
 import { applyPermissionsToUI } from '../navigation.js';
 import { startSessionTimeout, stopSessionTimeout } from './session-timeout.js';
 import { DEFAULT_PERMISSIONS } from './permissions.js';
-import { resetUniversidade } from '../pages/universidade.js';
 import { A } from './auth/auth-state.js';
 import { applySavedTheme } from './auth/auth-theme.js';
 import { mostrarUsuario, limparUsuario } from './auth/auth-user-ui.js';
@@ -79,10 +78,8 @@ export async function doSignIn() {
 
 export async function doSignOut() {
   stopSessionTimeout();
-  resetUniversidade();
   await sb.auth.signOut();
   state.currentUser = null;
-  document.body.classList.remove('uni-mode');
   limparUsuario();
   document.getElementById('login-email').value = '';
   document.getElementById('login-pass').value  = '';

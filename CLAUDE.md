@@ -17,7 +17,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 
 ## O que é o sistema
 
-**Smart RYC — Dashboard de Marketing** é uma SPA (Single Page Application) em JavaScript (vanilla no core, Preact nos componentes) que consolida dados de vendas, leads de marketing e métricas de desempenho da equipe comercial da Smart Consig. O sistema permite importar planilhas de produção, classificar o status de cada venda/lead, acompanhar KPIs (ROI, CAC, taxa de conversão, funil), gerenciar metas, exibir rankings e controlar acesso por perfil de usuário.
+**Smart RYC — Dashboard de Marketing** é uma SPA (Single Page Application) em JavaScript (vanilla no core, Preact nos componentes) que consolida dados de vendas, leads de marketing e métricas de desempenho da equipe comercial da Smart Consig. O sistema permite importar planilhas de produção, classificar o status de cada venda/lead, acompanhar KPIs (ROI, CAC, taxa de conversão), exibir o ranking BSC e controlar acesso por perfil de usuário.
 
 **Usuários**: gestores de marketing, supervisores comerciais e admins da Smart Consig.  
 **Problema central**: unificar dados de múltiplas origens (Smart interna, Ecorban, Meta Ads FB03/FB06) para distinguir vendas de marketing das orgânicas e calcular o retorno real das campanhas.
@@ -41,7 +41,6 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | Lotes ZIP/PDF | fflate + pdfjs-dist (npm, **import dinâmico** — só carregam ao importar lote na Quitação de Boleto) |
 | Auth client | @supabase/supabase-js 2.x (CDN) |
 | Deploy | Vercel |
-| CDN de vídeo | Bunny.net (módulo Universidade) |
 
 ---
 
@@ -60,7 +59,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 
 ### Vercel
 - Deploy automático via `vercel.json` (installCommand: `npm install`, buildCommand: `npm run build`, outputDirectory: `dist`)
-- Variáveis de ambiente da Vercel: apenas `VITE_BUNNY_RO_KEY` e `BUNNY_API_KEY` (módulo Universidade) — configuradas **no painel da Vercel**, não no `vercel.json`
+- Variáveis de ambiente da Vercel: `VITE_BUNNY_RO_KEY` e `BUNNY_API_KEY` eram do módulo Universidade (removido em 07/10/2026) — podem ser apagadas do painel da Vercel
 
 ### Meta Ads
 - Integração direta com a API da Meta via Edge Function `meta-ads` no Supabase
@@ -73,9 +72,8 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 ### Kolmeya (SMS) — REMOVIDA em 06/10/2026
 - A integração de relatórios de SMS foi retirada do app a pedido do responsável (dava erro 500 a cada login e não era mais usada). A Edge Function `kolmeya-reports` e o secret `KOLMEYA_TOKEN` podem continuar no painel do Supabase até serem apagados à mão — o app não os chama mais
 
-### Bunny.net
-- CDN de vídeo para o módulo Universidade
-- `VITE_BUNNY_RO_KEY` (leitura, exposto no frontend) e `BUNNY_API_KEY` (escrita, server-side)
+### Bunny.net — sem uso desde 07/10/2026
+- Era a CDN de vídeo da Universidade (tela removida). Os vídeos continuam na conta do Bunny até serem apagados à mão
 
 ---
 
@@ -106,7 +104,7 @@ Estas regras se aplicam a **toda e qualquer alteração** neste projeto, sem exc
 | `bm_contas` | Central de BMs: uma linha por Business Manager (toggle ativa + motivo) |
 | `bm_numeros` | Números oficiais de cada BM: status, qualidade (manual), tier |
 | `bm_eventos` | Histórico das BMs/números: criação, banimento, troca de qualidade |
-| tabelas `uni_*` | Módulo Universidade: cursos, exames, gamificação |
+| tabelas `uni_*` | Módulo Universidade — **tela removida em 07/10/2026**; cursos e progresso seguem no banco, sem uso no app (vídeos seguem no Bunny.net) |
 
 **Storage**: bucket privado `conteudo-anexos` guarda as imagens da Esteira de Conteúdo (leitura só por URL assinada, 1h). Outros buckets: `quitacoes-docs`, `boletos-docs` (privado — PDFs de boletos/faturas da Quitação de Boleto em `<cpf>/boletos|faturas/<arquivo>.pdf`, URL assinada 1h; parceiro lê os dos próprios clientes via policy) e `avatars` (público — logos dos parceiros em `avatars/parceiros/<slug>.jpg` e a logo da empresa em `assets/logo.png`).
 
@@ -130,8 +128,6 @@ relatorio_marketing/
 ├── vite.config.js            # Vite com plugin preact() e polling (Windows); sem alias @/
 ├── package.json
 ├── vercel.json
-├── api/
-│   └── bunny-create.js       # Função serverless Vercel (usa BUNNY_API_KEY server-side)
 ├── public/
 │   └── template_liberacao.xlsx # Template de planilha de liberação de margem
 ├── supabase/
@@ -155,10 +151,7 @@ relatorio_marketing/
 │   ├── core/
 │   │   ├── buildResult.js    # Transforma Excel bruto em entries tipadas
 │   │   ├── calcKPIs.js       # ROI, CAC, conversão, métricas principais
-│   │   ├── calcFunil.js      # Análise de funil de vendas
-│   │   ├── calcPerfil.js     # Clusterização de perfil de cliente
 │   │   ├── parseBSC.js       # Parse do Balanced Scorecard
-│   │   ├── parseParceiros.js # Parse do CSV "Relatório de produção - Parceiros"
 │   │   └── storage.js        # Persistência em localStorage
 │   ├── services/             # ÚNICA camada que fala com o banco (gate de lint)
 │   │   ├── auth.js           # Login, logout, sessão, loadUserProfile
@@ -167,18 +160,12 @@ relatorio_marketing/
 │   │   ├── admin-svc.js      # Admin: profiles, grupos e Edge Functions invite/delete-user
 │   │   ├── liberacao-svc.js  # Liberação de Margem: CRUD de liberacao_margem_master
 │   │   ├── boletos-svc.js    # Quitação de Boleto: CRUD + RPC boleto_mudar_status
-│   │   ├── uni-svc.js        # Universidade: cursos, aulas, progresso e provas
-│   │   ├── uni-admin-svc.js  # Criador de Cursos: escrita das tabelas uni_*
-│   │   ├── uni-upload-svc.js # Uploads da Universidade (TUS/Bunny, PDF, imagem)
-│   │   ├── uni-gam-svc.js    # Gamificação: configuração e pontuação
 │   │   ├── snapshot.js       # Save/load de snapshot no Supabase (debounced 2s)
 │   │   ├── meta-ads.js       # Sync Meta Ads via Edge Function
 │   │   ├── permissions.js    # can() + objeto perm com atalhos (perm.isAdmin()…)
 │   │   ├── classifications.js# Overrides de status por CPF
-│   │   ├── goals-svc.js      # Metas de KPI
 │   │   ├── paginacao.js      # lerTudo(): lê tabela grande em páginas de 1000 EM PARALELO + log [desempenho]
 │   │   ├── boleto-docs-svc.js# Docs da Quitação de Boleto: upload p/ Storage e análise dos ZIPs (fflate + pdf.js sob demanda)
-│   │   ├── parceiros-svc.js  # Ranking de Parceiros: load/save do JSON na tabela parceiros_data
 │   │   ├── propostas-store.js# Fase 3: dual-write do import nas tabelas propostas/smart_leads/import_meta
 │   │   ├── trafego-svc.js    # Tráfego (Ads): CRUD de trafego_diario + TAXA_IMPOSTO + trafegoInRange (fonte dos KPIs)
 │   │   ├── conteudo-svc.js   # Esteira de Conteúdo: cards, eventos e anexos (sem snapshot)
@@ -191,31 +178,23 @@ relatorio_marketing/
 │   │   │                     # ORQUESTRADOR + PASTA: xxx-page.js re-exporta os nomes
 │   │   │                     # públicos e os blocos vivem em pages/<feature>/.
 │   │   │                     # Pastas: admin/ bm/ boletos/ bsc/ conteudo/ liberacao/
-│   │   │                     # overview/ parceiros/ perfil/ procv/ propostas/
-│   │   │                     # uni/ uni-admin/ uni-gam/
+│   │   │                     # overview/ procv/ propostas/
 │   │   ├── home-page.js      # Home: boas-vindas + atalhos por permissão (login cai aqui; F5 mantém a tela)
 │   │   ├── import-page.js    # Upload e processamento de Excel
 │   │   ├── overview.js       # Dashboard de KPIs
-│   │   ├── ranking.js        # Rankings e funil
-│   │   ├── perfil.js         # Segmentação de clientes
 │   │   ├── procv.js          # Revisão de classificação de marketing
 │   │   ├── clientes.js       # Lista de clientes
 │   │   ├── review.js         # Classificação de status desconhecidos
 │   │   ├── propostas.js      # Propostas de marketing
-│   │   ├── goals-page.js     # Configuração de metas
 │   │   ├── bsc-page.js       # BSC (Balanced Scorecard)
 │   │   ├── liberacao-page.js # Liberação de margem
 │   │   ├── boletos-page.js   # Quitação de Boleto (fases por parceiro; importa lotes ZIP de docs; regras nas migrations 006/012)
-│   │   ├── parceiros-page.js # Ranking de Parceiros (pódio + lista + overlay "Top Parceiros")
 │   │   ├── conteudo-page.js  # Esteira de Conteúdo (kanban de criação)
 │   │   ├── bm-page.js        # Central de BMs (controle de banimento de números)
 │   │   ├── divergences.js    # Divergências de dados
 │   │   ├── history-panel.js  # Log de alterações
 │   │   ├── trafego-page.js   # Tráfego (Ads): visão de planilha + modal de lançamento do dia
-│   │   ├── admin-page.js     # Gestão de usuários e grupos
-│   │   ├── universidade.js   # Módulo de treinamento corporativo
-│   │   ├── uni-admin.js      # Criação de cursos
-│   │   └── uni-gamificacao.js# Configurações de gamificação
+│   │   └── admin-page.js     # Gestão de usuários e grupos
 │   ├── utils/
 │   │   ├── currency.js       # Formatação e parse de BRL
 │   │   ├── gzip.js           # Compressão gzip nativa (snapshot + cache local)
@@ -238,7 +217,7 @@ relatorio_marketing/
 
 ## Fluxo de dados
 
-1. **Login**: `auth.js` → Supabase Auth → `state.currentUser` populado com perfil e permissões do grupo. **Login explícito cai na Home** (permissão `home`, ligada em todos os grupos pela migration `010_home_permissao.sql`); **F5 volta para a seção em que a pessoa estava** (hash da URL + `sc_last_section`). Menu agrupado: Home, Importar, Dashboard, Gestão, Comercial, Marketing, Tarefas, Financeiro, Universidade, Administração
+1. **Login**: `auth.js` → Supabase Auth → `state.currentUser` populado com perfil e permissões do grupo. **Login explícito cai na Home** (permissão `home`, ligada em todos os grupos pela migration `010_home_permissao.sql`); **F5 volta para a seção em que a pessoa estava** (hash da URL + `sc_last_section`). Menu agrupado: Home, Importar, Dashboard, Gestão, Comercial, Marketing, Tarefas, Financeiro, Administração
 2. **Import**: `import-page.js` recebe Excel → `buildResult.js` normaliza e tipifica → `state.result.entries[]`
 3. **Snapshot**: ao login, compara timestamp local com Supabase; se desatualizado, carrega snapshot completo e mescla com estado local
 4. **Renderização**: páginas renderizam sob demanda na navegação; todas chamam `renderAll()` para sincronizar com `state`
@@ -310,12 +289,7 @@ O snapshot (estado inteiro numa única linha da tabela `snapshots`) está sendo 
 - **Qualidade é manual**: o campo `qualidade` do número é preenchido à mão olhando o painel da Meta; o campo já está pronto para uma futura automação via Edge Function + token WhatsApp Business, sem migração nova.
 - **Permissões próprias**: `bm_visualizar` e `bm_editar`; admin tem as duas. Excluir BM/número é só admin.
 
-**Ranking de Parceiros**: ranking das produções por parceiro, alimentado por um **CSV** próprio ("Relatório de produção - Parceiros", separador `;`, codificação windows-1252) importado na tela — **não** vem do fluxo de Excel/Ecorban do resto do sistema. Pontos de desenho:
-- **Parser dedicado** (`parseParceiros.js`): colunas de valores em R$ (`reprovado`, `clienteDesistiu`, `pendencia`, `riscoPerda`, `emAndamento`, `integrado`, `projecao`) + `rank` (coluna RANKING da planilha, já ordenada por INTEGRADO). Rodapé "TOTAL" e linhas "STATUS" são ignorados.
-- **Persistência estilo `bsc_data`**: o ranking inteiro é serializado em JSON numa única linha da tabela `parceiros_data` (`parceiros-svc.js`), além de um cache em `localStorage` (`sc_parceiros_v1`). Ao abrir, mostra o local na hora e depois substitui pelo do Supabase se for mais novo (compara `importedAt`).
-- **Sem "nota"**: diferente do BSC, parceiro não tem score — o ranking é por posição/valor Integrado. Logos ficam no bucket público `avatars/parceiros/<slug>.jpg` (editáveis pela UI) com fallback de iniciais.
-- **"Mostrar valores"** (`_showValues`, padrão desligado): a tela nasce limpa para print/TV; o toggle revela as métricas em R$.
-- **Overlay "Top Parceiros"**: tela cheia estilo "modo TV" do BSC (fundo branco fixo, cabeçalho + relógio, pódio 2º-1º-3º + grid dos demais, **só posição, sem R$**), com botões de quantidade **Top 10 / 25 / 50** (desabilita a opção maior que o total). Só exibição — não persiste nada. Sai no `✕` ou `Esc`.
+**Telas removidas em 07/10/2026** (pedido do responsável, antes da fase 5 do redesenho): Perfil de Cliente, Ranking Parceiros, Ranking de Vendas + Funil, Metas e Universidade (com Criador de Cursos e Gamificação) — além de Quitações e Resíduos no mesmo dia. Saíram código, menu, Home, permissões do Admin e a carga no login; **os dados ficam no banco** (`parceiros_data`, metas, `uni_*`, `quitacoes_clientes`) e as chaves antigas de permissão seguem gravadas nos grupos, sem efeito (decisão: não limpar). Os cards da Visão Geral não mostram mais "% da meta". Para trazer uma tela de volta, recuperar do git (commit anterior à remoção).
 
 **Documentos da Quitação de Boleto (lotes ZIP)**: boletos e faturas chegam em lotes ZIP e são anexados aos clientes da tela Quitação de Boleto (botão "Importar Lote", só admin). Pontos de desenho:
 - **Elegibilidade**: documento só casa com cliente em `boleto_solicitado` OU `boleto_enviado` (os lotes só existem para quem já teve boleto/fatura pedidos). **Importar É o envio**: cliente em `boleto_solicitado` que recebe o 1º doc vira `boleto_enviado` automaticamente (trigger `boleto_docs_envia`).
@@ -372,7 +346,7 @@ O dev server usa polling de arquivos (`usePolling: true`) — necessário no Win
 - **CSS por feature**: cada feature grande tem seu próprio `.css` em `src/styles/`; a maioria é importada em `main.js` (exceção: `admin.css` é carregado direto no `<head>` do `index.html`)
 - **Sem TypeScript no frontend**: o app é JS/JSX; TypeScript só aparece nas Edge Functions do Supabase (Deno, `.ts`). Sem JSDoc sistemático
 - **Formulários herdam a fonte do app**: regra global em `base.css` (`input, select, textarea, button { font-family: inherit }` + `accent-color` da marca em checkbox/radio) — nunca deixar campo com fonte de sistema. `modal-kit.css` aplica blur de fundo e animação de entrada a todos os modais; as regras de campo de cada modal vivem no CSS da própria feature (padrão: fundo `--surface`, campo `--surface2`, foco `--red`)
-- **Filtro de período** (desde 02/09/2026): o seletor de datas **não fica mais no header** — cada tela de período (Visão Geral, Ranking, Perfil, Gestão, Propostas, Tráfego) imprime a própria barra via `src/components/period-bar.js` (reutiliza as classes visuais `date-filter`/`qf-*`; eventos por delegação global, sem IDs fixos). **Toda mudança de período passa por `setPeriodo()` em `navigation.js`** — nunca gravar `state.filterDates` ou campos de data na mão. Tela nova que use o período: imprimir a barra e adicionar a seção em `PERIOD_SECS`. Metas fica fora (tem seletor de mês próprio). Perfil e Tráfego renderizam em contêiner interno (`perfil-body`/`trafego-body`) para a barra sobreviver ao redesenho
+- **Filtro de período** (desde 02/09/2026): o seletor de datas **não fica mais no header** — cada tela de período (Visão Geral, Gestão, Propostas, Tráfego) imprime a própria barra via `src/components/period-bar.js` (reutiliza as classes visuais `date-filter`/`qf-*`; eventos por delegação global, sem IDs fixos). **Toda mudança de período passa por `setPeriodo()` em `navigation.js`** — nunca gravar `state.filterDates` ou campos de data na mão. Tela nova que use o período: imprimir a barra e adicionar a seção em `PERIOD_SECS`. Tráfego renderiza em contêiner interno (`trafego-body`) para a barra sobreviver ao redesenho
 
 ---
 
@@ -438,7 +412,7 @@ Receita derivada das etapas 2 e 3 do refactor (18 arquivos gigantes divididos em
 
 **1. Serviço primeiro.** Antes da tela, crie `src/services/<feature>-svc.js` com as funções de banco (`fetchX`, `insertX`, `updateX`, `deleteX`). A tela importa o serviço, nunca o `sb`. Isso não é estilo — é gate de lint.
 
-**2. Uma pasta por feature quando passar de um arquivo.** O padrão já em uso em `src/pages/`: `admin/`, `bm/`, `boletos/`, `bsc/`, `conteudo/`, `liberacao/`, `overview/`, `parceiros/`, `perfil/`, `procv/`, `propostas/`, `uni/`, `uni-admin/`, `uni-gam/`. Divisão típica: `<f>-core.js` (estado + helpers), `<f>-tabela.js`, `<f>-modais.js`, `<f>-acoes.js`, `<f>-import.js`.
+**2. Uma pasta por feature quando passar de um arquivo.** O padrão já em uso em `src/pages/`: `admin/`, `bm/`, `boletos/`, `bsc/`, `conteudo/`, `liberacao/`, `overview/`, `procv/`, `propostas/`. Divisão típica: `<f>-core.js` (estado + helpers), `<f>-tabela.js`, `<f>-modais.js`, `<f>-acoes.js`, `<f>-import.js`.
 
 **3. O arquivo da página vira orquestrador + barrel.** `src/pages/<feature>-page.js` importa os módulos e **re-exporta os nomes públicos originais**, para que `main.js` e os `onclick` das strings HTML não mudem. Exemplo real em `liberacao-page.js`.
 

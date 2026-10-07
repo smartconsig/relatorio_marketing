@@ -1,21 +1,5 @@
 // Cards da Visão Geral: KPI, pipeline e hero (com animação de contagem).
-import { state } from '../../state.js';
-import { fmtBRL, fmtN, fmtPct } from '../../utils/currency.js';
-
-export function pct(v, g) { return g ? (v / g) * 100 : null; }
-
-// good/warn/bad conforme a distância da meta (inv = quanto menor melhor)
-function _clsMeta(p, inv) {
-  return inv
-    ? (p <= 100 ? 'good' : p <= 120 ? 'warn' : 'bad')
-    : (p >= 100 ? 'good' : p >= 70  ? 'warn' : 'bad');
-}
-
-// Sub-linha do card: % da meta/limite quando tem meta; senão o texto fixo
-function _metaStr(p, inv, goalLabel, meta) {
-  if (p === null) return meta || '—';
-  return (goalLabel ? `${goalLabel} · ` : '') + `${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}`;
-}
+import { fmtBRL, fmtN } from '../../utils/currency.js';
 
 // Valores longos encolhem a fonte para não estourar o card
 function _vStyle(val) {
@@ -23,18 +7,13 @@ function _vStyle(val) {
   return vStr.length > 14 ? ' style="font-size:15px"' : vStr.length > 11 ? ' style="font-size:20px"' : '';
 }
 
-// Assinatura por objeto: kpiCard(label, val, { meta, p, inv, goalLabel })
-export function kpiCard(label, val, { meta = null, p = null, inv = false, goalLabel = null } = {}) {
-  const cls     = (p !== null && state.goals) ? _clsMeta(p, inv) : 'accent';
-  const barW    = p !== null ? Math.min(Math.max(p, 0), 100).toFixed(1) : 0;
-  const metaStr = _metaStr(p, inv, goalLabel, meta);
-  const vStyle  = _vStyle(val);
+// Assinatura por objeto: kpiCard(label, val, { meta }) — meta = texto da sub-linha
+export function kpiCard(label, val, { meta = null } = {}) {
   return `
-    <div class="kpi-card ${p !== null ? cls : 'accent'}">
+    <div class="kpi-card accent">
       <div class="kpi-label">${label}</div>
-      <div class="kpi-value"${vStyle}>${val}</div>
-      <div class="kpi-meta">${metaStr}</div>
-      ${p !== null ? `<div class="kpi-progress"><div class="kpi-bar ${cls}" style="width:${barW}%"></div></div>` : ''}
+      <div class="kpi-value"${_vStyle(val)}>${val}</div>
+      <div class="kpi-meta">${meta || '—'}</div>
     </div>`;
 }
 
@@ -51,17 +30,8 @@ export function pipelineCard({ label, cls, count, value, sub }) {
 // "R$" discreto ao lado do número grande — o valor é o protagonista
 export const fmtHeroBRL = v => fmtBRL(v).replace(/^R\$\s?/, '<span class="cur-sm">R$</span>');
 
-// Barra + linha "% da meta" do rodapé do hero (só quando há meta)
-function _heroProgressoHTML(p, inv, cls, goalLabel) {
-  if (p === null) return '';
-  return `
-        <div class="kpi-progress" style="margin-top:14px"><div class="kpi-bar ${cls || 'accent'}" style="width:${Math.min(Math.max(p,0),100).toFixed(1)}%"></div></div>
-        <div style="font-size:11px;color:var(--gray-light);margin-top:4px">${goalLabel ? goalLabel + ' · ' : ''}${fmtPct(p)} ${inv ? 'do limite' : 'da meta'}</div>`;
-}
-
-// Assinatura por objeto: heroCard({ label, count, value, sub, accentColor, p, inv, valueColor, goalLabel })
-export function heroCard({ label, count = null, value, sub, accentColor, p = null, inv = false, valueColor = null, goalLabel = null }) {
-  const cls   = p === null ? '' : _clsMeta(p, inv);
+// Assinatura por objeto: heroCard({ label, count, value, sub, accentColor, valueColor })
+export function heroCard({ label, count = null, value, sub, accentColor, valueColor = null }) {
   const isNum = typeof value !== 'string';
   const countUp = isNum ? ` data-cv="${value}" data-k="${label}"` : '';
   return `
@@ -70,7 +40,6 @@ export function heroCard({ label, count = null, value, sub, accentColor, p = nul
       ${count !== null ? `<div class="hero-count">${fmtN(count)}</div>` : ''}
       <div class="hero-value" style="color:${valueColor || accentColor}"${countUp}>${isNum ? fmtHeroBRL(value) : value}</div>
       <div class="hero-sub">${sub}</div>
-      ${_heroProgressoHTML(p, inv, cls, goalLabel)}
     </div>`;
 }
 

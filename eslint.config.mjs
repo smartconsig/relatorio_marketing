@@ -40,8 +40,6 @@ export default defineConfig([
         XLSX: "readonly", // CDN — index.html:12 (parseBSC.js, import-page.js)
         Chart: "readonly", // CDN — index.html:13 (overview.js)
         supabase: "readonly", // CDN — index.html:14 (services/supabase.js)
-        playerjs: "readonly", // injetado em runtime — universidade.js
-        tus: "readonly", // injetado em runtime — uni-admin.js
       },
     },
     rules: {

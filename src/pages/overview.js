@@ -11,16 +11,16 @@ import { fmtBRL, fmtN, fmtPct } from '../utils/currency.js';
 import { sectionTitle } from '../components/ui.js';
 import { icon } from '../utils/icons.js';
 import { badgeHTML } from '../components/Badge.jsx';
-import { pct, kpiCard, pipelineCard, heroCard, animateHeroValues } from './overview/kpi-cards.js';
+import { kpiCard, pipelineCard, heroCard, animateHeroValues } from './overview/kpi-cards.js';
 import { renderChart } from './overview/chart.js';
 import { renderDivergencias } from './overview/divergencias.js';
 
-export { pct, kpiCard, pipelineCard } from './overview/kpi-cards.js';
+export { kpiCard, pipelineCard } from './overview/kpi-cards.js';
 export { exportNoValueCSV, exportNoDatesCSV } from './overview/exports-csv.js';
 export { renderDiag } from './overview/diag.js';
 
 // ── 1. HERO — Resultados de Marketing ───────────────────────────────────────
-function _heroSectionHTML(k, g) {
+function _heroSectionHTML(k) {
   const cacValidas = k.countValidMkt > 0 ? k.invest / (k.countValidMkt * 0.70) : 0;
   const convProspeccao = k.leads > 0 ? (k.countValidMkt / k.leads) * 100 : 0;
   const corConv = convProspeccao >= 15 ? 'var(--green)' : convProspeccao >= 10 ? 'var(--yellow)' : 'var(--red-bright)';
@@ -28,17 +28,12 @@ function _heroSectionHTML(k, g) {
 
   return sectionTitle('Resultados de Marketing') + `<div class="hero-grid">
     ${heroCard({ label: 'Válidas Total', count: k.countValidMkt, value: k.valueValidMkt,
-                 sub: 'em andamento + pagas · tráfego pago', accentColor: 'var(--green)',
-                 p: pct(k.valueValidMkt, g.approved), valueColor: 'var(--blue)',
-                 goalLabel: g.approved ? `meta: ${fmtBRL(g.approved)}` : null })}
+                 sub: 'em andamento + pagas · tráfego pago', accentColor: 'var(--green)', valueColor: 'var(--blue)' })}
     ${heroCard({ label: 'Pagas', count: k.paidMkt, value: k.valueMkt,
-                 sub: 'operações confirmadas · tráfego pago', accentColor: 'var(--green)',
-                 p: pct(k.valueMkt, g.paid),
-                 goalLabel: g.paid ? `meta: ${fmtBRL(g.paid)}` : null })}
+                 sub: 'operações confirmadas · tráfego pago', accentColor: 'var(--green)' })}
     ${heroCard({ label: 'Investimento', value: k.invest,
                  sub: k.investSource === 'trafego' ? 'total investido · tráfego digitado (c/ imposto)' : 'total investido · Facebook Ads',
-                 accentColor: 'var(--red-bright)', p: pct(k.invest, g.invest), inv: true, valueColor: 'var(--white)',
-                 goalLabel: g.invest ? `limite: ${fmtBRL(g.invest)}` : null })}
+                 accentColor: 'var(--red-bright)', valueColor: 'var(--white)' })}
     ${heroCard({ label: 'CAC Válidas', value: cacValidas,
                  sub: 'custo por venda válida · 70% das válidas', accentColor: 'var(--yellow)', valueColor: 'var(--white)' })}
     ${heroCard({ label: 'Conversão', value: `${convProspeccao.toFixed(1)}%`,
@@ -57,13 +52,13 @@ function _pipelineMktHTML(k) {
 }
 
 // ── 3. INDICADORES ──────────────────────────────────────────────────────────
-function _indicadoresHTML(k, g) {
+function _indicadoresHTML(k) {
   return sectionTitle('Indicadores de Performance') + `<div class="kpi-grid">
     ${kpiCard('Ticket Médio Pagas', fmtBRL(k.ticketMkt), { meta: 'vendas pagas de marketing' })}
-    ${kpiCard('CAC', fmtBRL(k.cac), { p: pct(k.cac, g.cac), inv: true, goalLabel: g.cac ? `máx. ${fmtBRL(g.cac)}` : null })}
-    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', { p: pct(k.roas, g.roas), goalLabel: g.roas ? `mín. ${g.roas.toFixed(2)}x` : null })}
+    ${kpiCard('CAC', fmtBRL(k.cac), { meta: 'custo por venda paga' })}
+    ${kpiCard('ROAS', k.roas.toFixed(2) + 'x', { meta: 'comissão (21%) ÷ investimento' })}
     ${kpiCard('Taxa de Conversão', fmtPct(k.convRate), { meta: 'Leads → Vendas Pagas' })}
-    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), { p: pct(k.cplCalc, g.cpl), inv: true, goalLabel: g.cpl ? `máx. ${fmtBRL(g.cpl)}` : null })}
+    ${kpiCard('CPL Calculado', fmtBRL(k.cplCalc), { meta: 'custo por lead · com imposto' })}
     ${kpiCard('Leads Gerados', fmtN(k.leads), { meta: 'leads recebidos no período' })}
     ${kpiCard('CPL Facebook', fmtBRL(k.fbCpl), { meta: k.investSource === 'trafego' ? 'painel Meta · sem imposto' : 'Reportado pelo Facebook' })}
   </div>`;
@@ -106,7 +101,6 @@ function _avisoSemDataHTML() {
 }
 
 export function renderOverview(k, fd) {
-  const g = state.goals;
   let h = '';
 
   h += _avisoSemDataHTML();
@@ -114,9 +108,9 @@ export function renderOverview(k, fd) {
   // ── 0b. DIVERGÊNCIAS ECORBAN ─────────────────────────────────────────────
   h += renderDivergencias(fd.entries);
 
-  h += _heroSectionHTML(k, g);
+  h += _heroSectionHTML(k);
   h += _pipelineMktHTML(k);
-  h += _indicadoresHTML(k, g);
+  h += _indicadoresHTML(k);
   h += _todasOrigensHTML(k);
 
   h += _avisoSemValorHTML(fd);

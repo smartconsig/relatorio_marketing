@@ -138,7 +138,6 @@ export function clearState() {
   document.getElementById('diag-panel').style.display = 'none';
   document.getElementById('btn-process').disabled = true;
   document.getElementById('overview-body').innerHTML = `<div class="empty"><div class="empty-icon">${icon('chart')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
-  document.getElementById('ranking-body').innerHTML  = `<div class="empty"><div class="empty-icon">${icon('trophy')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
   document.getElementById('review-body').innerHTML   = `<div class="empty"><div class="empty-icon">${icon('search')}</div><div class="empty-title">Nenhum dado processado</div><div class="empty-desc">Importe os arquivos e processe os dados primeiro.</div></div>`;
   document.getElementById('review-badge').classList.add('hidden');
   setCacheIndicator(false);

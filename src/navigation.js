@@ -10,10 +10,6 @@ import { syncBottomNav, initSwipe } from './utils/mobile.js';
 import { renderAdminPage } from './pages/admin-page.js';
 import { renderConteudo } from './pages/conteudo-page.js';
 import { renderBMs } from './pages/bm-page.js';
-import { initGoalsPage } from './pages/goals-page.js';
-import { renderUniversidade, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './pages/universidade.js';
-import { renderUniAdmin } from './pages/uni-admin.js';
-import { renderUniGamificacao } from './pages/uni-gamificacao.js';
 import { renderLiberacao } from './pages/liberacao-page.js';
 import { renderBoletos } from './pages/boletos-page.js';
 import { renderTrafego } from './pages/trafego-page.js';
@@ -22,7 +18,6 @@ import { syncPeriodBars } from './components/period-bar.js';
 import { applyPermissionsToUI } from './navigation/permissions-ui.js';
 import { buildFloatRail, destroyFloatRail } from './navigation/float-rail.js';
 
-export { exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao };
 export { applyPermissionsToUI } from './navigation/permissions-ui.js';
 export { renderAll, switchGestaoTab } from './navigation/render-all.js';
 export { setPeriodo, clearFilter, quickFilter } from './navigation/periodo.js';
@@ -33,12 +28,8 @@ let _animEnterT = null; // timer da cascata de entrada das seções
 const GROUP_MAP = {
   overview:  'dashboard',
   bsc:       'dashboard',
-  parceiros: 'dashboard',
-  perfil:    'dashboard',
   gestao:    'gestao-grp',
-  ranking:   'gestao-grp',
   propostas: 'comercial',
-  goals:     'comercial',
   trafego:   'marketing',
   bms:       'marketing',
   conteudo:  'tarefas',
@@ -50,43 +41,16 @@ const TITLES = {
   home:         'Home',
   import:       'Importar Dados',
   overview:     'Visão Geral',
-  ranking:      'Ranking de Vendas',
   trafego:      'Tráfego (Ads)',
-  perfil:       'Perfil de Cliente',
   gestao:       'Gestão de Classificações',
   conteudo:     'Esteira de Conteúdo',
   bms:          'Central de BMs',
   propostas:    'Propostas de Marketing',
-  goals:        'Configurar Metas',
   bsc:          'Ranking BSC',
-  parceiros:    'Ranking Parceiros',
   liberacao:    'Liberação de Margem Master',
   boletos:      'Quitação de Boleto',
-  universidade: 'Universidade Smart',
-  'uni-admin':       'Criador de Cursos',
-  'uni-gamificacao': 'Gamificação',
   admin:             'Administração',
 };
-
-// Entra/sai dos modos imersivos (Universidade e admin da Universidade)
-function _sairDosModosImersivos(sec) {
-  if (sec !== 'universidade') document.body.classList.remove('uni-mode');
-  if (sec !== 'uni-admin' && sec !== 'uni-gamificacao') {
-    document.body.classList.remove('uni-admin-mode');
-    document.getElementById('uni-admin-ryc-return')?.remove();
-  }
-  if (sec === 'uni-admin' || sec === 'uni-gamificacao') {
-    document.body.classList.add('uni-admin-mode');
-    if (!document.getElementById('uni-admin-ryc-return')) {
-      const btn = document.createElement('button');
-      btn.id = 'uni-admin-ryc-return';
-      btn.className = 'uni-ryc-return';
-      btn.innerHTML = `<span class="uni-ryc-return-dot"></span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>Smart RYC`;
-      btn.addEventListener('click', () => navigate('overview'));
-      document.body.appendChild(btn);
-    }
-  }
-}
 
 // Filtro de data do header, seção lembrada e hash da URL
 function _atualizarChromeDaSecao(sec) {
@@ -148,14 +112,9 @@ const RENDER_POR_SECAO = {
   bms:               renderBMs,
   liberacao:         renderLiberacao,
   boletos:           renderBoletos,
-  goals:             initGoalsPage,
-  universidade:      renderUniversidade,
-  'uni-admin':       renderUniAdmin,
-  'uni-gamificacao': renderUniGamificacao,
 };
 
 export function navigate(sec) {
-  _sairDosModosImersivos(sec);
   _atualizarChromeDaSecao(sec);
   _atualizarMenus(sec);
   _animarEntrada(sec);

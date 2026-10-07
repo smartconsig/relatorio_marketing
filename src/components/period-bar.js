@@ -7,7 +7,7 @@ import { state } from '../state.js';
 import { setPeriodo, quickFilter, clearFilter } from '../navigation.js';
 
 /** Seções que usam o período global e ganham a barra (Metas tem seletor de mês próprio). */
-export const PERIOD_SECS = ['overview', 'ranking', 'perfil', 'gestao', 'propostas', 'trafego'];
+export const PERIOD_SECS = ['overview', 'gestao', 'propostas', 'trafego'];
 
 const QF_PRESETS = [
   ['today', 'Hoje'],

@@ -10,9 +10,9 @@
  *
  * Exemplo:
  *   filterButtonsHTML([
- *     { value: 'seller', label: 'Vendedor', onclick: "setRankView('seller')" },
- *     { value: 'team',   label: 'Time',     onclick: "setRankView('team')" },
- *   ], state.rankView)
+ *     { value: 'all', label: 'Todos',     onclick: "setClientesFilter('all')" },
+ *     { value: 'mkt', label: 'Marketing', onclick: "setClientesFilter('mkt')" },
+ *   ], state.clientesFilter)
  */
 export function filterButtonsHTML(options, active) {
   return options.map(({ value, label, onclick, style }) => {

@@ -21,12 +21,8 @@ export const perm = {
 
   // Seções principais
   visaoGeral:          () => can('visao_geral'),
-  ranking:             () => can('ranking'),
   propostas:           () => can('propostas'),
-  metasVisualizar:     () => can('metas_visualizar'),
-  metasEditar:         () => can('metas_editar'),
   bsc:                 () => can('bsc'),
-  parceiros:           () => can('parceiros'),
 
   // Gestão
   procvVisualizar:     () => can('gestao_procv_visualizar'),
@@ -35,10 +31,6 @@ export const perm = {
   revisaoVisualizar:   () => can('gestao_revisao_visualizar'),
   revisaoClassificar:  () => can('gestao_revisao_classificar'),
   clientesVisualizar:  () => can('gestao_clientes'),
-
-  // Dashboard avançado
-  perfilCliente:       () => can('perfil_visualizar'),
-
 
   // Esteira de Conteúdo
   conteudoVisualizar:  () => can('conteudo_visualizar') || can('admin_usuarios') || can('admin_grupos'),
@@ -72,7 +64,7 @@ export const perm = {
 // Telas que leem as propostas/leads de marketing (state.result). Quem não tem
 // nenhuma delas (parceiros, alunos, esteira…) não baixa esses dados no login.
 const CHAVES_DADOS_MARKETING = [
-  'visao_geral', 'ranking', 'propostas', 'perfil_visualizar', 'metas_visualizar',
+  'visao_geral', 'propostas',
   'gestao_procv_visualizar', 'gestao_revisao_visualizar', 'gestao_clientes',
   'importacao_processar', 'admin_usuarios', 'admin_grupos',
 ];
@@ -91,7 +83,7 @@ export function canSeeGestao() {
 
 /**
  * Permissões padrão para usuários sem grupo atribuído.
- * Acesso mínimo: apenas visão geral e ranking.
+ * Acesso mínimo: Home, visão geral, propostas e BSC.
  */
 export const DEFAULT_PERMISSIONS = {
   home: true,
@@ -101,7 +93,6 @@ export const DEFAULT_PERMISSIONS = {
   importacao_smart: false,
   importacao_processar: false,
   visao_geral: true,
-  ranking: true,
   gestao_procv_visualizar: false,
   gestao_procv_confirmar: false,
   gestao_procv_exportar: false,
@@ -109,11 +100,7 @@ export const DEFAULT_PERMISSIONS = {
   gestao_revisao_classificar: false,
   gestao_clientes: false,
   propostas: true,
-  metas_visualizar: true,
-  metas_editar: false,
   bsc: true,
-  parceiros: true,
-  perfil_visualizar: false,
   conteudo_visualizar: false,
   conteudo_editar: false,
   conteudo_aprovar: false,

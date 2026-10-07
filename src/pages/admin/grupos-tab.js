@@ -56,21 +56,15 @@ function _summarizePerms(permissoes) {
   const sections = [
     { key: 'importacao_processar', label: 'Importar' },
     { key: 'visao_geral',          label: 'Visão Geral' },
-    { key: 'ranking',              label: 'Ranking' },
     { key: 'gestao_procv_visualizar', label: 'PROCV' },
     { key: 'gestao_revisao_visualizar', label: 'Revisão' },
     { key: 'propostas',            label: 'Propostas' },
-    { key: 'metas_visualizar',     label: 'Metas' },
     { key: 'bsc',                  label: 'BSC' },
-    { key: 'parceiros',            label: 'Parceiros' },
     { key: 'conteudo_visualizar',      label: 'Conteúdo' },
     { key: 'trafego_visualizar',       label: 'Tráfego' },
     { key: 'bm_visualizar',            label: 'BMs' },
     { key: 'liberacao_margem',         label: 'Lib. Margem' },
     { key: 'quitacao_boleto',          label: 'Quit. Boleto' },
-    { key: 'universidade_acessar',     label: 'Universidade' },
-    { key: 'universidade_criador',     label: 'Criador' },
-    { key: 'universidade_gamificacao', label: 'Gamificação' },
     { key: 'admin_usuarios',           label: 'Admin' },
   ];
   return sections

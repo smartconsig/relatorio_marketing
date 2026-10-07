@@ -43,7 +43,7 @@ export function closeBottomSheet() {
 
 // ── SWIPE ENTRE SEÇÕES ──────────────────────────────────
 // Ordem das seções no mobile (sem import, sem bsc)
-const MOBILE_SECTIONS = ['overview', 'ranking', 'gestao', 'propostas', 'goals'];
+const MOBILE_SECTIONS = ['overview', 'gestao', 'propostas'];
 
 export function initSwipe(navigateFn) {
   const content = document.querySelector('.content');

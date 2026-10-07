@@ -16,8 +16,6 @@ export const FLOAT_NAV_ITEMS = [
     children: [
       { sec: 'overview', title: 'Visão Geral',      svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
       { sec: 'bsc',      title: 'Ranking BSC',      svg: '<path d="M8 6l4-4 4 4"/><path d="M12 2v10"/><path d="M3 18h3v3h12v-3h3"/><path d="M6 15v3"/><path d="M18 15v3"/><path d="M12 12v6"/>' },
-      { sec: 'parceiros', title: 'Ranking Parceiros', svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>' },
-      { sec: 'perfil',   title: 'Perfil de Cliente', svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="21" x2="23" y2="15"/><line x1="16" y1="15" x2="16" y2="21"/><polyline points="20 18 23 21 26 18"/>' },
     ],
   },
   {
@@ -25,7 +23,6 @@ export const FLOAT_NAV_ITEMS = [
     svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
     children: [
       { sec: 'gestao',  title: 'Gestão',  svg: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>' },
-      { sec: 'ranking', title: 'Ranking', svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
     ],
   },
   {
@@ -33,7 +30,6 @@ export const FLOAT_NAV_ITEMS = [
     svg: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>',
     children: [
       { sec: 'propostas', title: 'Propostas', svg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>' },
-      { sec: 'goals',     title: 'Metas',     svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
     ],
   },
   {
@@ -58,10 +54,6 @@ export const FLOAT_NAV_ITEMS = [
       { sec: 'liberacao', title: 'Lib. Margem',  svg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
       { sec: 'boletos',   title: 'Quit. Boleto', svg: '<rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="17" y1="9" x2="17" y2="15"/>' },
     ],
-  },
-  {
-    sec: 'universidade', title: 'Universidade', badgeId: null,
-    svg: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><path d="M12 15v7"/><path d="M6 11.8v5.5c3.3 2.8 8.7 2.8 12 0v-5.5"/>',
   },
   {
     sec: 'admin', title: 'Administração', badgeId: null,
