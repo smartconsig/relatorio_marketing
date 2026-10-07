@@ -25,10 +25,13 @@ import './styles/ds/ds-tokens.css';
 import './styles/ds/ds-base.css';
 import './styles/ds/ds-table.css';
 import './styles/ds/ds-overlay.css';
-import './styles/carbono.css'; // sempre por último — re-seleciona classes das features (Fase 3c)
+import './styles/carbono.css'; // por último entre os antigos — re-seleciona classes das features (Fase 3c)
+// Fase 1A do redesenho: moldura (login, menu, topo, confirmação) no visual novo.
+// Precisa vir DEPOIS do carbono.css — só restiliza, não muda comportamento.
+import './styles/ds/ds-chrome.css';
 
 import { initNavigation, navigate, clearFilter, quickFilter, switchGestaoTab, toggleSidebar, exitUniversidade, uniOpenCurso, uniGoBack, uniPlayAula, uniStartProva, uniVerCertificado, uniOpenAdmin, uniOpenGamificacao } from './navigation.js';
-import { initAuth, doSignIn, doSignOut, toggleTheme } from './services/auth.js';
+import { initAuth, doSignIn, doSignOut, toggleTheme, setTheme } from './services/auth.js';
 import { classify, exportOverrides } from './pages/review.js';
 import { exportNoDatesCSV, exportNoValueCSV } from './pages/overview.js';
 import { confirmDivergence, rejectDivergence } from './pages/divergences.js';
@@ -47,7 +50,7 @@ import { renderTrafego, openTrafegoForm, closeTrafegoForm, saveTrafegoForm, askD
 import { renderHome } from './pages/home-page.js';
 import { initPeriodBars } from './components/period-bar.js';
 import { clearState } from './core/storage.js';
-import { toggleAccordion } from './utils/ui.js';
+import { toggleAccordion, toggleSenha } from './utils/ui.js';
 import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
@@ -65,6 +68,8 @@ window.toggleSidebar     = toggleSidebar;
 window.doSignIn          = doSignIn;
 window.doSignOut         = doSignOut;
 window.toggleTheme       = toggleTheme;
+window.setTheme          = setTheme;
+window.toggleSenha       = toggleSenha;
 window.classify          = classify;
 window.classifyFromProcv = classifyFromProcv;
 window.askClassify       = askClassify;

@@ -3,6 +3,7 @@
 // são registrados aqui, no mesmo módulo das funções-alvo.
 import { icon } from '../../utils/icons.js';
 import { toast } from '../../utils/ui.js';
+import { showConfirm } from '../../utils/confirm.js';
 import {
   fetchProfiles, updateProfileAtivo, updateProfile, invokeDeleteUser,
 } from '../../services/admin-svc.js';
@@ -139,26 +140,20 @@ function _msgErroExclusao(data, error) {
   return errMsg || data?.error || error?.message || 'Erro ao excluir';
 }
 
-async function deleteUser(id, nome) {
-  const confirmEl = document.getElementById('confirm-overlay');
-  if (confirmEl) {
-    const titleEl = document.getElementById('confirm-title');
-    const descEl  = document.getElementById('confirm-desc');
-    const okBtn   = document.getElementById('confirm-ok-btn');
-    if (titleEl) titleEl.textContent = 'Excluir Usuário';
-    if (descEl)  descEl.textContent  = `Excluir "${nome}" permanentemente? O usuário perderá o acesso imediatamente e não poderá recuperar a conta.`;
-    confirmEl.style.display = 'flex';
-    const original = okBtn.onclick;
-    okBtn.onclick = async () => {
-      confirmEl.style.display = 'none';
-      okBtn.onclick = original;
-
+// Usa a confirmação padrão. Antes abria o overlay por fora (style.display +
+// troca do onclick do OK): ao Cancelar, a janela ficava na tela e o OK seguia
+// armado com a exclusão — a próxima confirmação de outra tela excluiria o usuário.
+function deleteUser(id, nome) {
+  showConfirm(
+    'Excluir usuário',
+    `Excluir "${nome}" permanentemente? O usuário perderá o acesso imediatamente e não poderá recuperar a conta.`,
+    'Excluir',
+    async () => {
       const { data, error } = await invokeDeleteUser(id);
-
       const errMsg = _msgErroExclusao(data, error);
       if (errMsg) { toast(errMsg, 'err'); return; }
       toast('Usuário excluído');
       await loadUsers();
-    };
-  }
+    }
+  );
 }

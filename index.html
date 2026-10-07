@@ -17,41 +17,81 @@
 
 <!-- ══════════════════════════ DEFINIR SENHA (convite) ══════════════════════════ -->
 <div id="set-password-screen" style="display:none">
-  <div class="login-box">
-    <div class="login-logo">Smart<em>RYC</em></div>
-    <div class="login-title">Bem-vindo(a)!</div>
-    <div class="login-sub">Crie sua senha para acessar o sistema</div>
-    <div class="login-field">
-      <label>Nova senha</label>
-      <input type="password" id="set-pass-1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+  <div class="lg-shell">
+    <div class="lg-brand" aria-hidden="true">
+      <div class="lg-logo"><i>S</i><b>Smart RYC</b></div>
+      <div>
+        <h2 class="lg-headline">Tudo da operação<br>em um só lugar.</h2>
+        <p class="lg-lead">Liberação de margem, quitação de boletos, resultados de marketing e a Universidade Smart.</p>
+        <div class="lg-feats">
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"/></svg></span>Status de cada cliente, em tempo real</div>
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3L5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/></svg></span>Cada parceiro vê só os próprios clientes</div>
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>Indicadores e alertas no mesmo painel</div>
+        </div>
+      </div>
+      <div class="lg-foot">Smart Consig · uso interno e parceiros autorizados</div>
     </div>
-    <div class="login-field">
-      <label>Confirmar senha</label>
-      <input type="password" id="set-pass-2" placeholder="Repita a senha" autocomplete="new-password"
-             onkeydown="if(event.key==='Enter') window._confirmSetPassword()">
+    <div class="login-box">
+      <div class="login-logo">Smart<em>RYC</em></div>
+      <div class="login-title">Bem-vindo(a)!</div>
+      <div class="login-sub">Crie sua senha para acessar o sistema</div>
+      <div class="login-field">
+        <label>Nova senha</label>
+        <div class="lg-pass">
+          <input type="password" id="set-pass-1" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+          <button type="button" class="lg-eye" onclick="toggleSenha('set-pass-1', this)">Mostrar</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Confirmar senha</label>
+        <div class="lg-pass">
+          <input type="password" id="set-pass-2" placeholder="Repita a senha" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter') window._confirmSetPassword()">
+          <button type="button" class="lg-eye" onclick="toggleSenha('set-pass-2', this)">Mostrar</button>
+        </div>
+      </div>
+      <button class="login-btn" id="set-pass-btn" onclick="window._confirmSetPassword()">Criar senha e entrar</button>
+      <div id="set-pass-err" class="login-err"></div>
     </div>
-    <button class="login-btn" id="set-pass-btn" onclick="window._confirmSetPassword()">Criar Senha e Entrar</button>
-    <div id="set-pass-err" class="login-err"></div>
   </div>
 </div>
 
 <!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
 <div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">Smart<em>RYC</em></div>
-    <div class="login-title">Marketing Dashboard</div>
-    <div class="login-sub">Faça login para continuar</div>
-    <div class="login-field">
-      <label>E-mail</label>
-      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+  <div class="lg-shell">
+    <div class="lg-brand" aria-hidden="true">
+      <div class="lg-logo"><i>S</i><b>Smart RYC</b></div>
+      <div>
+        <h2 class="lg-headline">Tudo da operação<br>em um só lugar.</h2>
+        <p class="lg-lead">Liberação de margem, quitação de boletos, resultados de marketing e a Universidade Smart.</p>
+        <div class="lg-feats">
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"/></svg></span>Status de cada cliente, em tempo real</div>
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3L5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/></svg></span>Cada parceiro vê só os próprios clientes</div>
+          <div><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>Indicadores e alertas no mesmo painel</div>
+        </div>
+      </div>
+      <div class="lg-foot">Smart Consig · uso interno e parceiros autorizados</div>
     </div>
-    <div class="login-field">
-      <label>Senha</label>
-      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter') doSignIn()">
+    <div class="login-box">
+      <div class="login-logo">Smart<em>RYC</em></div>
+      <div class="login-title">Bem-vindo de volta</div>
+      <div class="login-sub">Entrar no RYC</div>
+      <div class="login-field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="login-field">
+        <label>Senha</label>
+        <div class="lg-pass">
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter') doSignIn()">
+          <button type="button" class="lg-eye" onclick="toggleSenha('login-pass', this)">Mostrar</button>
+        </div>
+      </div>
+      <div id="login-err" class="login-err"></div>
+      <button class="login-btn" id="login-btn" onclick="doSignIn()">Entrar</button>
+      <div class="lg-help">Problemas para entrar? Fale com o administrador.</div>
     </div>
-    <button class="login-btn" id="login-btn" onclick="doSignIn()">Entrar</button>
-    <div id="login-err" class="login-err"></div>
   </div>
 </div>
 
@@ -215,10 +255,15 @@
     </div>
   </nav>
   <div class="sidebar-footer">
-    <div class="user-chip" id="user-email"></div>
+    <div class="user-block">
+      <div class="user-av" id="user-av"></div>
+      <div class="user-info">
+        <div class="user-chip" id="user-email"></div>
+        <div class="user-role" id="user-role"></div>
+      </div>
+      <button class="user-out" onclick="doSignOut()" title="Sair" aria-label="Sair"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
     <div class="version">v2.0 · Smart RYC</div>
-    <button class="btn-sm btn-ghost" id="theme-toggle" style="margin-top:8px;width:100%;font-size:10px" onclick="toggleTheme()"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Tema Claro</button>
-    <button class="btn-sm btn-ghost" style="margin-top:6px;width:100%;font-size:10px" onclick="doSignOut()">Sair</button>
   </div>
 </aside>
 
@@ -226,6 +271,12 @@
 <main class="main">
   <div class="topbar">
     <div class="topbar-title" id="topbar-title">Importar Dados</div>
+    <div class="topbar-right">
+      <div class="ds-seg theme-seg" id="theme-seg" role="group" aria-label="Tema">
+        <button type="button" data-theme-set="light" onclick="setTheme('light')">Claro</button>
+        <button type="button" data-theme-set="dark" onclick="setTheme('dark')">Escuro</button>
+      </div>
+    </div>
   </div>
 
   <div class="content">
@@ -462,7 +513,7 @@
 <!-- Modal de aviso de inatividade -->
 <div class="session-warning" id="session-warning">
   <div class="session-warning-box">
-    <div class="session-warning-icon">⏱️</div>
+    <div class="session-warning-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div>
     <div class="session-warning-title">Sessão prestes a expirar</div>
     <div class="session-warning-desc">Você ficará desconectado por inatividade em <strong>2 minutos</strong>. Deseja continuar conectado?</div>
     <button class="btn-sm btn-primary" style="padding:10px 28px;font-size:13px" onclick="keepSession()">Continuar conectado</button>

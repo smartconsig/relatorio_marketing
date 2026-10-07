@@ -7,6 +7,7 @@ import { showList } from './curso-lista.js';
 import { syncModulosUI } from './modulos-builder.js';
 import { syncQuestoesUI } from './quiz-builder.js';
 import { salvar } from './uadm-salvar.js';
+import { toast } from '../../utils/ui.js';
 
 export async function openEditor(cursoExistente, el) {
   el.innerHTML = spinner();
@@ -286,7 +287,7 @@ function _attachEditorListeners(el) {
       _showImgLoading('preview-capa');
       U.curso.capa_url = await uploadImagemAsset(file, 'capa');
       _updateImgPreview('preview-capa', U.curso.capa_url);
-    } catch (err) { alert(`Erro no upload: ${err.message}`); }
+    } catch (err) { toast(`Erro no upload: ${err.message}`, 'err'); }
   });
 
   el.querySelector('#upload-hero')?.addEventListener('change', async e => {
@@ -296,7 +297,7 @@ function _attachEditorListeners(el) {
       _showImgLoading('preview-hero');
       U.curso.hero_img = await uploadImagemAsset(file, 'hero');
       _updateImgPreview('preview-hero', U.curso.hero_img);
-    } catch (err) { alert(`Erro no upload: ${err.message}`); }
+    } catch (err) { toast(`Erro no upload: ${err.message}`, 'err'); }
   });
 
   el.querySelector('#rm-capa')?.addEventListener('click', () => { U.curso.capa_url = ''; _renderEditor(el); });

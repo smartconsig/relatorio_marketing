@@ -5,6 +5,7 @@
 // (comportamento pré-existente, preservado).
 import { uploadVideoBunny, uploadPdfAsset } from '../../services/uni-upload-svc.js';
 import { U, emptyAula, esc } from './uadm-core.js';
+import { toast } from '../../utils/ui.js';
 
 export function syncModulosUI() {
   const wrap = document.getElementById('uadm-modulos-wrap');
@@ -244,7 +245,7 @@ async function _uploadVideo(file, akey, mkey) {
     if (aa) aa._up = { status: 'error', pct: 0 };
     syncModulosUI();
     console.error('Erro no upload:', err);
-    alert(`Erro no upload do vídeo: ${err.message || err}`);
+    toast(`Erro no upload do vídeo: ${err.message || err}`, 'err');
   }
 }
 
@@ -267,6 +268,6 @@ async function _uploadPdf(file, akey, mkey) {
     const aa = mm?.aulas.find(x => x._key === akey);
     if (aa) aa._up = { status: 'error', pct: 0 };
     syncModulosUI();
-    alert(`Erro no upload do PDF: ${err.message}`);
+    toast(`Erro no upload do PDF: ${err.message}`, 'err');
   }
 }

@@ -3,6 +3,7 @@
 // e _adminDeleteGrupo são registrados aqui, junto das funções-alvo.
 import { icon } from '../../utils/icons.js';
 import { toast } from '../../utils/ui.js';
+import { showConfirm } from '../../utils/confirm.js';
 import { fetchGrupos, insertGrupo, updateGrupo, deleteGrupoRow } from '../../services/admin-svc.js';
 import { getGrupos, setGrupos } from './admin-store.js';
 import { renderPermTree, readPermissoes } from './perm-tree.js';
@@ -136,25 +137,17 @@ export function openGrupoModal(grupoId) {
   });
 }
 
-async function deleteGrupo(id, nome) {
-  // Usa o confirm overlay existente do sistema
-  const overlay = document.getElementById('confirm-overlay');
-  if (overlay) {
-    const titleEl = document.getElementById('confirm-title');
-    const descEl  = document.getElementById('confirm-desc');
-    const okBtn   = document.getElementById('confirm-ok-btn');
-    if (titleEl) titleEl.textContent = 'Excluir Grupo';
-    if (descEl)  descEl.textContent  = `Excluir o grupo "${nome}"? Os usuários desse grupo ficarão sem permissões.`;
-    overlay.style.display = 'flex';
-    // Substitui o handler padrão temporariamente
-    const original = okBtn.onclick;
-    okBtn.onclick = async () => {
-      overlay.style.display = 'none';
-      okBtn.onclick = original;
+// Confirmação padrão (mesmo motivo de deleteUser em users-tab.js).
+function deleteGrupo(id, nome) {
+  showConfirm(
+    'Excluir grupo',
+    `Excluir o grupo "${nome}"? Os usuários desse grupo ficarão sem permissões.`,
+    'Excluir',
+    async () => {
       const { error } = await deleteGrupoRow(id);
       if (error) { toast('Erro ao excluir: ' + error.message, 'err'); return; }
       toast('Grupo excluído');
       await loadGrupos();
-    };
-  }
+    }
+  );
 }

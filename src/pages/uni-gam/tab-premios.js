@@ -2,6 +2,8 @@
 // editor ficam no MESMO módulo de propósito (recursão de re-render).
 import { updPremio, insPremio, delPremio } from '../../services/uni-gam-svc.js';
 import { G, emptyPremio, esc } from './ugam-core.js';
+import { toast } from '../../utils/ui.js';
+import { showConfirm } from '../../utils/confirm.js';
 
 export function renderPremios(body) {
   if (G.editView === 'premio') {
@@ -126,20 +128,21 @@ function _renderPremioEditor(body) {
     G.editView = null; renderPremios(body);
   });
 
-  body.querySelector('#btn-del-premio')?.addEventListener('click', async () => {
-    if (!confirm(`Excluir o prêmio "${G.premio.nome}"?`)) return;
-    await delPremio(G.premio.id);
-    G.premios = G.premios.filter(x => x.id !== G.premio.id);
-    G.editView = null;
-    renderPremios(body);
+  body.querySelector('#btn-del-premio')?.addEventListener('click', () => {
+    showConfirm('Excluir prêmio', `Excluir o prêmio "${G.premio.nome}"?`, 'Excluir', async () => {
+      await delPremio(G.premio.id);
+      G.premios = G.premios.filter(x => x.id !== G.premio.id);
+      G.editView = null;
+      renderPremios(body);
+    });
   });
 
   body.querySelector('#btn-salvar-premio')?.addEventListener('click', async () => {
     const btn = body.querySelector('#btn-salvar-premio');
     const nome = document.getElementById('pf-nome')?.value?.trim();
     const xp   = parseInt(document.getElementById('pf-xp')?.value);
-    if (!nome) { alert('Informe o nome do prêmio.'); return; }
-    if (!xp || xp < 1) { alert('Informe o XP necessário.'); return; }
+    if (!nome) { toast('Informe o nome do prêmio.', 'err'); return; }
+    if (!xp || xp < 1) { toast('Informe o XP necessário.', 'err'); return; }
 
     btn.disabled = true; btn.textContent = 'Salvando…';
 
@@ -156,7 +159,7 @@ function _renderPremioEditor(body) {
       renderPremios(body);
     } catch (err) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast(`Erro: ${err.message}`, 'err');
       btn.disabled = false;
       btn.textContent = G.premio.id ? 'Salvar alterações' : 'Criar prêmio';
     }

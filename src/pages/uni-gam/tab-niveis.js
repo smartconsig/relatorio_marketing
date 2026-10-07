@@ -3,6 +3,7 @@
 // limite") — o valor vazio vira null no save e significa infinito.
 import { updNivel } from '../../services/uni-gam-svc.js';
 import { G, esc } from './ugam-core.js';
+import { toast } from '../../utils/ui.js';
 
 export function renderNiveis(body) {
   body.innerHTML = `
@@ -51,7 +52,7 @@ export function renderNiveis(body) {
       setTimeout(() => { btn.disabled = false; btn.textContent = 'Salvar níveis'; }, 2000);
     } catch (err) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast(`Erro: ${err.message}`, 'err');
       btn.disabled = false; btn.textContent = 'Salvar níveis';
     }
   });

@@ -3,6 +3,8 @@
 // re-render) e separá-los criaria import circular.
 import { updConquista, insConquista, delConquista } from '../../services/uni-gam-svc.js';
 import { G, emptyConquista, esc } from './ugam-core.js';
+import { toast } from '../../utils/ui.js';
+import { showConfirm } from '../../utils/confirm.js';
 
 const CONDICAO_LABELS = {
   cursos_concluidos: 'Cursos concluídos',
@@ -165,18 +167,19 @@ function _renderConquistaEditor(body) {
     });
   });
 
-  body.querySelector('#btn-del-conquista')?.addEventListener('click', async () => {
-    if (!confirm(`Excluir a conquista "${G.conquista.nome}"?`)) return;
-    await delConquista(G.conquista.id);
-    G.conquistas = G.conquistas.filter(x => x.id !== G.conquista.id);
-    G.editView = null;
-    renderConquistas(body);
+  body.querySelector('#btn-del-conquista')?.addEventListener('click', () => {
+    showConfirm('Excluir conquista', `Excluir a conquista "${G.conquista.nome}"?`, 'Excluir', async () => {
+      await delConquista(G.conquista.id);
+      G.conquistas = G.conquistas.filter(x => x.id !== G.conquista.id);
+      G.editView = null;
+      renderConquistas(body);
+    });
   });
 
   body.querySelector('#btn-salvar-conquista')?.addEventListener('click', async () => {
     const btn = body.querySelector('#btn-salvar-conquista');
     const nome = document.getElementById('cf-nome')?.value?.trim();
-    if (!nome) { alert('Informe o nome da conquista.'); return; }
+    if (!nome) { toast('Informe o nome da conquista.', 'err'); return; }
 
     btn.disabled = true; btn.textContent = 'Salvando…';
 
@@ -186,7 +189,7 @@ function _renderConquistaEditor(body) {
       renderConquistas(body);
     } catch (err) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast(`Erro: ${err.message}`, 'err');
       btn.disabled = false;
       btn.textContent = G.conquista.id ? 'Salvar alterações' : 'Criar conquista';
     }

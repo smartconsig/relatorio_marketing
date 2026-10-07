@@ -10,6 +10,7 @@ import {
 } from '../../services/uni-admin-svc.js';
 import { U } from './uadm-core.js';
 import { reloadLista, showList } from './curso-lista.js';
+import { toast } from '../../utils/ui.js';
 
 // ── Coleta do DOM (mesmos fallbacks de sempre) ─────────────────────────────
 const _campoTexto = id => document.getElementById(id)?.value?.trim() || '';
@@ -172,8 +173,8 @@ async function _salvarProvaEQuestoes(cursoId) {
 }
 
 function _validarCurso() {
-  if (!U.curso.titulo) { alert('Informe o título do curso.'); return false; }
-  if (!U.curso.trilha_id) { alert('Selecione uma trilha.'); return false; }
+  if (!U.curso.titulo) { toast('Informe o título do curso.', 'err'); return false; }
+  if (!U.curso.trilha_id) { toast('Selecione uma trilha.', 'err'); return false; }
   return true;
 }
 
@@ -217,7 +218,7 @@ export async function salvar(publicar, el) {
 
   } catch (err) {
     console.error('Erro ao salvar:', err);
-    alert(`Erro ao salvar: ${err.message}`);
+    toast(`Erro ao salvar: ${err.message}`, 'err');
     U.saving = false;
     _travarBotoes(btns, false);
   } finally {

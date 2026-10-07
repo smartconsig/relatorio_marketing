@@ -15,9 +15,10 @@ import { DEFAULT_PERMISSIONS } from './permissions.js';
 import { resetUniversidade } from '../pages/universidade.js';
 import { A } from './auth/auth-state.js';
 import { applySavedTheme } from './auth/auth-theme.js';
+import { mostrarUsuario, limparUsuario } from './auth/auth-user-ui.js';
 import { onAuthenticated } from './auth/boot-data.js';
 
-export { toggleTheme } from './auth/auth-theme.js';
+export { toggleTheme, setTheme } from './auth/auth-theme.js';
 export { onAuthenticated } from './auth/boot-data.js';
 
 /**
@@ -69,7 +70,7 @@ export async function doSignIn() {
   state.currentUser = data.user;
   await loadUserProfile();
   applyPermissionsToUI();
-  document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || data.user.email;
+  mostrarUsuario(data.user.email);
   startSessionTimeout();
   document.getElementById('login-screen').style.display = 'none';
   A.freshLogin = true;
@@ -82,7 +83,7 @@ export async function doSignOut() {
   await sb.auth.signOut();
   state.currentUser = null;
   document.body.classList.remove('uni-mode');
-  document.getElementById('user-email').textContent = '';
+  limparUsuario();
   document.getElementById('login-email').value = '';
   document.getElementById('login-pass').value  = '';
   document.getElementById('login-screen').style.display = 'flex';
@@ -131,7 +132,7 @@ export async function initAuth() {
         state.currentUser = session.user;
         await loadUserProfile();
         applyPermissionsToUI();
-        document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || session.user.email;
+        mostrarUsuario(session.user.email);
         startSessionTimeout();
         await onAuthenticated();
       };
@@ -147,7 +148,7 @@ export async function initAuth() {
     state.currentUser = user;
     await loadUserProfile();
     applyPermissionsToUI();
-    document.getElementById('user-email').textContent = state.currentUser.nomeDisplay || user.email;
+    mostrarUsuario(user.email);
     document.getElementById('login-screen').style.display = 'none';
     startSessionTimeout();
     await onAuthenticated();

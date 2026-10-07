@@ -2,6 +2,7 @@
 // localStorage — só conveniência de UI) e geração do arquivo.
 import { filteredData } from '../../core/calcKPIs.js';
 import { applyFilters, fmtDate, fmtCPF } from './propostas-filtros.js';
+import { toast } from '../../utils/ui.js';
 
 // ── Column definitions ─────────────────────────────────────────────────────
 const COLS = [
@@ -48,7 +49,7 @@ export function closeExportModal() {
 
 export function doExportCSV() {
   const checked = [...document.querySelectorAll('#export-cols-list input:checked')].map(el => el.value);
-  if (!checked.length) { alert('Selecione ao menos uma coluna.'); return; }
+  if (!checked.length) { toast('Selecione ao menos uma coluna.', 'err'); return; }
   saveExportCols(new Set(checked));
 
   const fd = filteredData();

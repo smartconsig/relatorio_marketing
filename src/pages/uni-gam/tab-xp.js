@@ -1,6 +1,7 @@
 // Tab "Configurar XP": pontuação por ação da plataforma.
 import { updXP } from '../../services/uni-gam-svc.js';
 import { G } from './ugam-core.js';
+import { toast } from '../../utils/ui.js';
 
 export function renderXP(body) {
   const LABELS = {
@@ -64,7 +65,7 @@ export function renderXP(body) {
       setTimeout(() => { btn.disabled = false; btn.textContent = 'Salvar configuração de XP'; }, 2000);
     } catch (err) {
       console.error(err);
-      alert(`Erro: ${err.message}`);
+      toast(`Erro: ${err.message}`, 'err');
       btn.disabled = false; btn.textContent = 'Salvar configuração de XP';
     }
   });
