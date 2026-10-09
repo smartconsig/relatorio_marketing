@@ -59,6 +59,16 @@ export function rpcResiduoAvancar(id, novo, valorPago = null) {
   return sb.rpc('liberacao_residuo_avancar', { p_liberacao_id: String(id), p_novo: novo, p_valor_pago: valorPago });
 }
 
+/**
+ * Leva o cliente para QUALQUER status (migration 018). novo: pendente | res_pendente |
+ * res_solicitado | res_anexado | res_enviado | res_pago | ok. valor/enquadrada só
+ * quando o cliente ainda não tem resíduo informado; valorPago só no "pago".
+ */
+export function rpcMudarStatus(id, novo, { valor = null, enquadrada = null, valorPago = null } = {}) {
+  return sb.rpc('liberacao_mudar_status', { p_liberacao_id: String(id), p_novo: novo,
+    p_valor: valor, p_enquadrada: enquadrada, p_valor_pago: valorPago });
+}
+
 const ERROS_RESIDUO = [
   ['RESIDUO_VALOR_OBRIGATORIO',      'Informe o valor que ficou pendente.'],
   ['RESIDUO_ENQUADRADA_OBRIGATORIA', 'Informe se a conta está enquadrada.'],
@@ -69,6 +79,8 @@ const ERROS_RESIDUO = [
   ['RESIDUO_SEM_PERMISSAO',          'Sem permissão para agir neste cliente.'],
   ['RESIDUO_CPF_INVALIDO',           'CPF do cliente é inválido — corrija antes.'],
   ['RESIDUO_STATUS_SOMENTE_RPC',     'O resíduo só muda pelos botões da tela.'],
+  ['LIBERACAO_OK_SOMENTE_SMART',     'Só a Smart pode tirar o OK de um cliente.'],
+  ['liberacao_mudar_status',         'A função de mudar status ainda não existe no banco — rode a migration 018 no Supabase.'],
   ['liberacao_residuo_',             'As funções de resíduo ainda não existem no banco — rode a migration 015 no Supabase.'],
 ];
 

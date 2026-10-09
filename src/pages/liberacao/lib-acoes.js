@@ -12,8 +12,10 @@ import { render, updateTable } from './lib-tabela.js';
 
 // ── Exportar Excel (admin) ────────────────────────────────────────────────
 const _enq = v => (v == null ? '' : (v ? 'Sim' : 'Não'));
+// Saldo devedor da enquadrada = o valor informado no resíduo quando "enquadrada: Sim"
 const _colunasResiduo = r => [
-  r.residuo_valor ?? '', _enq(r.residuo_enquadrada), r.residuo_data_pendente || '', r.residuo_data_solicitado || '',
+  r.residuo_valor ?? '', _enq(r.residuo_enquadrada), r.residuo_enquadrada ? (r.residuo_valor ?? '') : '',
+  r.residuo_data_pendente || '', r.residuo_data_solicitado || '', r.residuo_data_anexado || '',
   r.residuo_data_enviado || '', r.residuo_data_pago || '', r.residuo_valor_pago ?? '', emAlerta(r) ? 'SIM' : '',
 ];
 
@@ -22,7 +24,7 @@ export function libExportar() {
   if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
 
   const headers = ['CPF','NOME','CONVÊNIO','PRODUTO','EMPRESA','SALDO DEVEDOR','TROCO','SALDO TOTAL','COMISSÃO 6%','TROCO LÍQUIDO','ACERTO','DATA QUITADO','OBS','STATUS',
-    'RESÍDUO VALOR PENDENTE','RESÍDUO ENQUADRADA','RESÍDUO PENDENTE EM','RESÍDUO SOLICITADO EM','RESÍDUO ENVIADO EM','RESÍDUO PAGO EM','RESÍDUO VALOR PAGO','EM ALERTA'];
+    'RESÍDUO VALOR PENDENTE','RESÍDUO ENQUADRADA','SALDO DEVEDOR ENQUADRADA','RESÍDUO PENDENTE EM','RESÍDUO SOLICITADO EM','RESÍDUO ANEXADO EM','RESÍDUO ENVIADO EM','RESÍDUO PAGO EM','RESÍDUO VALOR PAGO','EM ALERTA'];
   const rows = data.map(r => [
     r.cpf, r.nome, r.convenio || '', r.produto || '', r.empresa_parceira,
     r.saldo_devedor, r.troco, r.saldo_total, r.comissao_6pct, r.troco_liquido,

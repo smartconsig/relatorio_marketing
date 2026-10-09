@@ -89,7 +89,7 @@ function _obs(r) {
 function _mudarStatus(r) {
   const destinos = destinosPermitidos(r);
   if (!destinos.length) return '';
-  return dsMenu({ label: 'Mudar status', icon: 'edit',
+  return dsMenu({ label: 'Mudar status', icon: 'swap',
     items: destinos.map(st => ({ action: `mudar:${st}:${r.id}`, label: LIB_STATUS[st].label })) });
 }
 

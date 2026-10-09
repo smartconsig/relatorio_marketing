@@ -1,7 +1,9 @@
 // Liberação de Margem — status da linha, quem age em cada etapa e o alerta
 // (Fase 3 do redesenho; regras combinadas com o responsável em 06/10/2026).
-//   Pendente → (Resíduo pendente → solicitado → enviado → pago) → OK
-//   Resíduo: pendente/solicitado/pago = parceiro dono (ou Smart); enviado = SÓ Smart.
+//   Pendente → (Resíduo pendente → solicitado → anexado → enviado → pago) → OK
+//   Resíduo: pendente/solicitado/anexado/pago = parceiro dono (ou Smart); enviado = SÓ Smart.
+//   Desde 08/10/2026 (migration 018) dá para levar o cliente a QUALQUER status
+//   ("Mudar status" na linha aberta); exceções: enviado e tirar o OK = só Smart.
 //   Alerta: resíduo PAGO há mais de 7 dias úteis (seg–sex) sem virar OK.
 // O banco (migration 015) revalida tudo — aqui é só o espelho para a tela.
 import { state } from '../../state.js';
@@ -11,11 +13,12 @@ export const LIB_STATUS = {
   pendente:       { label: 'Pendente',           tone: 'neutral' },
   res_pendente:   { label: 'Resíduo pendente',   tone: 'brand' },
   res_solicitado: { label: 'Resíduo solicitado', tone: 'warn' },
+  res_anexado:    { label: 'Resíduo anexado',    tone: 'warn' },
   res_enviado:    { label: 'Resíduo enviado',    tone: 'info' },
   res_pago:       { label: 'Resíduo pago',       tone: 'pur' },
   ok:             { label: 'OK',                 tone: 'ok' },
 };
-export const LIB_ORDEM = ['pendente', 'res_pendente', 'res_solicitado', 'res_enviado', 'res_pago', 'ok'];
+export const LIB_ORDEM = ['pendente', 'res_pendente', 'res_solicitado', 'res_anexado', 'res_enviado', 'res_pago', 'ok'];
 
 export const statusDe = r => (r.aprovado ? 'ok' : (r.residuo_status ? 'res_' + r.residuo_status : 'pendente'));
 
@@ -27,12 +30,20 @@ export const ehDono = r => ehSmart() || (!!r.empresa_parceira && r.empresa_parce
 export const LIB_ACOES = {
   pendente:       [{ k: 'ok', label: 'Marcar como OK', who: 'p' }, { k: 'residuo', label: 'Resíduo', who: 'p', alt: true }],
   res_pendente:   [{ k: 'solicitado', label: 'Marcar como solicitado', who: 'p' }],
-  res_solicitado: [{ k: 'enviado', label: 'Marcar como enviado', who: 's' }],
+  res_solicitado: [{ k: 'anexado', label: 'Marcar como anexado', who: 'p' }],
+  res_anexado:    [{ k: 'enviado', label: 'Marcar como enviado', who: 's' }],
   res_enviado:    [{ k: 'pago', label: 'Marcar como pago', who: 'p' }],
   res_pago:       [{ k: 'ok', label: 'Marcar como OK', who: 'p' }],
   ok:             [],
 };
 export const podeAgir = (r, acao) => (acao.who === 's' ? ehSmart() : ehDono(r));
+
+/** Status para onde ESTA pessoa pode levar o cliente pelo "Mudar status" (o banco revalida). */
+export function destinosPermitidos(r) {
+  const atual = statusDe(r);
+  if (!ehDono(r) || (atual === 'ok' && !ehSmart())) return [];
+  return LIB_ORDEM.filter(s => s !== atual && (s !== 'res_enviado' || ehSmart()));
+}
 
 // Dias úteis (seg–sex) entre a data do pagamento e hoje — feriados contam como úteis
 export function diasUteisDesde(iso, hoje = new Date()) {

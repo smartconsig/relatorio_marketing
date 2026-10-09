@@ -9,7 +9,7 @@ import { dsChips, dsMenu, dsBtn, dsEmpty, dsSelect, dsCalendario, fmtBr, initDsM
 import { S, PAGE_SIZE, isAdmin, fmtBRL, esc, PRESETS, presetRange, filtered, loadData } from './lib-core.js';
 import { LIB_STATUS, LIB_ORDEM, LIB_ACOES, statusDe, emAlerta, podeAgir } from './lib-status.js';
 import { linhaHTML, colunas } from './lib-linha.js';
-import { executarAcao } from './lib-residuo.js';
+import { executarAcao, mudarStatus } from './lib-residuo.js';
 
 export async function reloadAndRender() {
   await loadData();
@@ -88,7 +88,7 @@ function _semStatus() {
 }
 
 function _kpis(base) {
-  const emRes = base.filter(r => !r.aprovado && ['pendente', 'solicitado', 'enviado'].includes(r.residuo_status));
+  const emRes = base.filter(r => !r.aprovado && ['pendente', 'solicitado', 'anexado', 'enviado'].includes(r.residuo_status));
   const alerta = base.filter(emAlerta).length;
   const card = (lbl, val, sub, hl) => `<div class="ds-card ds-kpi${hl ? ' ds-kpi--hl' : ''}"><div class="ds-kpi__lbl">${lbl}</div><div class="ds-kpi__val">${val}</div><div class="ds-kpi__sub">${sub}</div></div>`;
   document.getElementById('lib-kpis').innerHTML =
@@ -197,6 +197,11 @@ function _escolherAcerto(btn) {
 }
 
 function _acaoMenu(action) {
+  if (action.startsWith('mudar:')) {
+    const [, novo, id] = action.split(':');
+    mudarStatus(_linhaDe(id)[0], novo, { redesenhar: updateTable });
+    return;
+  }
   if (!action.startsWith('periodo:')) { ACOES_MENU[action]?.(); return; }
   if (action === 'periodo:custom') { setTimeout(_escolherPeriodo, 0); return; }
   const key = action.slice(8);
