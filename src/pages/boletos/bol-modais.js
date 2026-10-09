@@ -9,6 +9,7 @@ import { parseBRL } from '../../utils/currency.js';
 import { PRODUTOS, canonProduto, msgErroBanco, insertBoleto, updateBoleto } from '../../services/boletos-svc.js';
 import { BO, empresaParceira, fmtCpf, fmtDate, esc } from './bol-core.js';
 import { reloadAndRender, bolMudarStatus } from './bol-tabela.js';
+import { buscarReprovados, reprovadoDe, confirmarUm, reabrir } from './bol-reabrir.js';
 
 export function bolMarcarQuitado(id) {
   const r = BO.registros.find(x => x.id === id);
@@ -241,27 +242,40 @@ export function bolAddCliente() {
   _modalForm({ titulo: 'Novo Cliente', r: null, onSaveFn: 'bolSalvarCliente()' });
 }
 
+// Cliente já reprovado neste produto: pergunta se está ciente e REABRE o mesmo
+// registro (anexos ficam). A empresa fica a cargo do banco (parceiro: a dele;
+// Smart: mantém a que estava).
+async function _salvarReabrindo(dados) {
+  const info = reprovadoDe(await buscarReprovados([dados]), dados);
+  if (!info) return null;
+  if (!(await confirmarUm(info))) return { cancelou: true };
+  return reabrir(info, dados);
+}
+
+function _botaoSalvar(salvando) {
+  const btn = document.getElementById('bol-btn-save');
+  if (btn) { btn.disabled = salvando; btn.textContent = salvando ? 'Salvando…' : 'Salvar'; }
+}
+
 export async function bolSalvarCliente() {
   const dados = _lerFormulario();
   if (!dados) return;
+  _botaoSalvar(true);
 
-  const btn = document.getElementById('bol-btn-save');
-  const err = document.getElementById('bol-modal-err');
-  if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+  const reaberto = await _salvarReabrindo(dados);
+  if (reaberto?.cancelou) { _botaoSalvar(false); return; }
 
-  const { error } = await insertBoleto({
-    ...dados,
-    empresa_parceira: empresaParceira(),
-  });
+  const { error } = reaberto || await insertBoleto({ ...dados, empresa_parceira: empresaParceira() });
 
   if (error) {
+    const err = document.getElementById('bol-modal-err');
     if (err) { err.textContent = msgErroBanco(error); err.style.display = ''; }
-    if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+    _botaoSalvar(false);
     return;
   }
 
   bolFecharModal();
-  toast('Cliente salvo com sucesso!');
+  toast(reaberto ? 'Cliente solicitado de novo (já tinha sido reprovado).' : 'Cliente salvo com sucesso!');
   await reloadAndRender();
 }
 

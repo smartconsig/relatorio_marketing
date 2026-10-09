@@ -2,7 +2,7 @@
    relatório de importação (resumo + lista por motivo + progresso) e aviso rápido. */
 
 .ds-overlay { position: fixed; inset: 0; background: rgba(12,10,13,.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-  display: none; place-items: center; z-index: 9000; padding: 16px; }
+  display: none; place-items: center; z-index: 9100; padding: 16px; }
 .ds-overlay.is-open { display: grid; animation: ds-drop .15s var(--ds-ease); }
 .ds-modal { width: min(480px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; background: var(--ds-surface);
   color: var(--ds-ink); border: 1px solid var(--ds-line); border-radius: var(--ds-r-lg); box-shadow: var(--ds-shadow-pop); overflow: hidden;

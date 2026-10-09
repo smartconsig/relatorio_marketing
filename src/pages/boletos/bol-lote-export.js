@@ -9,6 +9,7 @@ import { dsImportReport } from '../../components/ds/index.js';
 import { baixarBoletoDocBytes } from '../../services/boleto-docs-svc.js';
 import { BO, filtered, fmtCpf, isAdmin } from './bol-core.js';
 import { BOL_STATUS } from './bol-linha.js';
+import { RESPALDO_HEADERS, respaldoCols } from './bol-respaldo-cols.js';
 
 const _limpa = s => String(s || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
 const _dm = iso => (iso ? iso.slice(8, 10) + '-' + iso.slice(5, 7) : '');
@@ -44,9 +45,9 @@ function _resumoXlsx(clientes) {
     const docs = BO.docs.get(r.id) || [];
     return [r.nome, fmtCpf(r.cpf), r.convenio || '', r.produto || '', r.empresa_parceira || '', BOL_STATUS[r.status]?.label || r.status,
       r.contrato || '', docs.filter(d => d.tipo === 'boleto').length, docs.filter(d => d.tipo === 'fatura').length,
-      r.respaldo_status || '', r.respaldo_protocolo || ''];
+      ...respaldoCols(r)];
   });
-  const ws = XLSX.utils.aoa_to_sheet([['CLIENTE', 'CPF', 'CONVÊNIO', 'PRODUTO', 'EMPRESA', 'STATUS', 'CONTRATO', 'BOLETOS', 'FATURAS', 'RESPALDO', 'PROTOCOLO'], ...linhas]);
+  const ws = XLSX.utils.aoa_to_sheet([['CLIENTE', 'CPF', 'CONVÊNIO', 'PRODUTO', 'EMPRESA', 'STATUS', 'CONTRATO', 'BOLETOS', 'FATURAS', ...RESPALDO_HEADERS], ...linhas]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
   return new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));

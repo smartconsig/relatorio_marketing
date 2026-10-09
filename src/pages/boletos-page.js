@@ -18,9 +18,11 @@ import { STATUS_META, limparBaseBoletos, deleteBoleto } from '../services/boleto
 import { BO, fmtCpf, presetRange, filtered, loadData, spinner, temCache } from './boletos/bol-core.js';
 import { render, updateTable } from './boletos/bol-tabela.js';
 import { reloadAndRender } from './boletos/bol-tabela.js';
+import { RESPALDO_HEADERS, respaldoCols } from './boletos/bol-respaldo-cols.js';
 
 export { bolExportarLote } from './boletos/bol-lote-export.js';
 export { bolImportarRespaldo, bolOnRespaldoFile } from './boletos/bol-respaldo.js';
+export { bolImportarRespaldoBoleto, bolOnRespaldoBoletoFile } from './boletos/bol-respaldo-boleto.js';
 // Usados pelos módulos de lote/respaldo para redesenhar sem importar a tabela (evita ciclo)
 export const bolRedesenhar = () => updateTable();
 export const bolRecarregar = () => reloadAndRender();
@@ -39,7 +41,7 @@ export async function renderBoletos() {
   const el = document.getElementById('sec-boletos');
   if (!el) return;
   BO.page = 1; BO.search = ''; BO.dateFrom = null; BO.dateTo = null; BO.preset = null;
-  BO.empresaFiltro = ''; BO.statusFiltro = ''; BO.respaldoFiltro = '';
+  BO.empresaFiltro = ''; BO.statusFiltro = '';
   BO.abertos = new Set(); BO.sel = new Set();
   if (temCache()) { render(el); _atualizarPorTras(); return; }
   el.innerHTML = spinner();
@@ -107,7 +109,7 @@ export function bolVerMais() {
   document.getElementById('bol-ver-mais-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ── Exportar Excel (admin) ────────────────────────────────────────────────
+// ── Exportar Excel (Smart e parceiro — o parceiro só tem os próprios clientes) ────────────────────────────────────────────────
 // Uma linha do export, na mesma ordem das colunas do cabeçalho.
 function _dadosClienteExport(r) {
   return [
@@ -125,15 +127,19 @@ function _dadosStatusExport(r) {
   ];
 }
 
+// Histórico de quem foi reprovado e solicitado de novo (migration 019)
+const _reprovadoAntes = r => [r.reprovado_antes_em || '', r.reprovado_antes_motivo || ''];
+
 function _linhaExport(r) {
-  return [..._dadosClienteExport(r), ..._dadosStatusExport(r)];
+  return [..._dadosClienteExport(r), ..._dadosStatusExport(r), ..._reprovadoAntes(r), ...respaldoCols(r)];
 }
 
 export function bolExportar() {
   const data = filtered();
   if (!data.length) { toast('Nenhum dado para exportar.', 'err'); return; }
 
-  const headers = ['CONTRATO','NOME','CPF','EMAIL','VALOR PARCELA','SALDO DEVEDOR','TROCO','CONVÊNIO','PRODUTO','EMPRESA','STATUS','DATA SOLICITADO','DATA ENVIADO','DATA QUITADO','DATA REPROVADO','MOTIVO REPROVAÇÃO','OBS','CADASTRO'];
+  const headers = ['CONTRATO','NOME','CPF','EMAIL','VALOR PARCELA','SALDO DEVEDOR','TROCO','CONVÊNIO','PRODUTO','EMPRESA','STATUS','DATA SOLICITADO','DATA ENVIADO','DATA QUITADO','DATA REPROVADO','MOTIVO REPROVAÇÃO','OBS','CADASTRO',
+    'JÁ REPROVADO EM','MOTIVO DA REPROVAÇÃO ANTERIOR', ...RESPALDO_HEADERS];
   const rows = data.map(_linhaExport);
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);

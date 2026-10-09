@@ -44,6 +44,11 @@ const ERROS_BANCO = [
   ['BOLETO_REGISTRO_FINALIZADO', 'Registro finalizado — somente admin pode editar.'],
   ['BOLETO_STATUS_SOMENTE_RPC',  'Status não pode ser alterado diretamente.'],
   ['BOLETO_RESPALDO_SOMENTE_RPC', 'O respaldo só pode ser alterado pela importação.'],
+  ['BOLETO_NAO_REPROVADO',        'Este cliente não está mais reprovado — atualize a tela.'],
+  ['BOLETO_SALDO_INVALIDO',       'Informe o saldo devedor.'],
+  ['boleto_importar_respaldo_boleto', 'A função de respaldo boleto ainda não existe no banco — rode a migration 019 no Supabase.'],
+  ['boleto_reprovados_existentes', 'A função de reprovados ainda não existe no banco — rode a migration 019 no Supabase.'],
+  ['boleto_reabrir_reprovado',     'A função de reabrir ainda não existe no banco — rode a migration 019 no Supabase.'],
   ['boleto_importar_respaldo',    'A função de respaldo ainda não existe no banco — rode a migration 014 no Supabase.'],
 ];
 
@@ -87,6 +92,26 @@ export function rpcImportarRespaldo({ cpf, protocolo, status, detalhes, obs }) {
   return sb.rpc('boleto_importar_respaldo', {
     p_cpf: cpf, p_protocolo: protocolo, p_status: status, p_detalhes: detalhes, p_obs: obs || null,
   });
+}
+
+// Respaldo BOLETO (migration 019): status/mensagem/alerta + contratos (jsonb) nas
+// propostas abertas do CPF; "Sem contratos / Nenhum contrato encontrado" reprova no banco.
+// Devolve { data: { ok, propostas, reprovadas }, error }. Só admin.
+export function rpcImportarRespaldoBoleto({ cpf, protocolo, status, mensagem, alerta, contratos }) {
+  return sb.rpc('boleto_importar_respaldo_boleto', {
+    p_cpf: cpf, p_protocolo: protocolo || null, p_status: status || null, p_mensagem: mensagem || null,
+    p_alerta: alerta || null, p_contratos: contratos?.length ? contratos : null,
+  });
+}
+
+/** itens: [{ cpf, produto }] → [{ id, cpf, produto, nome, data_reprovado, motivo, empresa }] que só existem como REPROVADO. */
+export function rpcReprovadosExistentes(itens) {
+  return sb.rpc('boleto_reprovados_existentes', { p_itens: itens });
+}
+
+/** Reabre o registro reprovado com os dados novos (volta para "Solicitar boleto"; anexos ficam). */
+export function rpcReabrirReprovado(id, dados) {
+  return sb.rpc('boleto_reabrir_reprovado', { p_id: id, p_dados: dados });
 }
 
 export function limparBaseBoletos() {

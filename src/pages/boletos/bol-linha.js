@@ -1,6 +1,7 @@
 // Linha da Quitação de Boleto no visual novo (Fase 2 do redesenho):
 // resumo compacto (cliente, convênio, cadastro, status, AÇÃO do dia a dia) e
-// detalhe que abre ao clicar (etapas, valores, respaldo, documentos, ações raras).
+// detalhe que abre ao clicar (etapas, valores, reprovação anterior, documentos, ações raras).
+// Os respaldos (boleto e fatura) NÃO aparecem na tela — só na exportação (decisão de 08/10/2026).
 // Só monta HTML — os cliques são tratados por delegação em bol-tabela.js.
 // Nomes window.* usados aqui (bolMarcarQuitado, bolAbrirReprovar, bolEditarCliente,
 // bolDeletarCliente, bolVerDoc, bolBaixarDoc, bolExcluirDoc) — NÃO RENOMEAR.
@@ -43,7 +44,7 @@ function _subStatus(r) {
   if (data) partes.push('desde ' + data);
   const nDocs = (BO.docs.get(r.id) || []).length;
   if (nDocs) partes.push(`${nDocs} doc${nDocs > 1 ? 's' : ''}`);
-  if (r.respaldo_status) partes.push('respaldo');
+  if (r.reprovado_antes_em) partes.push('já reprovado antes');
   return partes.length ? `<div class="bol-sub">${partes.join(' · ')}</div>` : '';
 }
 
@@ -89,16 +90,15 @@ function _valores(r) {
     + '</div>';
 }
 
-function _respaldo(r) {
-  if (!r.respaldo_status && !r.respaldo_protocolo) {
-    return `<div class="ds-blk"><h3>${icon('shield', 16)}Respaldo</h3><div class="ds-hint">Ainda não importado.</div></div>`;
-  }
-  const quando = r.respaldo_em ? new Date(r.respaldo_em).toLocaleDateString('pt-BR') : '';
-  const linhas = String(r.respaldo_detalhes || '').split('\n').filter(Boolean).map(l => `<div>${esc(l)}</div>`).join('');
-  return `<div class="ds-blk"><h3>${icon('shield', 16)}Respaldo ${r.respaldo_status ? dsBadge(r.respaldo_status, 'pur') : ''}`
-    + `<span class="ds-hint bol-respaldo-meta">${r.respaldo_protocolo ? 'protocolo <span class="bol-mono">' + esc(r.respaldo_protocolo) + '</span>' : ''}${quando ? ' · importado em ' + quando : ''}</span></h3>`
-    + `<div class="bol-linhas">${linhas || '<span class="ds-hint">Sem detalhes por cartão.</span>'}</div>`
-    + (r.respaldo_obs ? `<div class="ds-hint" style="margin-top:6px">${esc(r.respaldo_obs)}</div>` : '') + '</div>';
+// Cliente reprovado que foi solicitado de novo (migration 019): fica registrado aqui
+function _reprovadoAntes(r) {
+  if (!r.reprovado_antes_em && !r.reprovado_antes_motivo) return '';
+  const vezes = r.reaberturas > 1 ? ` · solicitado de novo ${r.reaberturas} vezes` : '';
+  const empresa = isAdmin() && r.reprovado_antes_empresa ? ` · era da ${esc(r.reprovado_antes_empresa)}` : '';
+  return `<div class="ds-blk"><h3 style="color:var(--ds-bad)">${icon('alert', 16)}Já foi reprovado antes</h3>`
+    + `<div class="ds-muted">Reprovado em ${fmtDate(r.reprovado_antes_em)}${empresa}${vezes}</div>`
+    + (r.reprovado_antes_motivo ? `<div class="ds-muted" style="margin-top:4px">Motivo: ${esc(r.reprovado_antes_motivo)}</div>` : '')
+    + '</div>';
 }
 
 function _docItem(d) {
@@ -133,5 +133,5 @@ export function detalheHTML(r) {
   const motivo = r.status === 'boleto_reprovado' && r.motivo_reprovacao
     ? `<div class="ds-blk"><h3 style="color:var(--ds-bad)">Motivo da reprovação</h3><div class="ds-muted">${esc(r.motivo_reprovacao)}</div></div>` : '';
   const obs = r.obs ? `<div class="ds-blk"><h3>${icon('note', 16)}Observação</h3><div class="ds-muted bol-obs">${esc(r.obs)}</div></div>` : '';
-  return _etapas(r) + _valores(r) + motivo + _respaldo(r) + _documentos(r) + obs + _acoesRaras(r);
+  return _etapas(r) + _valores(r) + motivo + _reprovadoAntes(r) + _documentos(r) + obs + _acoesRaras(r);
 }

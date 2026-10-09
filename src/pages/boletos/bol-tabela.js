@@ -26,13 +26,14 @@ function _menus() {
     { action: 'imp-planilha', label: 'Planilha de clientes', sub: 'Cadastra clientes em lote', icon: 'table' },
     ...(admin ? [
       { action: 'imp-lote', label: 'Lote ZIP', sub: 'Boletos e faturas em PDF', icon: 'folder', tag: 'SMART' },
-      { action: 'imp-respaldo', label: 'Respaldo', sub: 'Relatório de Faturas Smart', icon: 'shield', tag: 'SMART' },
+      { action: 'imp-respaldo-boleto', label: 'Respaldo boleto', sub: 'Relatório Boleto Smart (abas CPFs e Contratos)', icon: 'shield', tag: 'SMART' },
+      { action: 'imp-respaldo', label: 'Respaldo fatura', sub: 'Relatório de Faturas Smart', icon: 'shield', tag: 'SMART' },
     ] : []),
     { sep: true },
     { action: 'modelo', label: 'Baixar modelo da planilha', icon: 'download' },
   ];
   const exportar = [
-    ...(admin ? [{ action: 'exp-excel', label: 'Excel', sub: 'Todas as colunas do filtro atual', icon: 'table' }] : []),
+    { action: 'exp-excel', label: 'Excel', sub: 'Todas as colunas do filtro atual, com os respaldos', icon: 'table' },
     { action: 'exp-lote', label: 'Lote ZIP', sub: 'Uma pasta por cliente + resumo.xlsx', icon: 'folder' },
   ];
   const mais = admin ? dsMenu({ icon: 'dots', right: true, ariaLabel: 'Mais opções',
@@ -66,12 +67,12 @@ export function render(el) {
           ${_menus()}
           <input type="file" id="bol-import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="bolOnImportFile(this)" />
           <input type="file" id="bol-respaldo-input" accept=".xlsx,.xls" style="display:none" />
+          <input type="file" id="bol-respaldo-boleto-input" accept=".xlsx,.xls" style="display:none" />
         </div>
         <div class="ds-tbl__filters ds-filterbar">
           <div id="bol-status-chips"></div>
           <div class="ds-filterbar__right">
             ${isAdmin() ? '<span id="bol-empresa"></span>' : ''}
-            <span id="bol-respaldo"></span>
             <span class="ds-hint">Período pela data de cadastro</span>
           </div>
         </div>
@@ -116,9 +117,6 @@ function _selects() {
     emp.innerHTML = dsSelect({ id: 'empresa', value: BO.empresaFiltro, buscar: true, right: true,
       options: [{ value: '', label: 'Todas as empresas' }, ...empresas.map(e => ({ value: e, label: e }))] });
   }
-  const sts = [...new Set(BO.registros.map(r => r.respaldo_status).filter(Boolean))].sort();
-  document.getElementById('bol-respaldo').innerHTML = sts.length ? dsSelect({ id: 'respaldo', value: BO.respaldoFiltro, right: true,
-    options: [{ value: '', label: 'Respaldo: todos' }, { value: '__sem', label: 'Sem respaldo' }, ...sts.map(x => ({ value: x, label: x }))] }) : '';
   document.getElementById('bol-periodo').innerHTML = _menuPeriodo();
 }
 
@@ -165,6 +163,7 @@ const ACOES_MENU = {
   'imp-planilha': () => window.bolImportarPlanilha(),
   'imp-lote':     () => window.bolAbrirLote(),
   'imp-respaldo': () => window.bolImportarRespaldo(),
+  'imp-respaldo-boleto': () => window.bolImportarRespaldoBoleto(),
   'modelo':       () => { const a = document.createElement('a'); a.href = '/template_boletos.xlsx'; a.download = 'TEMPLATE_BOLETOS.xlsx'; a.click(); },
   'exp-excel':    () => window.bolExportar(),
   'exp-lote':     () => window.bolExportarLote(),
@@ -209,7 +208,6 @@ const CLIQUES = [
   ['[data-ds-action]', el => _acaoMenu(el.dataset.dsAction)],
   ['[data-ds-chip]',   el => { BO.statusFiltro = el.dataset.dsChip; _resetPage(); updateTable(); }],
   ['[data-ds-select="empresa"]',  el => { BO.empresaFiltro = el.dataset.value; _resetPage(); updateTable(); }],
-  ['[data-ds-select="respaldo"]', el => { BO.respaldoFiltro = el.dataset.value; _resetPage(); updateTable(); }],
   ['[data-bol-bulk]',  el => executarBulk(el.dataset.bolBulk)],
   ['[data-bol-acao]',  el => _acaoLinha(el.dataset.bolAcao)],
   ['[data-bol-abrir]', el => { BO.abertos.add(el.dataset.bolAbrir); updateTable(); }],
@@ -232,6 +230,7 @@ function _onChange(e) {
   }
   if (t.dataset.bolSel) { if (t.checked) BO.sel.add(t.dataset.bolSel); else BO.sel.delete(t.dataset.bolSel); renderBulk(); return; }
   if (t.id === 'bol-respaldo-input') window.bolOnRespaldoFile(t);
+  if (t.id === 'bol-respaldo-boleto-input') window.bolOnRespaldoBoletoFile(t);
 }
 
 function _ligarEventos(el) {

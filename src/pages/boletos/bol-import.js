@@ -7,6 +7,7 @@ import { canonProduto, msgErroBanco, insertBoleto } from '../../services/boletos
 import { isAdmin, empresaParceira, esc } from './bol-core.js';
 import { reloadAndRender } from './bol-tabela.js';
 import { bolFecharModal } from './bol-modais.js';
+import { separarReprovados } from './bol-reabrir.js';
 
 export function bolImportarPlanilha() {
   document.getElementById('bol-import-input')?.click();
@@ -173,12 +174,19 @@ export async function bolOnImportFile(input) {
     return;
   }
 
-  toast(`Importando ${valid.length} cliente${valid.length !== 1 ? 's' : ''}…`);
-  const { inserted, rejeitados } = await _inserirUmAUm(valid);
+  await _gravarValidos(valid, invalidos);
+}
+
+// Já reprovados antes: lista + "Estou ciente" antes de gravar os novos
+async function _gravarValidos(valid, invalidos) {
+  const { normais, reabertos, pulados } = await separarReprovados(valid);
+
+  toast(`Importando ${normais.length} cliente${normais.length !== 1 ? 's' : ''}…`);
+  const { inserted, rejeitados } = await _inserirUmAUm(normais);
 
   await reloadAndRender();
 
-  _mostrarResultadoImport(inserted, [...rejeitados, ...invalidos]);
+  _mostrarResultadoImport(inserted + reabertos, [...pulados, ...rejeitados, ...invalidos]);
 }
 
 function _mostrarErroModelo() {

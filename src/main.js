@@ -50,7 +50,7 @@ import { openHistoryPanel, closeHistoryPanel } from './pages/history-panel.js';
 import { keepSession } from './services/session-timeout.js';
 import { closeBottomSheet, openBottomSheet } from './utils/mobile.js';
 import { libAddCliente, libFecharModal, libCalcPreview, libSalvarCliente, libToggleOk, libSalvarAcerto, libSetSearch, libSetPreset, libClearDate, libSetDateManual, libVerMais, libImportarPlanilha, libOnImportFile, libImportarAcerto, libOnImportAcertoFile, libDeletarCliente, libLimparBase, libExportar, libEditarCliente, libSalvarEdicao, libSetEmpresaFiltro, libImportarPendencias, libOnPendenciasFile, libRedesenhar, libRecarregar } from './pages/liberacao-page.js';
-import { bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote, bolExportarLote, bolImportarRespaldo, bolOnRespaldoFile, bolRedesenhar, bolRecarregar } from './pages/boletos-page.js';
+import { bolSetSearch, bolSetPreset, bolClearDate, bolSetDateManual, bolVerMais, bolSetEmpresaFiltro, bolSetStatusFiltro, bolImportarPlanilha, bolOnImportFile, bolAddCliente, bolSalvarCliente, bolEditarCliente, bolSalvarEdicao, bolFecharModal, bolDeletarCliente, bolLimparBase, bolExportar, bolMudarStatus, bolMarcarQuitado, bolAbrirReprovar, bolConfirmarReprovar, bolVerMotivo, bolPopShow, bolPopEnter, bolPopLeave, bolVerDoc, bolBaixarDoc, bolExcluirDoc, bolAbrirLote, bolOnZipFile, bolAtribuirOrfaoLote, bolConfirmarLote, bolFecharLote, bolExportarLote, bolImportarRespaldo, bolOnRespaldoFile, bolImportarRespaldoBoleto, bolOnRespaldoBoletoFile, bolRedesenhar, bolRecarregar } from './pages/boletos-page.js';
 
 // Expose functions called from inline HTML handlers
 window.navigate          = navigate;
@@ -160,6 +160,8 @@ window.bolFecharLote       = bolFecharLote;
 window.bolExportarLote     = bolExportarLote;
 window.bolImportarRespaldo = bolImportarRespaldo;
 window.bolOnRespaldoFile   = bolOnRespaldoFile;
+window.bolImportarRespaldoBoleto = bolImportarRespaldoBoleto;
+window.bolOnRespaldoBoletoFile   = bolOnRespaldoBoletoFile;
 window.bolRedesenhar       = bolRedesenhar;
 window.bolRecarregar       = bolRecarregar;
 window.toggleAccordion   = toggleAccordion;
